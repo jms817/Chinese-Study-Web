@@ -1,4 +1,4 @@
-const CACHE_NAME = "zh-study-static-v3";
+const CACHE_NAME = "zh-study-static-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
