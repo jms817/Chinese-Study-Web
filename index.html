@@ -929,7 +929,7 @@ Object.assign(window, { ToneBadge, PinyinRow, TTSBtn, ProgressBar, Chip, Btn, Em
 <script type="text/babel">
 // HomeScreen — dashboard with XP/level, chapters & streak
 
-function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, session, syncStatus }) {
+function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, session, syncStatus, syncState }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "좋은 아침이에요" : hour < 18 ? "안녕하세요" : "좋은 저녁이에요";
   const chineseGreeting = hour < 12 ? "早上好" : hour < 18 ? "你好" : "晚上好";
@@ -969,7 +969,9 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
       </div>
 
       <Card onClick={onCloudSync} style={{marginBottom:14,display:"flex",alignItems:"center",gap:13,border:"1.5px solid var(--accent)22",padding:"14px 16px"}}>
-        <span style={{fontSize:22}}>{session ? "☁️" : "📱"}</span>
+        <span style={{fontSize:22}}>
+          {session ? (syncState==="syncing" ? "⏳" : syncState==="error" ? "⚠️" : syncState==="dirty" ? "📝" : "☁️") : "📱"}
+        </span>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>
             {session ? (session.user?.email || "클라우드 연결됨") : "기기 연동 설정"}
@@ -2439,13 +2441,16 @@ with check ((select auth.uid()) = user_id);`;
 
         <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
           <Btn variant="success" onClick={onPullCloud} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>클라우드에서 불러오기</Btn>
-          <Btn variant="primary" onClick={onPushCloud} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>클라우드에 저장</Btn>
+          <Btn variant="primary" onClick={onPushCloud} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>지금 바로 저장</Btn>
           <Btn variant="ghost" onClick={onSignOut} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>로그아웃</Btn>
           <span style={{fontSize:12,color:"var(--sub)"}}>
             {syncStatus || (session ? `로그인 사용자: ${session.user?.email || session.user?.id}` : "Supabase 설정 후 로그인 가능")}
           </span>
         </div>
         <div style={{fontSize:11,color:"var(--sub)",marginTop:10,lineHeight:1.5}}>
+          로그인 상태에서는 변경사항이 자동으로 저장됩니다. `지금 바로 저장`은 기다리지 않고 즉시 올리고 싶을 때만 누르면 됩니다.
+        </div>
+        <div style={{fontSize:11,color:"var(--sub)",marginTop:6,lineHeight:1.5}}>
           Supabase 대시보드의 Authentication 설정에서 Site URL과 Redirect URL에 이 앱 주소를 등록해야 매직링크 로그인이 정상적으로 돌아옵니다.
         </div>
       </Card>
@@ -2541,6 +2546,7 @@ function applyAccent(key) {
 
 function App() {
   const bootstrappedUserRef = React.useRef(null);
+  const autoSyncTimerRef = React.useRef(null);
   const [screen, setScreen] = React.useState(() => store.get("screen","home"));
   const [activeChapter, setActiveChapter] = React.useState(null);
   const [tweaksOpen, setTweaksOpen] = React.useState(false);
@@ -2550,6 +2556,7 @@ function App() {
   const [supabaseClient, setSupabaseClient] = React.useState(null);
   const [session, setSession] = React.useState(null);
   const [syncStatus, setSyncStatus] = React.useState("로컬 저장 사용 중");
+  const [syncState, setSyncState] = React.useState("local");
 
   React.useEffect(() => { store.set("screen", screen); }, [screen]);
   React.useEffect(() => { store.set("stats", stats); }, [stats]);
@@ -2571,16 +2578,19 @@ function App() {
       setSession(null);
       bootstrappedUserRef.current = null;
       setSyncStatus("로컬 저장 사용 중");
+      setSyncState("local");
       return;
     }
     let unsub = null;
     client.auth.getSession().then(({ data }) => {
       setSession(data.session || null);
       setSyncStatus(data.session ? `로그인됨: ${data.session.user?.email || "사용자"}` : "Supabase 설정 완료");
+      setSyncState(data.session ? "synced" : "ready");
     });
     const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession || null);
       setSyncStatus(nextSession ? `로그인됨: ${nextSession.user?.email || "사용자"}` : "로그아웃됨");
+      setSyncState(nextSession ? "synced" : "ready");
     });
     unsub = data?.subscription;
     return () => unsub?.unsubscribe?.();
@@ -2596,6 +2606,7 @@ function App() {
       if (!remoteState) {
         await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
         setSyncStatus("클라우드 초기 저장 완료");
+        setSyncState("synced");
         return;
       }
       const localStamp = String(stats.lastStudiedAt || "");
@@ -2604,9 +2615,11 @@ function App() {
         setStats(hydrateStats(remoteState));
         if (remoteTweaks) setTweaks({...TWEAK_DEFAULTS, ...remoteTweaks});
         setSyncStatus("클라우드 최신 데이터를 가져왔어요.");
+        setSyncState("synced");
       } else {
         await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
         setSyncStatus("로컬 최신 데이터를 클라우드에 반영했어요.");
+        setSyncState("synced");
       }
     })();
   }, [supabaseClient, session?.user?.id]);
@@ -2663,10 +2676,12 @@ function App() {
   const sendMagicLink = async (email) => {
     if (!supabaseClient) {
       setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
+      setSyncState("error");
       return;
     }
     if (!String(email || "").trim()) {
       setSyncStatus("로그인할 이메일을 입력해 주세요.");
+      setSyncState("error");
       return;
     }
     const { error } = await supabaseClient.auth.signInWithOtp({
@@ -2674,34 +2689,43 @@ function App() {
       options: { emailRedirectTo: window.location.href }
     });
     setSyncStatus(error ? `로그인 메일 전송 실패: ${error.message}` : "매직링크를 이메일로 보냈어요.");
+    setSyncState(error ? "error" : "ready");
   };
   const pushNow = async () => {
     if (!supabaseClient || !session?.user?.id) {
       setSyncStatus("로그인 후 클라우드 저장을 사용할 수 있어요.");
+      setSyncState("error");
       return;
     }
     setSyncStatus("클라우드 저장 중...");
+    setSyncState("syncing");
     const { error } = await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
     setSyncStatus(error ? `클라우드 저장 실패: ${error.message}` : "클라우드 저장 완료");
+    setSyncState(error ? "error" : "synced");
   };
   const pullNow = async () => {
     if (!supabaseClient || !session?.user?.id) {
       setSyncStatus("로그인 후 클라우드 불러오기를 사용할 수 있어요.");
+      setSyncState("error");
       return;
     }
     setSyncStatus("클라우드 데이터 확인 중...");
+    setSyncState("syncing");
     const { data, error } = await pullCloudSnapshot(supabaseClient, session.user.id);
     if (error) {
       setSyncStatus(`클라우드 불러오기 실패: ${error.message}`);
+      setSyncState("error");
       return;
     }
     if (!data?.data?.studyState) {
       setSyncStatus("클라우드에 저장된 데이터가 없어요. 현재 로컬 데이터를 기준으로 시작합니다.");
+      setSyncState("ready");
       return;
     }
     setStats(hydrateStats(data.data.studyState));
     if (data.data.tweaks) setTweaks({...TWEAK_DEFAULTS, ...data.data.tweaks});
     setSyncStatus("클라우드 데이터 불러오기 완료");
+    setSyncState("synced");
   };
   const signOutCloud = async () => {
     if (!supabaseClient) return;
@@ -2709,14 +2733,23 @@ function App() {
     setSession(null);
     bootstrappedUserRef.current = null;
     setSyncStatus("로그아웃됨");
+    setSyncState("ready");
   };
   React.useEffect(() => {
     if (!supabaseClient || !session?.user?.id) return;
-    const timer = setTimeout(async () => {
-      await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
-      setSyncStatus("자동 동기화됨");
-    }, 1800);
-    return () => clearTimeout(timer);
+    setSyncStatus("변경사항 감지됨 - 자동 저장 대기 중");
+    setSyncState("dirty");
+    if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
+    autoSyncTimerRef.current = setTimeout(async () => {
+      setSyncStatus("자동 동기화 중...");
+      setSyncState("syncing");
+      const { error } = await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
+      setSyncStatus(error ? `자동 동기화 실패: ${error.message}` : "자동 동기화됨");
+      setSyncState(error ? "error" : "synced");
+    }, 900);
+    return () => {
+      if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
+    };
   }, [stats, tweaks, session?.user?.id, supabaseClient]);
 
   const reviewCount = getDueReviewWords(stats).length;
@@ -2763,6 +2796,7 @@ function App() {
             onCloudSync={()=>setScreen("backup")}
             session={session}
             syncStatus={syncStatus}
+            syncState={syncState}
           />
         )}
         {screen==="study"  && <StudyScreen chapter={activeChapter||getStudyChapters(stats)[0]} stats={stats} onResult={handleResult} onBack={()=>setScreen("home")}/>}
