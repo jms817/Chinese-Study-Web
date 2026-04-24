@@ -1,432 +1,463 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>중국어 표현 검수 페이지</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>중국어 표현 검수</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <style>
     :root{
       --bg:#f4f7fb;
-      --card:rgba(255,255,255,.76);
+      --card:rgba(255,255,255,.82);
       --line:rgba(123,142,224,.18);
       --text:#1f2430;
       --sub:#66708a;
       --accent:#7b8ee0;
       --accent-dim:rgba(123,142,224,.12);
       --good:#4f9d74;
-      --good-dim:rgba(79,157,116,.12);
+      --good-dim:rgba(79,157,116,.13);
       --warn:#d9705b;
-      --warn-dim:rgba(217,112,91,.12);
-      --shadow:0 18px 48px rgba(123,142,224,.10);
+      --warn-dim:rgba(217,112,91,.13);
+      --both-dim:rgba(200,180,100,.13);
+      --shadow:0 12px 36px rgba(123,142,224,.10);
     }
-    *{box-sizing:border-box}
+    *{box-sizing:border-box;margin:0;padding:0}
     body{
-      margin:0;
       font-family:"Pretendard","SUIT",system-ui,sans-serif;
       color:var(--text);
       background:
-        radial-gradient(circle at top left, rgba(123,142,224,.15), transparent 32%),
-        radial-gradient(circle at right 20%, rgba(240,179,106,.12), transparent 28%),
+        radial-gradient(circle at top left,rgba(123,142,224,.13),transparent 30%),
+        radial-gradient(circle at right 20%,rgba(240,179,106,.10),transparent 26%),
         var(--bg);
       min-height:100vh;
     }
-    .shell{
-      max-width:1080px;
-      margin:0 auto;
-      padding:32px 18px 56px;
+    .shell{max-width:900px;margin:0 auto;padding:28px 16px 60px}
+
+    /* overlay */
+    .overlay{
+      position:fixed;inset:0;background:rgba(31,36,48,.45);
+      display:flex;align-items:center;justify-content:center;z-index:100;
+      backdrop-filter:blur(6px);
     }
-    .hero,.card{
-      background:var(--card);
-      border:1px solid var(--line);
-      box-shadow:var(--shadow);
-      backdrop-filter:blur(18px);
-      -webkit-backdrop-filter:blur(18px);
-      border-radius:26px;
+    .overlay-card{
+      background:#fff;border-radius:24px;padding:32px 28px;
+      width:min(400px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.18);
     }
+    .overlay-card h2{font-size:20px;margin-bottom:8px}
+    .overlay-card p{font-size:13px;color:var(--sub);line-height:1.65;margin-bottom:20px}
+    .name-input{
+      width:100%;padding:12px 14px;border-radius:14px;
+      border:1.5px solid var(--line);font-size:15px;font-family:inherit;
+      outline:none;transition:.15s;
+    }
+    .name-input:focus{border-color:var(--accent)}
+    .btn-start{
+      width:100%;margin-top:14px;padding:13px;border-radius:14px;
+      background:var(--accent);color:#fff;font-size:15px;font-weight:700;
+      border:none;cursor:pointer;font-family:inherit;
+    }
+    .btn-start:hover{opacity:.9}
+
+    /* error screen */
+    .err{display:flex;flex-direction:column;align-items:center;justify-content:center;
+      min-height:60vh;text-align:center;gap:12px;padding:24px}
+    .err h2{font-size:20px;color:var(--warn)}
+    .err p{font-size:14px;color:var(--sub);line-height:1.65;max-width:320px}
+
+    /* hero */
     .hero{
-      padding:26px 24px;
-      margin-bottom:18px;
+      background:var(--card);border:1px solid var(--line);
+      border-radius:22px;padding:22px 20px;margin-bottom:14px;
+      box-shadow:var(--shadow);
     }
-    h1{
-      margin:0 0 8px;
-      font-size:28px;
-      line-height:1.15;
-    }
-    .sub{
-      color:var(--sub);
-      line-height:1.65;
-      font-size:14px;
-      max-width:760px;
-    }
-    .meta{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:14px;
-    }
+    .hero h1{font-size:22px;margin-bottom:6px}
+    .hero-sub{font-size:13px;color:var(--sub);line-height:1.6}
+    .hero-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .pill{
-      padding:7px 11px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:700;
-      background:rgba(255,255,255,.68);
-      border:1px solid var(--line);
-      color:var(--sub);
+      padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;
+      background:rgba(255,255,255,.7);border:1px solid var(--line);color:var(--sub);
     }
-    .toolbar{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:18px;
+    .pill.done{background:var(--good-dim);color:var(--good);border-color:rgba(79,157,116,.3)}
+
+    /* toolbar */
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+    .btn{
+      padding:10px 16px;border-radius:14px;font-size:13px;font-weight:700;
+      font-family:inherit;border:none;cursor:pointer;transition:.15s;
     }
-    button{
-      border:none;
-      cursor:pointer;
-      border-radius:16px;
-      padding:12px 16px;
-      font-weight:700;
-      font-family:inherit;
-      transition:.18s ease;
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-ghost{background:rgba(255,255,255,.8);color:var(--text);border:1px solid var(--line)}
+    .reviewer-badge{
+      margin-left:auto;font-size:12px;color:var(--sub);
+      background:var(--accent-dim);border-radius:999px;padding:6px 12px;
     }
-    button.primary{ background:var(--accent); color:#fff; }
-    button.ghost{ background:rgba(255,255,255,.75); color:var(--text); border:1px solid var(--line); }
-    button:hover{ transform:translateY(-1px); }
-    .grid{
-      display:grid;
-      gap:14px;
-    }
+
+    /* cards */
+    .grid{display:grid;gap:12px}
     .card{
-      padding:18px;
+      background:var(--card);border:1px solid var(--line);border-radius:20px;
+      padding:16px 18px;box-shadow:var(--shadow);
     }
-    .head{
-      display:flex;
-      justify-content:space-between;
-      gap:14px;
-      align-items:flex-start;
-      margin-bottom:14px;
+    .card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .kicker{font-size:11px;font-weight:800;color:var(--sub);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+    .card-title{font-size:15px;font-weight:800;margin-bottom:4px}
+    .card-q{font-size:12px;color:var(--sub);line-height:1.55}
+    .status-badge{
+      font-size:11px;font-weight:800;padding:5px 9px;border-radius:999px;
+      white-space:nowrap;flex-shrink:0;
     }
-    .kicker{
-      font-size:11px;
-      font-weight:800;
-      color:var(--sub);
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      margin-bottom:6px;
-    }
-    .title{
-      font-size:18px;
-      font-weight:800;
-      margin-bottom:6px;
-    }
-    .context{
-      color:var(--sub);
-      font-size:13px;
-      line-height:1.6;
-    }
-    .state{
-      font-size:12px;
-      font-weight:800;
-      padding:7px 10px;
-      border-radius:999px;
-      background:rgba(255,255,255,.7);
-      border:1px solid var(--line);
-      color:var(--sub);
-      white-space:nowrap;
-    }
-    .compare{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-bottom:14px;
-    }
-    .option{
-      border:1px solid var(--line);
-      border-radius:20px;
-      padding:14px;
-      background:rgba(255,255,255,.58);
-    }
-    .option h3{
-      margin:0 0 8px;
-      font-size:13px;
-      color:var(--sub);
-    }
-    .zh{
-      font-family:"Noto Sans SC","PingFang SC",sans-serif;
-      font-size:24px;
-      line-height:1.45;
-      margin-bottom:8px;
-    }
-    .py{
-      color:var(--accent);
-      font-size:13px;
-      margin-bottom:6px;
-      font-weight:700;
-    }
-    .ko{
-      color:var(--sub);
-      font-size:13px;
-      line-height:1.6;
-    }
-    .question{
-      font-size:13px;
-      line-height:1.65;
-      color:var(--text);
-      margin-bottom:12px;
-    }
-    .choices{
-      display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
-      gap:8px;
-      margin-bottom:12px;
-    }
+    .status-badge.done{background:var(--good-dim);color:var(--good);border:1px solid rgba(79,157,116,.25)}
+    .status-badge.wait{background:rgba(255,255,255,.7);color:var(--sub);border:1px solid var(--line)}
+
+    .compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .option{border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.55)}
+    .option h3{margin:0 0 6px;font-size:11px;color:var(--sub);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .zh{font-family:"Noto Sans SC","PingFang SC",sans-serif;font-size:20px;line-height:1.45;margin-bottom:6px}
+    .py{color:var(--accent);font-size:12px;margin-bottom:4px;font-weight:700}
+    .ko{color:var(--sub);font-size:12px;line-height:1.55}
+
+    .choices{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
     .choice{
-      text-align:center;
-      padding:12px 10px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.72);
-      color:var(--sub);
+      text-align:center;padding:10px 6px;border-radius:14px;font-size:11px;font-weight:700;
+      border:1px solid var(--line);background:rgba(255,255,255,.7);color:var(--sub);
+      cursor:pointer;font-family:inherit;transition:.15s;
     }
-    .choice.on.current{ background:var(--good-dim); color:var(--good); border-color:rgba(79,157,116,.35); }
-    .choice.on.proposed{ background:var(--accent-dim); color:var(--accent); border-color:rgba(123,142,224,.35); }
-    .choice.on.both{ background:rgba(255,255,255,.88); color:var(--text); border-color:rgba(123,142,224,.32); }
-    .choice.on.neither{ background:var(--warn-dim); color:var(--warn); border-color:rgba(217,112,91,.35); }
-    textarea{
-      width:100%;
-      min-height:86px;
-      resize:vertical;
-      border-radius:18px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.8);
-      padding:14px;
-      font:inherit;
-      color:var(--text);
+    .choice:hover{transform:translateY(-1px)}
+    .choice.sel-current{background:var(--good-dim);color:var(--good);border-color:rgba(79,157,116,.35)}
+    .choice.sel-proposed{background:var(--accent-dim);color:var(--accent);border-color:rgba(123,142,224,.35)}
+    .choice.sel-both{background:var(--both-dim);color:#8a7a30;border-color:rgba(200,180,100,.35)}
+    .choice.sel-neither{background:var(--warn-dim);color:var(--warn);border-color:rgba(217,112,91,.35)}
+
+    .comment-box{
+      width:100%;min-height:70px;resize:vertical;border-radius:14px;
+      border:1px solid var(--line);background:rgba(255,255,255,.8);
+      padding:10px 12px;font:inherit;font-size:13px;color:var(--text);outline:none;transition:.15s;
     }
-    .footer{
-      margin-top:20px;
-      color:var(--sub);
-      font-size:12px;
-      line-height:1.6;
-      text-align:center;
-    }
-    @media (max-width:800px){
-      .compare,.choices{ grid-template-columns:1fr; }
+    .comment-box:focus{border-color:var(--accent)}
+    .saving-hint{font-size:11px;color:var(--sub);margin-top:5px;text-align:right;min-height:16px}
+
+    .footer{margin-top:24px;text-align:center;font-size:12px;color:var(--sub);line-height:1.6}
+
+    @media(max-width:600px){
+      .compare,.choices{grid-template-columns:1fr}
     }
   </style>
 </head>
 <body>
-  <div class="shell">
+<div class="shell" id="app">
+  <div class="err">
+    <h2>링크를 확인해 주세요</h2>
+    <p>검수 링크가 올바르지 않아요.<br>앱에서 링크를 다시 복사해서 전달해 달라고 요청해 주세요.</p>
+  </div>
+</div>
+
+<script>
+const REVIEW_ITEMS = [
+  {
+    id:"review-shopping-lookaround",
+    category:"회화 뉘앙스",
+    context:"가게에서 '그냥 둘러보는 중이에요'라고 자연스럽게 말하기",
+    current:"我只是看看。", currentPinyin:"Wǒ zhǐshì kàn kàn.", currentKo:"그냥 구경만 해요.",
+    proposed:"我随便看看。", proposedPinyin:"Wǒ suíbiàn kàn kàn.", proposedKo:"그냥 편하게 둘러보고 있어요.",
+    question:"초급 학습자에게도 자연스럽고 부담 없는 표현은 어느 쪽인가요?"
+  },
+  {
+    id:"review-phone-message",
+    category:"회화 뉘앙스",
+    context:"친구나 동료에게 '메시지 보낼게요'라고 말하기",
+    current:"我给你发消息。", currentPinyin:"Wǒ gěi nǐ fā xiāoxi.", currentKo:"내가 메시지 보낼게요.",
+    proposed:"我给你发个消息。", proposedPinyin:"Wǒ gěi nǐ fā ge xiāoxi.", proposedKo:"제가 메시지 하나 보낼게요.",
+    question:"구어체에서 더 자연스럽게 들리는 쪽이 어느 쪽인가요?"
+  },
+  {
+    id:"review-health-comfort",
+    category:"회화 뉘앙스",
+    context:"몸 상태가 살짝 안 좋을 때 말하기",
+    current:"我有点不舒服。", currentPinyin:"Wǒ yǒudiǎn bù shūfu.", currentKo:"조금 몸이 안 좋아요.",
+    proposed:"我有点不太舒服。", proposedPinyin:"Wǒ yǒudiǎn bú tài shūfu.", proposedKo:"조금 좀 불편해요.",
+    question:"일상 회화에서 더 자주 들리는 표현은 어느 쪽인가요?"
+  },
+  {
+    id:"review-vocab-fangbian",
+    category:"단어 설명",
+    context:"方便의 초급자용 뜻 설명",
+    current:"편하다, 괜찮다", currentPinyin:"fāngbiàn", currentKo:"짧고 쉽지만 뜻이 넓음",
+    proposed:"편리하다, 시간이나 상황이 괜찮다", proposedPinyin:"fāngbiàn", proposedKo:"조금 길지만 오해가 적음",
+    question:"초급 학습자에게 오해를 덜 주는 설명은 어느 쪽인가요?"
+  },
+  {
+    id:"review-grammar-le",
+    category:"문법 설명",
+    context:"`了`의 초급자용 핵심 설명",
+    current:"행동이 끝났다는 느낌을 줄 때 `了`를 많이 씁니다.", currentPinyin:"", currentKo:"짧고 직관적",
+    proposed:"행동의 완료나 상태 변화를 말할 때 `了`를 자주 씁니다.", proposedPinyin:"", proposedKo:"조금 더 정확함",
+    question:"초급자에게 더 정확하면서도 부담이 덜한 설명은 어느 쪽인가요?"
+  },
+  {
+    id:"review-grammar-yao-hui",
+    category:"문법 설명",
+    context:"`要`와 `会`의 차이 설명",
+    current:"가까운 계획은 `要`, 가능성이나 미래 예측은 `会`로 자주 말합니다.", currentPinyin:"", currentKo:"의미 구분은 괜찮지만 능력 뜻이 빠짐",
+    proposed:"가까운 계획·의도는 `要`, 예측이나 능력은 `会`로 자주 말합니다.", proposedPinyin:"", proposedKo:"능력 의미까지 포함",
+    question:"학습앱 문장으로 더 자연스럽고 정확한 설명은 어느 쪽인가요?"
+  }
+];
+
+const CHOICE_LABELS = {
+  current:"현재안이 더 좋음",
+  proposed:"제안안이 더 좋음",
+  both:"둘 다 괜찮음",
+  neither:"둘 다 애매함",
+};
+
+const STORE_NAME = "zh-reviewer-name-v1";
+let supabase = null;
+let reviewerName = "";
+let answers = {};
+let saveTimers = {};
+
+function parseHash() {
+  const hash = window.location.hash.slice(1);
+  const params = new URLSearchParams(hash);
+  return { url: params.get("url"), key: params.get("key") };
+}
+
+function initSupabase(url, key) {
+  try {
+    supabase = window.supabase.createClient(url, key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function loadAnswers() {
+  if (!supabase || !reviewerName) return;
+  const { data } = await supabase
+    .from("nuance_reviews")
+    .select("item_id,choice,comment")
+    .eq("reviewer_name", reviewerName);
+  if (data) {
+    answers = {};
+    data.forEach(r => { answers[r.item_id] = { choice: r.choice, comment: r.comment || "" }; });
+  }
+}
+
+async function saveAnswer(itemId) {
+  if (!supabase || !reviewerName) return;
+  const a = answers[itemId] || {};
+  await supabase.from("nuance_reviews").upsert({
+    reviewer_name: reviewerName,
+    item_id: itemId,
+    choice: a.choice || null,
+    comment: a.comment || "",
+    reviewed_at: new Date().toISOString(),
+  }, { onConflict: "reviewer_name,item_id" });
+}
+
+function debounceSave(itemId) {
+  clearTimeout(saveTimers[itemId]);
+  setSavingHint(itemId, "저장 중…");
+  saveTimers[itemId] = setTimeout(async () => {
+    await saveAnswer(itemId);
+    setSavingHint(itemId, "저장됨 ✓");
+    setTimeout(() => setSavingHint(itemId, ""), 1200);
+  }, 600);
+}
+
+function setSavingHint(itemId, text) {
+  const el = document.getElementById("hint-" + itemId);
+  if (el) el.textContent = text;
+}
+
+function doneCount() {
+  return REVIEW_ITEMS.filter(it => answers[it.id]?.choice).length;
+}
+
+function renderProgress() {
+  const done = doneCount();
+  const total = REVIEW_ITEMS.length;
+  const pillEl = document.getElementById("progress-pill");
+  if (pillEl) {
+    pillEl.textContent = `${done}/${total} 완료`;
+    pillEl.className = "pill" + (done === total ? " done" : "");
+  }
+}
+
+function renderCard(item) {
+  const a = answers[item.id] || {};
+  const isDone = !!a.choice;
+  const card = document.getElementById("card-" + item.id);
+  if (!card) return;
+
+  card.querySelector(".status-badge").textContent = isDone ? "선택 완료" : "검수 대기";
+  card.querySelector(".status-badge").className = "status-badge " + (isDone ? "done" : "wait");
+
+  ["current","proposed","both","neither"].forEach(val => {
+    const btn = card.querySelector(`[data-choice="${val}"]`);
+    if (btn) btn.className = "choice" + (a.choice === val ? " sel-" + val : "");
+  });
+
+  const ta = card.querySelector("textarea");
+  if (ta && document.activeElement !== ta) ta.value = a.comment || "";
+}
+
+function buildUI() {
+  const done = doneCount();
+  const total = REVIEW_ITEMS.length;
+
+  const html = `
     <section class="hero">
-      <h1>중국어 표현 검수 페이지</h1>
-      <div class="sub">
-        전체를 새로 써주실 필요는 없고, 각 항목에서 더 자연스럽거나 초급자에게 더 적절한 쪽만 가볍게 골라주시면 됩니다.
-        필요하면 짧게 코멘트만 남겨 주세요.
-      </div>
-      <div class="meta">
-        <span class="pill">선택형 검수</span>
-        <span class="pill">짧은 코멘트만 추가 가능</span>
-        <span class="pill">JSON 내보내기 지원</span>
+      <h1>중국어 표현 검수</h1>
+      <div class="hero-sub">더 자연스러운 쪽을 골라 주세요. 코멘트는 짧게 한 줄이면 충분해요.</div>
+      <div class="hero-meta">
+        <span class="pill${done===total?" done":""}" id="progress-pill">${done}/${total} 완료</span>
+        <span class="pill">검수자: ${reviewerName}</span>
       </div>
     </section>
 
     <div class="toolbar">
-      <button class="primary" id="downloadBtn">검수 결과 JSON 저장</button>
-      <button class="ghost" id="copyBtn">검수 요약 복사</button>
-      <button class="ghost" id="resetBtn">선택 초기화</button>
+      <button class="btn btn-primary" id="copyBtn">결과 복사</button>
+      <button class="btn btn-ghost" id="nameChangeBtn">이름 변경</button>
     </div>
 
-    <main class="grid" id="list"></main>
+    <div class="grid" id="list"></div>
 
-    <div class="footer">
-      이 페이지는 로컬 브라우저에 임시 저장됩니다. 제출 전에는 꼭 JSON 저장이나 복사를 한 번 해두는 편이 안전해요.
+    <div class="footer">입력할 때마다 자동으로 저장돼요. 페이지를 닫아도 이어서 할 수 있어요.</div>
+  `;
+  document.getElementById("app").innerHTML = html;
+
+  const list = document.getElementById("list");
+  REVIEW_ITEMS.forEach(item => {
+    const sec = document.createElement("section");
+    sec.className = "card";
+    sec.id = "card-" + item.id;
+    const a = answers[item.id] || {};
+    sec.innerHTML = `
+      <div class="card-head">
+        <div>
+          <div class="kicker">${item.category}</div>
+          <div class="card-title">${item.context}</div>
+          <div class="card-q">${item.question}</div>
+        </div>
+        <div class="status-badge ${a.choice?"done":"wait"}">${a.choice?"선택 완료":"검수 대기"}</div>
+      </div>
+      <div class="compare">
+        <div class="option">
+          <h3>현재안</h3>
+          <div class="zh">${item.current}</div>
+          ${item.currentPinyin ? `<div class="py">${item.currentPinyin}</div>` : ""}
+          <div class="ko">${item.currentKo}</div>
+        </div>
+        <div class="option">
+          <h3>제안안</h3>
+          <div class="zh">${item.proposed}</div>
+          ${item.proposedPinyin ? `<div class="py">${item.proposedPinyin}</div>` : ""}
+          <div class="ko">${item.proposedKo}</div>
+        </div>
+      </div>
+      <div class="choices">
+        ${["current","proposed","both","neither"].map(val =>
+          `<button class="choice${a.choice===val?" sel-"+val:""}" data-id="${item.id}" data-choice="${val}">${CHOICE_LABELS[val]}</button>`
+        ).join("")}
+      </div>
+      <textarea class="comment-box" data-comment="${item.id}" placeholder="코멘트 (선택)">${a.comment||""}</textarea>
+      <div class="saving-hint" id="hint-${item.id}"></div>
+    `;
+    list.appendChild(sec);
+  });
+
+  document.getElementById("list").addEventListener("click", e => {
+    const btn = e.target.closest("[data-choice]");
+    if (!btn) return;
+    const { id, choice } = btn.dataset;
+    answers[id] = { ...(answers[id]||{}), choice };
+    renderCard(REVIEW_ITEMS.find(it=>it.id===id));
+    renderProgress();
+    debounceSave(id);
+  });
+
+  document.getElementById("list").addEventListener("input", e => {
+    const id = e.target.dataset.comment;
+    if (!id) return;
+    answers[id] = { ...(answers[id]||{}), comment: e.target.value };
+    debounceSave(id);
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    const lines = ["# 중국어 표현 검수 결과", `검수자: ${reviewerName}`, `날짜: ${new Date().toLocaleDateString("ko-KR")}`, ""];
+    let currentCategory = "";
+    REVIEW_ITEMS.forEach((item, i) => {
+      if (item.category !== currentCategory) {
+        currentCategory = item.category;
+        lines.push(`## ${currentCategory}`);
+      }
+      const a = answers[item.id] || {};
+      const choiceLabel = a.choice ? CHOICE_LABELS[a.choice] : "미선택";
+      lines.push(`${i+1}. ${item.context}`);
+      lines.push(`   → ${choiceLabel}${a.comment ? " / " + a.comment : ""}`);
+    });
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      document.getElementById("copyBtn").textContent = "복사됨 ✓";
+      setTimeout(() => { document.getElementById("copyBtn").textContent = "결과 복사"; }, 1800);
+    } catch {
+      alert(lines.join("\n"));
+    }
+  });
+
+  document.getElementById("nameChangeBtn").addEventListener("click", () => {
+    localStorage.removeItem(STORE_NAME);
+    reviewerName = "";
+    showNameInput();
+  });
+}
+
+function showNameInput() {
+  const overlay = document.createElement("div");
+  overlay.className = "overlay";
+  overlay.innerHTML = `
+    <div class="overlay-card">
+      <h2>안녕하세요!</h2>
+      <p>검수 결과를 저장하고 이어 볼 수 있도록 이름(또는 닉네임)을 입력해 주세요.</p>
+      <input class="name-input" id="nameInput" type="text" placeholder="예: 홍길동" maxlength="20" autocomplete="off"/>
+      <button class="btn-start" id="nameSubmit">시작하기</button>
     </div>
-  </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("nameInput").focus();
 
-  <script>
-    const STORAGE_KEY = "zh-review-answers-v1";
-    const ITEMS = [
-      {
-        id:"review-shopping-lookaround",
-        category:"회화 뉘앙스",
-        context:"가게에서 '그냥 둘러보는 중이에요'라고 자연스럽게 말하기",
-        current:"我只是看看。",
-        proposed:"我随便看看。",
-        currentPinyin:"Wǒ zhǐshì kàn kàn.",
-        proposedPinyin:"Wǒ suíbiàn kàn kàn.",
-        currentKo:"그냥 구경만 해요.",
-        proposedKo:"그냥 편하게 둘러보고 있어요.",
-        question:"초급 학습자에게도 자연스럽고 부담 없는 표현은 어느 쪽인가요?"
-      },
-      {
-        id:"review-phone-message",
-        category:"회화 뉘앙스",
-        context:"친구나 동료에게 '메시지 보낼게요'라고 말하기",
-        current:"我给你发消息。",
-        proposed:"我给你发个消息。",
-        currentPinyin:"Wǒ gěi nǐ fā xiāoxi.",
-        proposedPinyin:"Wǒ gěi nǐ fā ge xiāoxi.",
-        currentKo:"내가 메시지 보낼게요.",
-        proposedKo:"제가 메시지 하나 보낼게요.",
-        question:"구어체에서 더 자연스럽게 들리는 쪽이 어느 쪽인가요?"
-      },
-      {
-        id:"review-health-comfort",
-        category:"회화 뉘앙스",
-        context:"몸 상태가 살짝 안 좋을 때 말하기",
-        current:"我有点不舒服。",
-        proposed:"我有点不太舒服。",
-        currentPinyin:"Wǒ yǒudiǎn bù shūfu.",
-        proposedPinyin:"Wǒ yǒudiǎn bú tài shūfu.",
-        currentKo:"조금 몸이 안 좋아요.",
-        proposedKo:"조금 좀 불편해요.",
-        question:"일상 회화에서 더 자주 들리는 표현은 어느 쪽인가요?"
-      },
-      {
-        id:"review-vocab-fangbian",
-        category:"단어 설명",
-        context:"方便의 초급자용 뜻 설명",
-        current:"편하다, 괜찮다",
-        proposed:"편리하다, 시간이나 상황이 괜찮다",
-        currentPinyin:"fāngbiàn",
-        proposedPinyin:"fāngbiàn",
-        currentKo:"짧고 쉽지만 뜻이 넓음",
-        proposedKo:"조금 길지만 오해가 적음",
-        question:"초급 학습자에게 오해를 덜 주는 설명은 어느 쪽인가요?"
-      },
-      {
-        id:"review-grammar-le",
-        category:"문법 설명",
-        context:"`了`의 초급자용 핵심 설명",
-        current:"행동이 끝났다는 느낌을 줄 때 `了`를 많이 씁니다.",
-        proposed:"행동의 완료나 상태 변화를 말할 때 `了`를 자주 씁니다.",
-        currentPinyin:"",
-        proposedPinyin:"",
-        currentKo:"짧고 직관적",
-        proposedKo:"조금 더 정확함",
-        question:"초급자에게 더 정확하면서도 부담이 덜한 설명은 어느 쪽인가요?"
-      },
-      {
-        id:"review-grammar-yao-hui",
-        category:"문법 설명",
-        context:"`要`와 `会`의 차이 설명",
-        current:"가까운 계획은 `要`, 가능성이나 미래 예측은 `会`로 자주 말합니다.",
-        proposed:"가까운 계획·의도는 `要`, 예측이나 능력은 `会`로 자주 말합니다.",
-        currentPinyin:"",
-        proposedPinyin:"",
-        currentKo:"의미 구분은 괜찮지만 능력 뜻이 빠짐",
-        proposedKo:"능력 의미까지 포함",
-        question:"학습앱 문장으로 더 자연스럽고 정확한 설명은 어느 쪽인가요?"
-      }
-    ];
+  const submit = async () => {
+    const val = document.getElementById("nameInput").value.trim();
+    if (!val) return;
+    reviewerName = val;
+    localStorage.setItem(STORE_NAME, val);
+    document.body.removeChild(overlay);
+    await loadAnswers();
+    buildUI();
+  };
 
-    const answers = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    const list = document.getElementById("list");
+  document.getElementById("nameSubmit").addEventListener("click", submit);
+  document.getElementById("nameInput").addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+}
 
-    function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
-    }
+async function init() {
+  const { url, key } = parseHash();
+  if (!url || !key || !initSupabase(url, key)) return;
 
-    function render() {
-      list.innerHTML = "";
-      ITEMS.forEach((item, index) => {
-        const card = document.createElement("section");
-        card.className = "card";
-        const value = answers[item.id]?.choice || "";
-        const comment = answers[item.id]?.comment || "";
-        card.innerHTML = `
-          <div class="head">
-            <div>
-              <div class="kicker">${item.category}</div>
-              <div class="title">${index + 1}. ${item.context}</div>
-              <div class="context">${item.question}</div>
-            </div>
-            <div class="state">${value ? "선택 완료" : "검수 대기"}</div>
-          </div>
-          <div class="compare">
-            <div class="option">
-              <h3>현재안</h3>
-              <div class="zh">${item.current}</div>
-              ${item.currentPinyin ? `<div class="py">${item.currentPinyin}</div>` : ""}
-              <div class="ko">${item.currentKo}</div>
-            </div>
-            <div class="option">
-              <h3>제안안</h3>
-              <div class="zh">${item.proposed}</div>
-              ${item.proposedPinyin ? `<div class="py">${item.proposedPinyin}</div>` : ""}
-              <div class="ko">${item.proposedKo}</div>
-            </div>
-          </div>
-          <div class="choices">
-            <button class="choice ${value === "current" ? "on current" : ""}" data-id="${item.id}" data-choice="current">현재안이 더 좋음</button>
-            <button class="choice ${value === "proposed" ? "on proposed" : ""}" data-id="${item.id}" data-choice="proposed">제안안이 더 좋음</button>
-            <button class="choice ${value === "both" ? "on both" : ""}" data-id="${item.id}" data-choice="both">둘 다 괜찮음</button>
-            <button class="choice ${value === "neither" ? "on neither" : ""}" data-id="${item.id}" data-choice="neither">둘 다 애매함</button>
-          </div>
-          <textarea data-comment="${item.id}" placeholder="필요하면 짧게 코멘트를 남겨 주세요. 예: 조금 더 자연스럽게는 ...">${comment}</textarea>
-        `;
-        list.appendChild(card);
-      });
-    }
+  const stored = localStorage.getItem(STORE_NAME);
+  if (stored) {
+    reviewerName = stored;
+    await loadAnswers();
+    buildUI();
+  } else {
+    document.getElementById("app").innerHTML = "";
+    showNameInput();
+  }
+}
 
-    document.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-choice]");
-      if (!button) return;
-      const id = button.dataset.id;
-      answers[id] = {
-        ...(answers[id] || {}),
-        choice:button.dataset.choice,
-      };
-      save();
-      render();
-    });
-
-    document.addEventListener("input", (event) => {
-      const id = event.target.dataset.comment;
-      if (!id) return;
-      answers[id] = {
-        ...(answers[id] || {}),
-        comment:event.target.value,
-      };
-      save();
-    });
-
-    document.getElementById("downloadBtn").addEventListener("click", () => {
-      const payload = {
-        reviewedAt:new Date().toISOString(),
-        answers
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "chinese-nuance-review.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    });
-
-    document.getElementById("copyBtn").addEventListener("click", async () => {
-      const lines = ITEMS.map((item, index) => {
-        const row = answers[item.id] || {};
-        const label = row.choice || "미선택";
-        return `${index + 1}. ${item.context} - ${label}${row.comment ? ` / ${row.comment}` : ""}`;
-      });
-      const text = lines.join("\\n");
-      try {
-        await navigator.clipboard.writeText(text);
-        alert("검수 요약을 복사했어요.");
-      } catch {
-        alert("복사 권한이 막혀 있어요. JSON 저장으로 대신 전달해 주세요.");
-      }
-    });
-
-    document.getElementById("resetBtn").addEventListener("click", () => {
-      if (!confirm("지금까지 선택한 검수 내용을 모두 지울까요?")) return;
-      localStorage.removeItem(STORAGE_KEY);
-      Object.keys(answers).forEach((key) => delete answers[key]);
-      render();
-    });
-
-    render();
-  </script>
+init();
+</script>
 </body>
 </html>

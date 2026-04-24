@@ -1071,69 +1071,6 @@ const GRAMMAR_NOTES = [
   }
 ];
 
-const NUANCE_REVIEW_ITEMS = [
-  {
-    id:"review-shopping-lookaround",
-    category:"회화 뉘앙스",
-    context:"가게에서 '그냥 둘러보는 중이에요'라고 자연스럽게 말하기",
-    current:"我只是看看。",
-    proposed:"我随便看看。",
-    currentPinyin:"Wǒ zhǐshì kàn kàn.",
-    proposedPinyin:"Wǒ suíbiàn kàn kàn.",
-    question:"초급 학습자에게도 자연스럽고 부담 없는 표현은 어느 쪽인가요?",
-  },
-  {
-    id:"review-phone-message",
-    category:"회화 뉘앙스",
-    context:"친구나 동료에게 '메시지 보낼게요'라고 말하기",
-    current:"我给你发消息。",
-    proposed:"我给你发个消息。",
-    currentPinyin:"Wǒ gěi nǐ fā xiāoxi.",
-    proposedPinyin:"Wǒ gěi nǐ fā ge xiāoxi.",
-    question:"구어체에서 더 자연스럽게 들리는 쪽이 어느 쪽인가요?",
-  },
-  {
-    id:"review-health-comfort",
-    category:"회화 뉘앙스",
-    context:"몸 상태가 살짝 안 좋을 때 말하기",
-    current:"我有点不舒服。",
-    proposed:"我有点不太舒服。",
-    currentPinyin:"Wǒ yǒudiǎn bù shūfu.",
-    proposedPinyin:"Wǒ yǒudiǎn bú tài shūfu.",
-    question:"일상 회화에서 더 자주 들리는 표현은 어느 쪽인가요?",
-  },
-  {
-    id:"review-vocab-fangbian",
-    category:"단어 설명",
-    context:"方便의 초급자용 뜻 설명",
-    current:"편하다, 괜찮다",
-    proposed:"편리하다, 시간이나 상황이 괜찮다",
-    currentPinyin:"fāngbiàn",
-    proposedPinyin:"fāngbiàn",
-    question:"초급 학습자에게 오해를 덜 주는 설명은 어느 쪽인가요?",
-  },
-  {
-    id:"review-grammar-le",
-    category:"문법 설명",
-    context:"`了`의 초급자용 핵심 설명",
-    current:"행동이 끝났다는 느낌을 줄 때 `了`를 많이 씁니다.",
-    proposed:"행동의 완료나 상태 변화를 말할 때 `了`를 자주 씁니다.",
-    currentPinyin:"",
-    proposedPinyin:"",
-    question:"초급자에게 더 정확하면서도 부담이 덜한 설명은 어느 쪽인가요?",
-  },
-  {
-    id:"review-grammar-yao-hui",
-    category:"문법 설명",
-    context:"`要`와 `会`의 차이 설명",
-    current:"가까운 계획은 `要`, 가능성이나 미래 예측은 `会`로 자주 말합니다.",
-    proposed:"가까운 계획·의도는 `要`, 예측이나 능력은 `会`로 자주 말합니다.",
-    currentPinyin:"",
-    proposedPinyin:"",
-    question:"학습앱 문장으로 더 자연스럽고 정확한 설명은 어느 쪽인가요?",
-  }
-];
-
 const MISSION_SETS = [
   {
     id:"mission-restaurant",
@@ -1289,7 +1226,7 @@ const MISSION_SETS = [
   }
 ];
 
-Object.assign(window, { PHRASE_SETS, GRAMMAR_NOTES, NUANCE_REVIEW_ITEMS, MISSION_SETS });
+Object.assign(window, { PHRASE_SETS, GRAMMAR_NOTES, MISSION_SETS });
 
 </script>
 
@@ -3283,7 +3220,25 @@ on public.study_snapshots
 for update
 to authenticated
 using ((select auth.uid()) = user_id)
-with check ((select auth.uid()) = user_id);`;
+with check ((select auth.uid()) = user_id);
+
+-- 검수 테이블 (로그인 불필요)
+create table if not exists public.nuance_reviews (
+  id uuid primary key default gen_random_uuid(),
+  reviewer_name text not null,
+  item_id text not null,
+  choice text,
+  comment text not null default '',
+  reviewed_at timestamptz not null default now(),
+  unique(reviewer_name, item_id)
+);
+alter table public.nuance_reviews enable row level security;
+create policy "anon select nuance reviews"
+  on public.nuance_reviews for select to anon using (true);
+create policy "anon insert nuance reviews"
+  on public.nuance_reviews for insert to anon with check (true);
+create policy "anon update nuance reviews"
+  on public.nuance_reviews for update to anon using (true) with check (true);`;
 
   return (
     <div style={{animation:"fadeUp .3s ease both"}}>
@@ -3448,6 +3403,280 @@ Object.assign(window, { BackupScreen });
 
 </script>
 
+<script type="text/babel">
+// InspectScreen — owner-side review management
+
+const REVIEW_ITEMS = [
+  {
+    id:"review-shopping-lookaround",
+    category:"회화 뉘앙스",
+    context:"가게에서 '그냥 둘러보는 중이에요'라고 자연스럽게 말하기",
+    current:"我只是看看。", currentPinyin:"Wǒ zhǐshì kàn kàn.", currentKo:"그냥 구경만 해요.",
+    proposed:"我随便看看。", proposedPinyin:"Wǒ suíbiàn kàn kàn.", proposedKo:"그냥 편하게 둘러보고 있어요.",
+    question:"초급 학습자에게도 자연스럽고 부담 없는 표현은 어느 쪽인가요?"
+  },
+  {
+    id:"review-phone-message",
+    category:"회화 뉘앙스",
+    context:"친구나 동료에게 '메시지 보낼게요'라고 말하기",
+    current:"我给你发消息。", currentPinyin:"Wǒ gěi nǐ fā xiāoxi.", currentKo:"내가 메시지 보낼게요.",
+    proposed:"我给你发个消息。", proposedPinyin:"Wǒ gěi nǐ fā ge xiāoxi.", proposedKo:"제가 메시지 하나 보낼게요.",
+    question:"구어체에서 더 자연스럽게 들리는 쪽이 어느 쪽인가요?"
+  },
+  {
+    id:"review-health-comfort",
+    category:"회화 뉘앙스",
+    context:"몸 상태가 살짝 안 좋을 때 말하기",
+    current:"我有点不舒服。", currentPinyin:"Wǒ yǒudiǎn bù shūfu.", currentKo:"조금 몸이 안 좋아요.",
+    proposed:"我有点不太舒服。", proposedPinyin:"Wǒ yǒudiǎn bú tài shūfu.", proposedKo:"조금 좀 불편해요.",
+    question:"일상 회화에서 더 자주 들리는 표현은 어느 쪽인가요?"
+  },
+  {
+    id:"review-vocab-fangbian",
+    category:"단어 설명",
+    context:"方便의 초급자용 뜻 설명",
+    current:"편하다, 괜찮다", currentPinyin:"fāngbiàn", currentKo:"짧고 쉽지만 뜻이 넓음",
+    proposed:"편리하다, 시간이나 상황이 괜찮다", proposedPinyin:"fāngbiàn", proposedKo:"조금 길지만 오해가 적음",
+    question:"초급 학습자에게 오해를 덜 주는 설명은 어느 쪽인가요?"
+  },
+  {
+    id:"review-grammar-le",
+    category:"문법 설명",
+    context:"`了`의 초급자용 핵심 설명",
+    current:"행동이 끝났다는 느낌을 줄 때 `了`를 많이 씁니다.", currentPinyin:"", currentKo:"짧고 직관적",
+    proposed:"행동의 완료나 상태 변화를 말할 때 `了`를 자주 씁니다.", proposedPinyin:"", proposedKo:"조금 더 정확함",
+    question:"초급자에게 더 정확하면서도 부담이 덜한 설명은 어느 쪽인가요?"
+  },
+  {
+    id:"review-grammar-yao-hui",
+    category:"문법 설명",
+    context:"`要`와 `会`의 차이 설명",
+    current:"가까운 계획은 `要`, 가능성이나 미래 예측은 `会`로 자주 말합니다.", currentPinyin:"", currentKo:"의미 구분은 괜찮지만 능력 뜻이 빠짐",
+    proposed:"가까운 계획·의도는 `要`, 예측이나 능력은 `会`로 자주 말합니다.", proposedPinyin:"", proposedKo:"능력 의미까지 포함",
+    question:"학습앱 문장으로 더 자연스럽고 정확한 설명은 어느 쪽인가요?"
+  }
+];
+
+const CHOICE_LABELS = {
+  current:"현재안이 더 좋음",
+  proposed:"제안안이 더 좋음",
+  both:"둘 다 괜찮음",
+  neither:"둘 다 애매함",
+};
+
+function InspectScreen({ supabaseClient, supabaseConfig }) {
+  const [reviews, setReviews] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [copiedLink, setCopiedLink] = React.useState(false);
+  const [copiedDoc, setCopiedDoc] = React.useState(false);
+
+  const hasSupabase = !!(supabaseConfig?.url && supabaseConfig?.anonKey);
+
+  const loadReviews = React.useCallback(async () => {
+    if (!supabaseClient) return;
+    setLoading(true);
+    const { data } = await supabaseClient
+      .from("nuance_reviews")
+      .select("reviewer_name,item_id,choice,comment,reviewed_at")
+      .order("reviewed_at", { ascending: false });
+    if (data) setReviews(data);
+    setLoading(false);
+  }, [supabaseClient]);
+
+  React.useEffect(() => { loadReviews(); }, [loadReviews]);
+
+  function generateLink() {
+    const base = window.location.origin + "/nuance-review";
+    const hash = `url=${encodeURIComponent(supabaseConfig.url)}&key=${encodeURIComponent(supabaseConfig.anonKey)}`;
+    return `${base}#${hash}`;
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(generateLink());
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = generateLink();
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 1800);
+  }
+
+  function buildMarkdown() {
+    const reviewerMap = {};
+    reviews.forEach(r => {
+      if (!reviewerMap[r.reviewer_name]) reviewerMap[r.reviewer_name] = {};
+      reviewerMap[r.reviewer_name][r.item_id] = r;
+    });
+
+    const lines = [
+      "# 중국어 학습 콘텐츠 검수 결과",
+      `생성일: ${new Date().toLocaleDateString("ko-KR")}`,
+      `항목 수: ${REVIEW_ITEMS.length}`,
+      "",
+    ];
+
+    Object.entries(reviewerMap).forEach(([name, rmap]) => {
+      lines.push(`## 검수자: ${name}`);
+      lines.push("");
+      let cat = "";
+      REVIEW_ITEMS.forEach((item, i) => {
+        if (item.category !== cat) {
+          cat = item.category;
+          lines.push(`### ${cat}`);
+        }
+        const r = rmap[item.id];
+        const choice = r?.choice ? CHOICE_LABELS[r.choice] : "미선택";
+        lines.push(`**${i+1}. ${item.context}**`);
+        lines.push(`- 현재안: ${item.current}${item.currentPinyin ? " ("+item.currentPinyin+")" : ""} — ${item.currentKo}`);
+        lines.push(`- 제안안: ${item.proposed}${item.proposedPinyin ? " ("+item.proposedPinyin+")" : ""} — ${item.proposedKo}`);
+        lines.push(`- 판정: **${choice}**`);
+        if (r?.comment) lines.push(`- 코멘트: ${r.comment}`);
+        lines.push("");
+      });
+    });
+
+    if (Object.keys(reviewerMap).length === 0) {
+      lines.push("아직 제출된 검수 결과가 없습니다.");
+    }
+    return lines.join("\n");
+  }
+
+  async function exportDoc() {
+    const md = buildMarkdown();
+    try {
+      const blob = new Blob([md], { type:"text/markdown;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `검수결과_${new Date().toISOString().slice(0,10)}.md`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch {
+      await navigator.clipboard.writeText(md);
+      setCopiedDoc(true);
+      setTimeout(() => setCopiedDoc(false), 1800);
+    }
+  }
+
+  const reviewerMap = {};
+  reviews.forEach(r => {
+    if (!reviewerMap[r.reviewer_name]) reviewerMap[r.reviewer_name] = {};
+    reviewerMap[r.reviewer_name][r.item_id] = r;
+  });
+  const reviewerNames = Object.keys(reviewerMap);
+
+  const rowStyle = { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 0", borderBottom:"1px solid var(--border)", fontSize:13 };
+  const tagStyle = (choice) => ({
+    fontSize:11, fontWeight:700, padding:"3px 8px", borderRadius:999,
+    background: choice==="current" ? "rgba(79,157,116,.13)" : choice==="proposed" ? "var(--accent-dim)" : choice==="both" ? "rgba(200,180,100,.12)" : choice==="neither" ? "rgba(217,96,74,.11)" : "var(--surface)",
+    color: choice==="current" ? "#3a8060" : choice==="proposed" ? "var(--accent)" : choice==="both" ? "#7a6a20" : choice==="neither" ? "var(--coral)" : "var(--sub)",
+  });
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="검수 링크를 팀즈로 전달하고, 결과를 Claude 문서로 내보내세요">콘텐츠 검수 관리</SectionTitle>
+
+      {!hasSupabase ? (
+        <Card style={{textAlign:"center", padding:"32px 24px", color:"var(--sub)"}}>
+          <div style={{fontSize:24, marginBottom:10}}>🔗</div>
+          <div style={{fontWeight:700, marginBottom:6}}>Supabase 연결이 필요해요</div>
+          <div style={{fontSize:13, lineHeight:1.65}}>동기화 탭에서 Supabase URL과 anon key를 먼저 입력해 주세요.</div>
+        </Card>
+      ) : (
+        <>
+          <Card style={{marginBottom:12}}>
+            <div style={{fontWeight:800, fontSize:14, marginBottom:4}}>검수 링크</div>
+            <div style={{fontSize:12, color:"var(--sub)", marginBottom:12, lineHeight:1.6}}>
+              이 링크를 팀즈로 전달하세요. 검수자는 로그인 없이 이름만 입력하면 바로 시작할 수 있어요.
+            </div>
+            <div style={{display:"flex", gap:8, flexWrap:"wrap"}}>
+              <button
+                onClick={copyLink}
+                style={{padding:"10px 18px", borderRadius:12, background:"var(--accent)", color:"#fff",
+                  border:"none", cursor:"pointer", fontWeight:700, fontSize:13}}>
+                {copiedLink ? "복사됨 ✓" : "검수 링크 복사"}
+              </button>
+              <button
+                onClick={loadReviews}
+                style={{padding:"10px 18px", borderRadius:12, background:"var(--surface)", color:"var(--sub)",
+                  border:"1px solid var(--border)", cursor:"pointer", fontWeight:700, fontSize:13}}>
+                {loading ? "로딩 중…" : "결과 새로고침"}
+              </button>
+            </div>
+          </Card>
+
+          <Card style={{marginBottom:12}}>
+            <div style={{fontWeight:800, fontSize:14, marginBottom:12}}>
+              검수 현황
+              <span style={{marginLeft:8, fontSize:12, fontWeight:400, color:"var(--sub)"}}>
+                {reviewerNames.length}명 참여 · 전체 {REVIEW_ITEMS.length}항목
+              </span>
+            </div>
+            {reviewerNames.length === 0 ? (
+              <div style={{fontSize:13, color:"var(--sub)", textAlign:"center", padding:"20px 0"}}>
+                아직 제출된 검수 결과가 없어요.
+              </div>
+            ) : reviewerNames.map(name => {
+              const rmap = reviewerMap[name];
+              const done = REVIEW_ITEMS.filter(it => rmap[it.id]?.choice).length;
+              return (
+                <div key={name} style={{marginBottom:16}}>
+                  <div style={{fontWeight:700, fontSize:13, marginBottom:6}}>
+                    👤 {name}
+                    <span style={{marginLeft:8, fontSize:11, color:"var(--sub)", fontWeight:400}}>
+                      {done}/{REVIEW_ITEMS.length} 완료
+                    </span>
+                  </div>
+                  {REVIEW_ITEMS.map(item => {
+                    const r = rmap[item.id];
+                    return (
+                      <div key={item.id} style={rowStyle}>
+                        <span style={{color:"var(--sub)", flex:1, paddingRight:8}}>{item.context}</span>
+                        <div style={{display:"flex", alignItems:"center", gap:6}}>
+                          <span style={tagStyle(r?.choice)}>
+                            {r?.choice ? CHOICE_LABELS[r.choice] : "미선택"}
+                          </span>
+                          {r?.comment && (
+                            <span style={{fontSize:11, color:"var(--sub)", maxWidth:140, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={r.comment}>
+                              💬 {r.comment}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </Card>
+
+          <Card>
+            <div style={{fontWeight:800, fontSize:14, marginBottom:4}}>Claude / Codex용 문서 내보내기</div>
+            <div style={{fontSize:12, color:"var(--sub)", marginBottom:12, lineHeight:1.6}}>
+              검수 결과를 Markdown 파일로 다운로드해요. Claude나 Codex에 바로 붙여 학습 데이터 수정에 활용하세요.
+            </div>
+            <button
+              onClick={exportDoc}
+              disabled={reviewerNames.length === 0}
+              style={{padding:"10px 18px", borderRadius:12,
+                background: reviewerNames.length === 0 ? "var(--surface)" : "var(--gold)",
+                color: reviewerNames.length === 0 ? "var(--sub)" : "#fff",
+                border:"none", cursor: reviewerNames.length === 0 ? "default" : "pointer",
+                fontWeight:700, fontSize:13}}>
+              {copiedDoc ? "클립보드에 복사됨 ✓" : "Markdown 내보내기"}
+            </button>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { InspectScreen, REVIEW_ITEMS, CHOICE_LABELS });
+
+</script>
+
 <!-- APP -->
 <script type="text/babel">
 
@@ -3472,9 +3701,10 @@ const NAV = [
   { id:"phrase", label:"회화",  icon:"💬" },
   { id:"grammar", label:"문법", icon:"🧩" },
   { id:"review", label:"복습",  icon:"🔄" },
-  { id:"chat",   label:"AI도움", icon:"🤖" },
-  { id:"stats",  label:"통계",  icon:"📊" },
-  { id:"backup", label:"동기화", icon:"💾" },
+  { id:"chat",    label:"AI도움", icon:"🤖" },
+  { id:"stats",   label:"통계",  icon:"📊" },
+  { id:"backup",  label:"동기화", icon:"💾" },
+  { id:"inspect", label:"검수",  icon:"🔍" },
 ];
 
 function applyAccent(key) {
@@ -3813,6 +4043,12 @@ function App() {
         {screen==="review" && <ReviewScreen stats={stats} onResult={handleResult} onBack={()=>setScreen("home")}/>}
         {screen==="chat"   && <ChatScreen/>}
         {screen==="stats"  && <StatsScreen stats={stats}/>}
+        {screen==="inspect" && (
+          <InspectScreen
+            supabaseClient={supabaseClient}
+            supabaseConfig={supabaseConfig}
+          />
+        )}
         {screen==="backup" && (
           <BackupScreen
             stats={stats}
