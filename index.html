@@ -3990,7 +3990,7 @@ function App() {
   const reviewCount = getDueReviewWords(stats).length;
 
   // Mobile nav keeps sync reachable on phones; stats moves to the sidebar-first path.
-  const MOBILE_NAV = NAV.filter(n => !["chat","stats"].includes(n.id));
+  const MOBILE_NAV = NAV.filter(n => !["chat","stats","inspect"].includes(n.id));
 
   return (
     <div className="app">
@@ -4003,16 +4003,18 @@ function App() {
             <div className="logo-sub">매일 조금씩</div>
           </div>
         </div>
-        {NAV.map(n => (
-          <div key={n.id} className={`nav-item${screen===n.id?" active":""}`}
-            onClick={()=>setScreen(n.id)}>
-            <span className="icon">{n.icon}</span>
-            <span>{n.label}</span>
-            {n.id==="review" && reviewCount>0 &&
-              <span className="nav-badge">{reviewCount}</span>}
-          </div>
-        ))}
-        <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid var(--border)"}}>
+        <div style={{flex:1, overflowY:"auto", marginRight:-4, paddingRight:4}}>
+          {NAV.map(n => (
+            <div key={n.id} className={`nav-item${screen===n.id?" active":""}`}
+              onClick={()=>setScreen(n.id)}>
+              <span className="icon">{n.icon}</span>
+              <span>{n.label}</span>
+              {n.id==="review" && reviewCount>0 &&
+                <span className="nav-badge">{reviewCount}</span>}
+            </div>
+          ))}
+        </div>
+        <div style={{paddingTop:16, borderTop:"1px solid var(--border)"}}>
           <div className="nav-item" onClick={()=>setTweaksOpen(o=>!o)}>
             <span className="icon">⚙️</span>
             <span style={{fontSize:12}}>테마 설정</span>
