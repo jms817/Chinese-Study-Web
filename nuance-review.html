@@ -212,7 +212,7 @@ const CHOICE_LABELS = {
 };
 
 const STORE_NAME = "zh-reviewer-name-v1";
-let supabase = null;
+let sbClient = null;
 let reviewerName = "";
 let answers = {};
 let saveTimers = {};
@@ -225,7 +225,7 @@ function parseHash() {
 
 function initSupabase(url, key) {
   try {
-    supabase = window.supabase.createClient(url, key);
+    sbClient = window.supabase.createClient(url, key);
     return true;
   } catch {
     return false;
@@ -233,8 +233,8 @@ function initSupabase(url, key) {
 }
 
 async function loadAnswers() {
-  if (!supabase || !reviewerName) return;
-  const { data } = await supabase
+  if (!sbClient || !reviewerName) return;
+  const { data } = await sbClient
     .from("nuance_reviews")
     .select("item_id,choice,comment")
     .eq("reviewer_name", reviewerName);
@@ -245,9 +245,9 @@ async function loadAnswers() {
 }
 
 async function saveAnswer(itemId) {
-  if (!supabase || !reviewerName) return;
+  if (!sbClient || !reviewerName) return;
   const a = answers[itemId] || {};
-  await supabase.from("nuance_reviews").upsert({
+  await sbClient.from("nuance_reviews").upsert({
     reviewer_name: reviewerName,
     item_id: itemId,
     choice: a.choice || null,
