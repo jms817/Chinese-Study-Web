@@ -1,0 +1,2848 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#F2F5FC"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="中文학습"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>中文 · 매일 조금씩</title>
+<link rel="manifest" href="./manifest.webmanifest"/>
+<link rel="icon" type="image/svg+xml" href="./icon.svg"/>
+<link rel="apple-touch-icon" href="./icon.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script><style>
+:root {
+  --bg:          #F2F5FC;
+  --surface:     #E8EDF9;
+  --card:        #FFFFFF;
+  --card2:       #EDF0FA;
+  --border:      #D8DFF2;
+  --accent:      #5B7EE8;
+  --accent-bright:#7B96EE;
+  --accent-dim:  rgba(91,126,232,.10);
+  --gold:        #E09040;
+  --gold-dim:    rgba(224,144,64,.12);
+  --coral:       #D9604A;
+  --coral-dim:   rgba(217,96,74,.11);
+  --text:        #1E2348;
+  --sub:         #6B7AAC;
+  --sub2:        #A4AECE;
+  --font-ui:     'DM Sans', sans-serif;
+  --font-zh:     'Noto Serif SC', serif;
+  --font-zh-sans:'Noto Sans SC', sans-serif;
+}
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
+#root { height:100%; }
+button { font-family:var(--font-ui); }
+input  { font-family:var(--font-ui); }
+textarea { font-family:var(--font-ui); }
+button, input, textarea { -webkit-tap-highlight-color:transparent; }
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+::selection { background:var(--accent-dim); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes blink  { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+.app {
+  display:flex; height:100dvh; min-height:100vh; overflow:hidden;
+}
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sidebar {
+  width:210px; flex-shrink:0;
+  background:var(--card);
+  border-right:1px solid var(--border);
+  box-shadow:2px 0 16px rgba(91,126,232,.06);
+  display:flex; flex-direction:column;
+  padding:24px 12px 20px;
+}
+.logo {
+  display:flex; align-items:center; gap:10px;
+  padding:0 8px 22px; border-bottom:1px solid var(--border); margin-bottom:10px;
+}
+.logo-badge {
+  width:36px; height:36px; border-radius:10px;
+  background:var(--accent); display:grid; place-items:center;
+  font-family:var(--font-zh); color:#0F1512; font-size:18px; font-weight:700;
+}
+.logo-name  { font-size:14px; font-weight:700; line-height:1.2; color:var(--text); }
+.logo-sub   { font-size:11px; color:var(--sub); }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px; margin-bottom:2px;
+  font-size:13px; font-weight:500; color:var(--sub);
+  cursor:pointer; transition:all .15s; user-select:none;
+}
+.nav-item:hover  { background:var(--card); color:var(--text); }
+.nav-item.active { background:var(--accent-dim); color:var(--accent); font-weight:600; }
+.nav-item .icon  { font-size:17px; width:22px; text-align:center; flex-shrink:0; }
+.nav-badge {
+  margin-left:auto; font-size:10px; font-weight:700;
+  background:var(--coral); color:white;
+  padding:2px 6px; border-radius:99px;
+}
+
+/* ── MAIN ─────────────────────────────────── */
+.main {
+  flex:1; overflow-y:auto;
+  padding:28px 22px 100px;
+  max-width:760px;
+  width:100%;
+  min-width:0;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+@media(min-width:900px){
+  .main { padding:36px 40px 60px; }
+}
+
+/* ── BOTTOM NAV ───────────────────────────── */
+.bnav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:8px 0 max(10px, env(safe-area-inset-bottom));
+  z-index:100;
+}
+.bnav-inner { display:flex; justify-content:space-around; max-width:680px; margin:0 auto; }
+.bnav-item {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  min-width:54px; min-height:50px; justify-content:center;
+  padding:4px 8px; cursor:pointer; color:var(--sub);
+  font-size:10px; font-weight:600; transition:color .15s;
+  position:relative;
+}
+.bnav-item .icon { font-size:20px; }
+.bnav-item.active { color:var(--accent); }
+.bnav-badge {
+  position:absolute; top:0; right:4px;
+  background:var(--coral); color:white;
+  font-size:9px; font-weight:700; width:14px; height:14px;
+  border-radius:99px; display:grid; place-items:center;
+}
+
+@media(max-width:680px){
+  .sidebar { display:none; }
+  .bnav    { display:block; }
+  .main    { padding:20px 16px calc(94px + env(safe-area-inset-bottom)); max-width:none; }
+}
+@media(max-width:430px){
+  .bnav-item { min-width:48px; font-size:9px; }
+  .bnav-item .icon { font-size:18px; }
+}
+
+/* ── TWEAKS ───────────────────────────────── */
+.tweaks {
+  position:fixed; bottom:90px; right:16px;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:18px; padding:18px 16px;
+  width:220px; z-index:200;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  display:none;
+}
+.tweaks.open { display:block; animation:fadeUp .2s ease; }
+@media(min-width:681px){ .tweaks { bottom:20px; right:20px; } }
+.tw-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:14px; }
+.tw-label { font-size:10px; font-weight:700; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; margin-bottom:7px; }
+.tw-row   { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.tw-chip  {
+  padding:4px 10px; border-radius:99px; font-size:12px; font-weight:500;
+  border:1.5px solid var(--border); cursor:pointer; transition:all .12s;
+  color:var(--sub); background:transparent; font-family:var(--font-ui);
+}
+.tw-chip.on { background:var(--accent); border-color:var(--accent); color:#0F1512; }
+</style></head>
+<body>
+<div id="root"></div>
+
+<!-- DATA -->
+<script>
+// HSK vocabulary organized by chapter, with example sentences
+const HSK_CHAPTERS = [
+  // ─── HSK 1 ────────────────────────────────────────────────
+  {
+    id:"1-1", level:1, num:1, title:"인사와 감사", titleZh:"问候感谢", emoji:"👋",
+    words:[
+      { char:"你好", pinyin:"nǐ hǎo", tones:[3,3], meaning:"안녕하세요", tags:["인사"],
+        example:"你好！我叫金志宇。", exPinyin:"Nǐ hǎo! Wǒ jiào Jīn Zhìyǔ.", exMeaning:"안녕하세요! 저는 김지우입니다." },
+      { char:"谢谢", pinyin:"xiè xie", tones:[4,5], meaning:"감사합니다", tags:["인사"],
+        example:"谢谢你的帮助！", exPinyin:"Xièxie nǐ de bāngzhù!", exMeaning:"도와줘서 감사해요!" },
+      { char:"再见", pinyin:"zài jiàn", tones:[4,4], meaning:"안녕히 가세요", tags:["인사"],
+        example:"再见！明天见。", exPinyin:"Zàijiàn! Míngtiān jiàn.", exMeaning:"안녕히 가세요! 내일 봐요." },
+      { char:"对不起", pinyin:"duì bu qǐ", tones:[4,5,3], meaning:"미안합니다", tags:["인사"],
+        example:"对不起，我来晚了。", exPinyin:"Duìbuqǐ, wǒ lái wǎn le.", exMeaning:"미안해요, 제가 늦었어요." },
+      { char:"没关系", pinyin:"méi guān xi", tones:[2,1,5], meaning:"괜찮아요", tags:["인사"],
+        example:"没关系，没事的。", exPinyin:"Méiguānxi, méi shì de.", exMeaning:"괜찮아요, 문제없어요." },
+      { char:"请", pinyin:"qǐng", tones:[3], meaning:"~해주세요, 청하다", tags:["예의"],
+        example:"请坐，请喝茶。", exPinyin:"Qǐng zuò, qǐng hē chá.", exMeaning:"앉으세요, 차 드세요." },
+      { char:"不客气", pinyin:"bù kè qi", tones:[4,4,5], meaning:"별말씀을요", tags:["인사"],
+        example:"谢谢！——不客气！", exPinyin:"Xièxie! —— Bù kèqi!", exMeaning:"감사해요! —— 별말씀을요!" },
+      { char:"你好吗", pinyin:"nǐ hǎo ma", tones:[3,3,5], meaning:"잘 지내세요?", tags:["인사"],
+        example:"你好吗？我很好，谢谢。", exPinyin:"Nǐ hǎo ma? Wǒ hěn hǎo, xièxie.", exMeaning:"잘 지내세요? 잘 지내요, 감사해요." },
+    ]
+  },
+  {
+    id:"1-2", level:1, num:2, title:"사람과 나", titleZh:"人与我", emoji:"👤",
+    words:[
+      { char:"我", pinyin:"wǒ", tones:[3], meaning:"나, 저", tags:["대명사"],
+        example:"我是韩国人。", exPinyin:"Wǒ shì Hánguórén.", exMeaning:"저는 한국 사람입니다." },
+      { char:"你", pinyin:"nǐ", tones:[3], meaning:"너, 당신", tags:["대명사"],
+        example:"你叫什么名字？", exPinyin:"Nǐ jiào shénme míngzi?", exMeaning:"이름이 뭐예요?" },
+      { char:"他", pinyin:"tā", tones:[1], meaning:"그 (남성)", tags:["대명사"],
+        example:"他是我的朋友。", exPinyin:"Tā shì wǒ de péngyou.", exMeaning:"그는 내 친구입니다." },
+      { char:"她", pinyin:"tā", tones:[1], meaning:"그녀 (여성)", tags:["대명사"],
+        example:"她很漂亮。", exPinyin:"Tā hěn piàoliang.", exMeaning:"그녀는 예뻐요." },
+      { char:"我们", pinyin:"wǒ men", tones:[3,5], meaning:"우리", tags:["대명사"],
+        example:"我们一起去吧。", exPinyin:"Wǒmen yīqǐ qù ba.", exMeaning:"우리 같이 가요." },
+      { char:"名字", pinyin:"míng zi", tones:[2,5], meaning:"이름", tags:["기본"],
+        example:"你的名字是什么？", exPinyin:"Nǐ de míngzi shì shénme?", exMeaning:"당신의 이름은 무엇인가요?" },
+      { char:"是", pinyin:"shì", tones:[4], meaning:"~이다", tags:["동사"],
+        example:"我是学生。", exPinyin:"Wǒ shì xuésheng.", exMeaning:"저는 학생입니다." },
+      { char:"不", pinyin:"bù", tones:[4], meaning:"아니다, ~않다", tags:["부정"],
+        example:"我不是中国人。", exPinyin:"Wǒ bú shì Zhōngguórén.", exMeaning:"저는 중국 사람이 아닙니다." },
+    ]
+  },
+  {
+    id:"1-3", level:1, num:3, title:"숫자와 시간", titleZh:"数字时间", emoji:"🕐",
+    words:[
+      { char:"今天", pinyin:"jīn tiān", tones:[1,1], meaning:"오늘", tags:["시간"],
+        example:"今天天气很好。", exPinyin:"Jīntiān tiānqì hěn hǎo.", exMeaning:"오늘 날씨가 좋아요." },
+      { char:"明天", pinyin:"míng tiān", tones:[2,1], meaning:"내일", tags:["시간"],
+        example:"明天我去上班。", exPinyin:"Míngtiān wǒ qù shàngbān.", exMeaning:"내일 저 출근해요." },
+      { char:"昨天", pinyin:"zuó tiān", tones:[2,1], meaning:"어제", tags:["시간"],
+        example:"昨天我吃了烤肉。", exPinyin:"Zuótiān wǒ chīle kǎoròu.", exMeaning:"어제 고기를 먹었어요." },
+      { char:"现在", pinyin:"xiàn zài", tones:[4,4], meaning:"지금", tags:["시간"],
+        example:"现在几点了？", exPinyin:"Xiànzài jǐ diǎn le?", exMeaning:"지금 몇 시예요?" },
+      { char:"多少钱", pinyin:"duō shao qián", tones:[1,5,2], meaning:"얼마예요?", tags:["쇼핑","필수"],
+        example:"这个多少钱？", exPinyin:"Zhège duōshao qián?", exMeaning:"이거 얼마예요?" },
+      { char:"一共", pinyin:"yī gòng", tones:[1,4], meaning:"합계, 모두 합쳐", tags:["쇼핑"],
+        example:"一共多少钱？", exPinyin:"Yīgòng duōshao qián?", exMeaning:"다 합쳐서 얼마예요?" },
+      { char:"年", pinyin:"nián", tones:[2], meaning:"년, 해", tags:["시간"],
+        example:"你今年多少岁？", exPinyin:"Nǐ jīnnián duōshao suì?", exMeaning:"올해 몇 살이에요?" },
+      { char:"月", pinyin:"yuè", tones:[4], meaning:"월, 달", tags:["시간"],
+        example:"四月是春天。", exPinyin:"Sì yuè shì chūntiān.", exMeaning:"4월은 봄이에요." },
+    ]
+  },
+  {
+    id:"1-4", level:1, num:4, title:"일상 동작", titleZh:"日常动作", emoji:"🍜",
+    words:[
+      { char:"吃", pinyin:"chī", tones:[1], meaning:"먹다", tags:["동사"],
+        example:"我想吃火锅。", exPinyin:"Wǒ xiǎng chī huǒguō.", exMeaning:"훠궈 먹고 싶어요." },
+      { char:"喝", pinyin:"hē", tones:[1], meaning:"마시다", tags:["동사"],
+        example:"你要喝咖啡吗？", exPinyin:"Nǐ yào hē kāfēi ma?", exMeaning:"커피 드실래요?" },
+      { char:"去", pinyin:"qù", tones:[4], meaning:"가다", tags:["동사"],
+        example:"我们去哪儿？", exPinyin:"Wǒmen qù nǎr?", exMeaning:"우리 어디 가요?" },
+      { char:"来", pinyin:"lái", tones:[2], meaning:"오다", tags:["동사"],
+        example:"你什么时候来？", exPinyin:"Nǐ shénme shíhou lái?", exMeaning:"언제 올 거예요?" },
+      { char:"看", pinyin:"kàn", tones:[4], meaning:"보다", tags:["동사"],
+        example:"我们去看电影吧。", exPinyin:"Wǒmen qù kàn diànyǐng ba.", exMeaning:"영화 보러 가요." },
+      { char:"买", pinyin:"mǎi", tones:[3], meaning:"사다", tags:["동사"],
+        example:"我要买一件衣服。", exPinyin:"Wǒ yào mǎi yī jiàn yīfu.", exMeaning:"옷 한 벌 살 거예요." },
+      { char:"说", pinyin:"shuō", tones:[1], meaning:"말하다", tags:["동사"],
+        example:"请慢慢说。", exPinyin:"Qǐng mànmàn shuō.", exMeaning:"천천히 말해 주세요." },
+      { char:"学习", pinyin:"xué xí", tones:[2,2], meaning:"공부하다", tags:["동사"],
+        example:"我在学习中文。", exPinyin:"Wǒ zài xuéxí Zhōngwén.", exMeaning:"중국어를 공부하고 있어요." },
+    ]
+  },
+  // ─── HSK 2 ────────────────────────────────────────────────
+  {
+    id:"2-1", level:2, num:1, title:"감정과 상태", titleZh:"感情状态", emoji:"😊",
+    words:[
+      { char:"高兴", pinyin:"gāo xìng", tones:[1,4], meaning:"기쁘다, 즐겁다", tags:["감정"],
+        example:"很高兴认识你！", exPinyin:"Hěn gāoxìng rènshi nǐ!", exMeaning:"만나서 반가워요!" },
+      { char:"累", pinyin:"lèi", tones:[4], meaning:"피곤하다", tags:["상태"],
+        example:"今天很累，早点睡吧。", exPinyin:"Jīntiān hěn lèi, zǎodiǎn shuì ba.", exMeaning:"오늘 너무 피곤해요, 일찍 자요." },
+      { char:"喜欢", pinyin:"xǐ huan", tones:[3,5], meaning:"좋아하다", tags:["감정"],
+        example:"我很喜欢吃韩国菜。", exPinyin:"Wǒ hěn xǐhuan chī Hánguó cài.", exMeaning:"한국 음식 먹는 것을 좋아해요." },
+      { char:"觉得", pinyin:"jué de", tones:[2,5], meaning:"느끼다, ~라고 생각하다", tags:["동사"],
+        example:"我觉得中文很有趣。", exPinyin:"Wǒ juéde Zhōngwén hěn yǒuqù.", exMeaning:"중국어가 재미있다고 생각해요." },
+      { char:"想", pinyin:"xiǎng", tones:[3], meaning:"~하고 싶다", tags:["동사"],
+        example:"我想去中国旅游。", exPinyin:"Wǒ xiǎng qù Zhōngguó lǚyóu.", exMeaning:"중국에 여행 가고 싶어요." },
+      { char:"知道", pinyin:"zhī dào", tones:[1,4], meaning:"알다", tags:["동사"],
+        example:"你知道他在哪儿吗？", exPinyin:"Nǐ zhīdào tā zài nǎr ma?", exMeaning:"그가 어디 있는지 알아요?" },
+      { char:"希望", pinyin:"xī wàng", tones:[1,4], meaning:"바라다, 희망하다", tags:["동사"],
+        example:"我希望你学习顺利。", exPinyin:"Wǒ xīwàng nǐ xuéxí shùnlì.", exMeaning:"공부 잘 되길 바랍니다." },
+    ]
+  },
+  {
+    id:"2-2", level:2, num:2, title:"장소와 이동", titleZh:"地点交通", emoji:"🚇",
+    words:[
+      { char:"学校", pinyin:"xué xiào", tones:[2,4], meaning:"학교", tags:["장소"],
+        example:"我们学校在市中心。", exPinyin:"Wǒmen xuéxiào zài shì zhōngxīn.", exMeaning:"우리 학교는 시내에 있어요." },
+      { char:"医院", pinyin:"yī yuàn", tones:[1,4], meaning:"병원", tags:["장소"],
+        example:"他去医院看病了。", exPinyin:"Tā qù yīyuàn kàn bìng le.", exMeaning:"그는 병원에 진료 받으러 갔어요." },
+      { char:"超市", pinyin:"chāo shì", tones:[1,4], meaning:"마트, 슈퍼마켓", tags:["장소"],
+        example:"我去超市买东西。", exPinyin:"Wǒ qù chāoshì mǎi dōngxi.", exMeaning:"마트에 물건 사러 가요." },
+      { char:"地铁", pinyin:"dì tiě", tones:[4,3], meaning:"지하철", tags:["교통"],
+        example:"坐地铁去比较快。", exPinyin:"Zuò dìtiě qù bǐjiào kuài.", exMeaning:"지하철 타는 게 더 빨라요." },
+      { char:"附近", pinyin:"fù jìn", tones:[4,4], meaning:"근처, 부근", tags:["장소"],
+        example:"附近有没有餐厅？", exPinyin:"Fùjìn yǒu méiyǒu cāntīng?", exMeaning:"근처에 식당 있나요?" },
+      { char:"左边", pinyin:"zuǒ biān", tones:[3,1], meaning:"왼쪽", tags:["방향"],
+        example:"银行在左边。", exPinyin:"Yínháng zài zuǒbiān.", exMeaning:"은행은 왼쪽에 있어요." },
+      { char:"右边", pinyin:"yòu biān", tones:[4,1], meaning:"오른쪽", tags:["방향"],
+        example:"便利店在右边。", exPinyin:"Biànlìdiàn zài yòubiān.", exMeaning:"편의점은 오른쪽에 있어요." },
+    ]
+  },
+  {
+    id:"2-3", level:2, num:3, title:"시간 표현", titleZh:"时间表达", emoji:"⏰",
+    words:[
+      { char:"已经", pinyin:"yǐ jīng", tones:[3,1], meaning:"이미, 벌써", tags:["부사"],
+        example:"我已经吃过了。", exPinyin:"Wǒ yǐjīng chīguò le.", exMeaning:"이미 먹었어요." },
+      { char:"还没", pinyin:"hái méi", tones:[2,2], meaning:"아직 ~하지 않았다", tags:["부사"],
+        example:"我还没吃饭呢。", exPinyin:"Wǒ hái méi chīfàn ne.", exMeaning:"아직 밥을 못 먹었어요." },
+      { char:"以后", pinyin:"yǐ hòu", tones:[3,4], meaning:"이후, 나중에", tags:["시간"],
+        example:"以后有机会再聊。", exPinyin:"Yǐhòu yǒu jīhuì zài liáo.", exMeaning:"나중에 기회가 되면 다시 이야기해요." },
+      { char:"马上", pinyin:"mǎ shàng", tones:[3,4], meaning:"곧, 바로", tags:["시간"],
+        example:"马上就到了。", exPinyin:"Mǎshàng jiù dào le.", exMeaning:"곧 도착해요." },
+      { char:"最近", pinyin:"zuì jìn", tones:[4,4], meaning:"요즘, 최근", tags:["시간"],
+        example:"最近天气怎么样？", exPinyin:"Zuìjìn tiānqì zěnmeyàng?", exMeaning:"요즘 날씨 어때요?" },
+      { char:"终于", pinyin:"zhōng yú", tones:[1,2], meaning:"드디어, 마침내", tags:["부사"],
+        example:"我终于学会了！", exPinyin:"Wǒ zhōngyú xuéhuì le!", exMeaning:"드디어 배웠어요!" },
+    ]
+  },
+  // ─── HSK 3 ────────────────────────────────────────────────
+  {
+    id:"3-1", level:3, num:1, title:"사회와 문화", titleZh:"社会文化", emoji:"🏙️",
+    words:[
+      { char:"社会", pinyin:"shè huì", tones:[4,4], meaning:"사회", tags:["명사"],
+        example:"现代社会变化很快。", exPinyin:"Xiàndài shèhuì biànhuà hěn kuài.", exMeaning:"현대 사회는 변화가 빠릅니다." },
+      { char:"文化", pinyin:"wén huà", tones:[2,4], meaning:"문화", tags:["명사"],
+        example:"中国文化历史悠久。", exPinyin:"Zhōngguó wénhuà lìshǐ yōujiǔ.", exMeaning:"중국 문화는 역사가 깊어요." },
+      { char:"经济", pinyin:"jīng jì", tones:[1,4], meaning:"경제", tags:["명사"],
+        example:"中国经济发展很快。", exPinyin:"Zhōngguó jīngjì fāzhǎn hěn kuài.", exMeaning:"중국 경제는 빠르게 발전하고 있어요." },
+      { char:"发展", pinyin:"fā zhǎn", tones:[1,3], meaning:"발전하다", tags:["동사"],
+        example:"这个城市发展很快。", exPinyin:"Zhège chéngshì fāzhǎn hěn kuài.", exMeaning:"이 도시는 빠르게 발전하고 있어요." },
+      { char:"环境", pinyin:"huán jìng", tones:[2,4], meaning:"환경", tags:["명사"],
+        example:"保护环境很重要。", exPinyin:"Bǎohù huánjìng hěn zhòngyào.", exMeaning:"환경 보호가 중요해요." },
+      { char:"历史", pinyin:"lì shǐ", tones:[4,3], meaning:"역사", tags:["명사"],
+        example:"学历史让我们了解过去。", exPinyin:"Xué lìshǐ ràng wǒmen liǎojiě guòqù.", exMeaning:"역사를 배우면 과거를 이해할 수 있어요." },
+    ]
+  },
+  {
+    id:"3-2", level:3, num:2, title:"의견과 생각", titleZh:"观点想法", emoji:"💭",
+    words:[
+      { char:"认为", pinyin:"rèn wéi", tones:[4,2], meaning:"~라고 생각하다", tags:["동사"],
+        example:"我认为学语言要坚持。", exPinyin:"Wǒ rènwéi xué yǔyán yào jiānchí.", exMeaning:"언어를 배우려면 꾸준히 해야 한다고 생각해요." },
+      { char:"应该", pinyin:"yīng gāi", tones:[1,1], meaning:"~해야 한다", tags:["조동사"],
+        example:"你应该多练习。", exPinyin:"Nǐ yīnggāi duō liànxí.", exMeaning:"더 많이 연습해야 해요." },
+      { char:"可能", pinyin:"kě néng", tones:[3,2], meaning:"아마도, 가능하다", tags:["조동사"],
+        example:"他可能今天不来了。", exPinyin:"Tā kěnéng jīntiān bù lái le.", exMeaning:"그는 아마 오늘 안 올 것 같아요." },
+      { char:"重要", pinyin:"zhòng yào", tones:[4,4], meaning:"중요하다", tags:["형용사"],
+        example:"复习很重要。", exPinyin:"Fùxí hěn zhòngyào.", exMeaning:"복습이 매우 중요해요." },
+      { char:"努力", pinyin:"nǔ lì", tones:[3,4], meaning:"노력하다", tags:["동사"],
+        example:"只要努力，就能成功。", exPinyin:"Zhǐyào nǔlì, jiù néng chénggōng.", exMeaning:"노력만 하면 성공할 수 있어요." },
+      { char:"坚持", pinyin:"jiān chí", tones:[1,2], meaning:"꾸준히 하다, 지속하다", tags:["동사"],
+        example:"坚持每天学一点中文。", exPinyin:"Jiānchí měitiān xué yīdiǎn Zhōngwén.", exMeaning:"매일 중국어를 조금씩 꾸준히 공부해요." },
+    ]
+  },
+];
+
+// App data is kept in normalized chapter/word shapes so it can later move to
+// React modules, Supabase tables, or imported JSON without changing screens.
+const APP_SCHEMA_VERSION = 3;
+const STORE_KEYS = {
+  screen: "zhapp.v3.screen",
+  stats: "zhapp.v3.studyState",
+  tweaks: "zhapp.v3.tweaks",
+};
+const SUPABASE_CONFIG_KEY = "zhapp.v3.supabaseConfig";
+const SUPABASE_DEFAULT_CONFIG = {
+  url: "https://egacpvixbqodyjrgqpsi.supabase.co",
+  anonKey: "sb_publishable_X21RYV4QrmLPqHBgrIqa7g_QGK4wkti",
+};
+
+const THEME_CHAPTERS = [
+  {
+    id:"theme-travel", level:1, num:101, title:"여행 필수", titleZh:"旅行必备", emoji:"🧳",
+    words:[
+      { char:"机场", pinyin:"jī chǎng", tones:[1,3], meaning:"공항", tags:["여행","교통"], difficulty:1, frequency:5,
+        example:"机场在哪里？", exPinyin:"Jīchǎng zài nǎlǐ?", exMeaning:"공항이 어디에 있어요?" },
+      { char:"护照", pinyin:"hù zhào", tones:[4,4], meaning:"여권", tags:["여행"], difficulty:2, frequency:4,
+        example:"请出示护照。", exPinyin:"Qǐng chūshì hùzhào.", exMeaning:"여권을 보여 주세요." },
+      { char:"行李", pinyin:"xíng li", tones:[2,5], meaning:"짐, 수하물", tags:["여행"], difficulty:1, frequency:5,
+        example:"我的行李很重。", exPinyin:"Wǒ de xíngli hěn zhòng.", exMeaning:"제 짐이 무거워요." },
+      { char:"预约", pinyin:"yù yuē", tones:[4,1], meaning:"예약하다", tags:["여행","호텔"], difficulty:2, frequency:4,
+        example:"我有预约。", exPinyin:"Wǒ yǒu yùyuē.", exMeaning:"예약했어요." },
+      { char:"房间", pinyin:"fáng jiān", tones:[2,1], meaning:"방", tags:["호텔"], difficulty:1, frequency:5,
+        example:"这个房间很干净。", exPinyin:"Zhège fángjiān hěn gānjìng.", exMeaning:"이 방은 깨끗해요." },
+      { char:"地图", pinyin:"dì tú", tones:[4,2], meaning:"지도", tags:["여행","길찾기"], difficulty:1, frequency:4,
+        example:"我需要一张地图。", exPinyin:"Wǒ xūyào yī zhāng dìtú.", exMeaning:"지도 한 장이 필요해요." },
+    ]
+  },
+  {
+    id:"theme-restaurant", level:1, num:102, title:"식당과 주문", titleZh:"餐厅点菜", emoji:"🥢",
+    words:[
+      { char:"菜单", pinyin:"cài dān", tones:[4,1], meaning:"메뉴판", tags:["식당"], difficulty:1, frequency:5,
+        example:"请给我菜单。", exPinyin:"Qǐng gěi wǒ càidān.", exMeaning:"메뉴판 주세요." },
+      { char:"点菜", pinyin:"diǎn cài", tones:[3,4], meaning:"음식을 주문하다", tags:["식당"], difficulty:1, frequency:5,
+        example:"我要点菜。", exPinyin:"Wǒ yào diǎn cài.", exMeaning:"주문할게요." },
+      { char:"辣", pinyin:"là", tones:[4], meaning:"맵다", tags:["식당","맛"], difficulty:1, frequency:5,
+        example:"这个菜很辣。", exPinyin:"Zhège cài hěn là.", exMeaning:"이 음식은 매워요." },
+      { char:"甜", pinyin:"tián", tones:[2], meaning:"달다", tags:["식당","맛"], difficulty:1, frequency:4,
+        example:"这个饮料很甜。", exPinyin:"Zhège yǐnliào hěn tián.", exMeaning:"이 음료는 달아요." },
+      { char:"打包", pinyin:"dǎ bāo", tones:[3,1], meaning:"포장하다", tags:["식당"], difficulty:2, frequency:4,
+        example:"可以打包吗？", exPinyin:"Kěyǐ dǎbāo ma?", exMeaning:"포장할 수 있어요?" },
+      { char:"买单", pinyin:"mǎi dān", tones:[3,1], meaning:"계산하다", tags:["식당"], difficulty:1, frequency:5,
+        example:"服务员，买单！", exPinyin:"Fúwùyuán, mǎidān!", exMeaning:"직원분, 계산할게요!" },
+    ]
+  },
+  {
+    id:"theme-daily-verbs", level:2, num:103, title:"자주 쓰는 동사", titleZh:"常用动词", emoji:"⚙️",
+    words:[
+      { char:"需要", pinyin:"xū yào", tones:[1,4], meaning:"필요하다", tags:["동사","필수"], difficulty:2, frequency:5,
+        example:"我需要帮助。", exPinyin:"Wǒ xūyào bāngzhù.", exMeaning:"도움이 필요해요." },
+      { char:"准备", pinyin:"zhǔn bèi", tones:[3,4], meaning:"준비하다", tags:["동사"], difficulty:2, frequency:4,
+        example:"我准备去中国。", exPinyin:"Wǒ zhǔnbèi qù Zhōngguó.", exMeaning:"저는 중국에 갈 준비를 해요." },
+      { char:"练习", pinyin:"liàn xí", tones:[4,2], meaning:"연습하다", tags:["동사","학습"], difficulty:2, frequency:5,
+        example:"每天练习发音。", exPinyin:"Měitiān liànxí fāyīn.", exMeaning:"매일 발음을 연습해요." },
+      { char:"发现", pinyin:"fā xiàn", tones:[1,4], meaning:"발견하다, 알게 되다", tags:["동사"], difficulty:3, frequency:4,
+        example:"我发现中文很有意思。", exPinyin:"Wǒ fāxiàn Zhōngwén hěn yǒuyìsi.", exMeaning:"중국어가 재미있다는 걸 알게 됐어요." },
+      { char:"决定", pinyin:"jué dìng", tones:[2,4], meaning:"결정하다", tags:["동사"], difficulty:2, frequency:4,
+        example:"我决定每天学习。", exPinyin:"Wǒ juédìng měitiān xuéxí.", exMeaning:"매일 공부하기로 결정했어요." },
+      { char:"复习", pinyin:"fù xí", tones:[4,2], meaning:"복습하다", tags:["동사","학습"], difficulty:2, frequency:5,
+        example:"晚上我要复习生词。", exPinyin:"Wǎnshang wǒ yào fùxí shēngcí.", exMeaning:"저녁에 새 단어를 복습할 거예요." },
+    ]
+  },
+  {
+    id:"theme-emotion", level:2, num:104, title:"감정 표현", titleZh:"情绪表达", emoji:"💛",
+    words:[
+      { char:"开心", pinyin:"kāi xīn", tones:[1,1], meaning:"기쁘다, 즐겁다", tags:["감정"], difficulty:1, frequency:5,
+        example:"今天我很开心。", exPinyin:"Jīntiān wǒ hěn kāixīn.", exMeaning:"오늘 저는 아주 기뻐요." },
+      { char:"担心", pinyin:"dān xīn", tones:[1,1], meaning:"걱정하다", tags:["감정"], difficulty:2, frequency:4,
+        example:"别担心，没问题。", exPinyin:"Bié dānxīn, méi wèntí.", exMeaning:"걱정하지 마세요, 문제없어요." },
+      { char:"紧张", pinyin:"jǐn zhāng", tones:[3,1], meaning:"긴장하다", tags:["감정"], difficulty:2, frequency:4,
+        example:"考试前我很紧张。", exPinyin:"Kǎoshì qián wǒ hěn jǐnzhāng.", exMeaning:"시험 전에 긴장돼요." },
+      { char:"放心", pinyin:"fàng xīn", tones:[4,1], meaning:"안심하다", tags:["감정"], difficulty:2, frequency:4,
+        example:"你放心吧。", exPinyin:"Nǐ fàngxīn ba.", exMeaning:"안심하세요." },
+      { char:"无聊", pinyin:"wú liáo", tones:[2,2], meaning:"지루하다", tags:["감정"], difficulty:2, frequency:4,
+        example:"这个电影有点无聊。", exPinyin:"Zhège diànyǐng yǒudiǎn wúliáo.", exMeaning:"이 영화는 조금 지루해요." },
+      { char:"满意", pinyin:"mǎn yì", tones:[3,4], meaning:"만족하다", tags:["감정"], difficulty:3, frequency:3,
+        example:"我对结果很满意。", exPinyin:"Wǒ duì jiéguǒ hěn mǎnyì.", exMeaning:"결과에 만족해요." },
+    ]
+  },
+];
+
+const BUILT_IN_CHAPTERS = [...HSK_CHAPTERS, ...THEME_CHAPTERS];
+
+function normalizeWord(word, chapter) {
+  return {
+    tones: [],
+    tags: [],
+    difficulty: chapter.level || 1,
+    frequency: 3,
+    source: "built-in",
+    ...word,
+    chapterId: word.chapterId || chapter.id,
+    level: word.level || chapter.level || 1,
+    chapterTitle: chapter.title,
+    chapterEmoji: chapter.emoji,
+  };
+}
+
+function makeUserChapter(userWords=[]) {
+  return {
+    id:"user-words", level:0, num:999, title:"내가 추가한 단어", titleZh:"我的词语", emoji:"⭐",
+    words:userWords.map((w, i) => ({
+      id:w.id || `user-${i}`,
+      char:w.char || "",
+      pinyin:w.pinyin || "",
+      tones:Array.isArray(w.tones) ? w.tones : [],
+      meaning:w.meaning || "",
+      tags:Array.isArray(w.tags) ? w.tags : ["사용자"],
+      example:w.example || "",
+      exPinyin:w.exPinyin || "",
+      exMeaning:w.exMeaning || "",
+      difficulty:Number(w.difficulty || 1),
+      frequency:Number(w.frequency || 3),
+      source:"user",
+    }))
+  };
+}
+
+function getStudyChapters(stats={}) {
+  const userWords = stats.userWords || [];
+  const chapters = userWords.length ? [...BUILT_IN_CHAPTERS, makeUserChapter(userWords)] : BUILT_IN_CHAPTERS;
+  return chapters.map(ch => ({ ...ch, words: ch.words.map(w => normalizeWord(w, ch)) }));
+}
+
+function getAllWords(stats={}) {
+  return getStudyChapters(stats).flatMap(ch => ch.words);
+}
+
+const HSK_LEVELS = [...new Set(BUILT_IN_CHAPTERS.map(ch => ch.level))].sort((a,b)=>a-b);
+const ALL_WORDS = getAllWords();
+
+const StorageService = {
+  legacy: { screen:"screen", stats:"stats2", tweaks:"tweaks" },
+  get(key, def) {
+    try {
+      const v = localStorage.getItem(key);
+      return v !== null ? JSON.parse(v) : def;
+    } catch {
+      return def;
+    }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  },
+  remove(key) {
+    try { localStorage.removeItem(key); } catch {}
+  },
+  migrate() {
+    const legacyStats = this.get(this.legacy.stats, null);
+    if (legacyStats && !localStorage.getItem(STORE_KEYS.stats)) this.set(STORE_KEYS.stats, legacyStats);
+    const legacyScreen = this.get(this.legacy.screen, null);
+    if (legacyScreen && !localStorage.getItem(STORE_KEYS.screen)) this.set(STORE_KEYS.screen, legacyScreen);
+    const legacyTweaks = this.get(this.legacy.tweaks, null);
+    if (legacyTweaks && !localStorage.getItem(STORE_KEYS.tweaks)) this.set(STORE_KEYS.tweaks, legacyTweaks);
+  },
+  exportPayload(studyState, tweaks) {
+    return {
+      app:"zh-daily-study",
+      schemaVersion:APP_SCHEMA_VERSION,
+      exportedAt:new Date().toISOString(),
+      studyState,
+      tweaks,
+    };
+  }
+};
+
+StorageService.migrate();
+
+// Backward-compatible store wrapper: old keys are mapped into the v3 namespace.
+const store = {
+  get: (k, def) => StorageService.get(STORE_KEYS[k] || k, def),
+  set: (k, v) => StorageService.set(STORE_KEYS[k] || k, v),
+  remove: (k) => StorageService.remove(STORE_KEYS[k] || k),
+};
+
+const todayKey = () => new Date().toISOString().slice(0,10);
+const dateKeyAfter = (days) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+};
+const wordKey = (word, chapterId=word.chapterId) => `${chapterId}:${word.char}`;
+
+function makeDefaultStats() {
+  return {
+    streak:0, totalLearned:0, totalCorrect:0, totalAnswered:0,
+    sessions:0, studyDays:[], todayCount:0, chapterProgress:{},
+    reviewQueue:[], reviewLedger:{}, learnedKeys:{}, favorites:{words:{}, phrases:{}},
+    bookmarks:{words:{}, phrases:{}}, userWords:[], totalXP:0, maxCombo:0,
+    lastStudiedAt:null,
+  };
+}
+
+function hydrateStats(raw={}) {
+  const stats = { ...makeDefaultStats(), ...raw };
+  const lastDay = stats.lastStudiedAt ? String(stats.lastStudiedAt).slice(0,10) : null;
+  if (lastDay !== todayKey()) stats.todayCount = 0;
+  stats.favorites = {
+    words:{...((stats.favorites || {}).words || {})},
+    phrases:{...((stats.favorites || {}).phrases || {})},
+  };
+  stats.bookmarks = {
+    words:{...((stats.bookmarks || {}).words || {})},
+    phrases:{...((stats.bookmarks || {}).phrases || {})},
+  };
+  return stats;
+}
+
+function getSupabaseConfig() {
+  return {
+    ...SUPABASE_DEFAULT_CONFIG,
+    ...StorageService.get(SUPABASE_CONFIG_KEY, {}),
+  };
+}
+
+function setSupabaseConfig(config) {
+  const rawUrl = String(config.url || "").trim();
+  const normalizedUrl = rawUrl
+    .replace(/\/rest\/v1\/?$/i, "")
+    .replace(/\/+$/,"");
+  StorageService.set(SUPABASE_CONFIG_KEY, {
+    url:normalizedUrl,
+    anonKey:String(config.anonKey || "").trim(),
+  });
+}
+
+function createSupabaseBrowserClient(config) {
+  if (!config?.url || !config?.anonKey || !window.supabase?.createClient) return null;
+  try {
+    return window.supabase.createClient(config.url, config.anonKey, {
+      auth: {
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:true,
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function pullCloudSnapshot(client, userId) {
+  if (!client || !userId) return { data:null, error:new Error("NO_CLIENT") };
+  const { data, error } = await client
+    .from("study_snapshots")
+    .select("user_id, data, updated_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return { data, error };
+}
+
+async function pushCloudSnapshot(client, userId, studyState, tweaks) {
+  if (!client || !userId) return { error:new Error("NO_CLIENT") };
+  const payload = {
+    app:"zh-daily-study",
+    schemaVersion:APP_SCHEMA_VERSION,
+    syncedAt:new Date().toISOString(),
+    studyState,
+    tweaks,
+  };
+  return client
+    .from("study_snapshots")
+    .upsert({ user_id:userId, data:payload, updated_at:new Date().toISOString() }, { onConflict:"user_id" });
+}
+
+function getDueReviewKeys(stats={}) {
+  const today = todayKey();
+  const ledger = stats.reviewLedger || {};
+  const fromLedger = Object.entries(ledger)
+    .filter(([,item]) => item.due <= today || item.wrongStreak > 0)
+    .map(([key]) => key);
+  return [...new Set([...(stats.reviewQueue || []), ...fromLedger])];
+}
+
+function getDueReviewWords(stats={}) {
+  const keys = getDueReviewKeys(stats);
+  const byKey = new Map(getAllWords(stats).map(w => [wordKey(w), w]));
+  return keys
+    .map(key => byKey.get(key))
+    .filter(Boolean)
+    .sort((a,b) => {
+      const la = (stats.reviewLedger || {})[wordKey(a)] || {};
+      const lb = (stats.reviewLedger || {})[wordKey(b)] || {};
+      return (lb.wrong || 0) - (la.wrong || 0) || String(la.due || "").localeCompare(String(lb.due || ""));
+    });
+}
+
+function recordAnswer(prevStats, ok, word, chapterId, earned=10) {
+  const s = { ...makeDefaultStats(), ...prevStats };
+  const today = todayKey();
+  const studyDays = s.studyDays.includes(today) ? s.studyDays : [...s.studyDays, today];
+  const daySet = new Set(studyDays);
+  let streak = 0;
+  for (let i=0; i<365; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    if (daySet.has(d.toISOString().slice(0,10)) || daySet.has(d.toDateString())) streak++;
+    else break;
+  }
+  const cp = { ...(s.chapterProgress || {}) };
+  const learnedKeys = { ...(s.learnedKeys || {}) };
+  const key = wordKey(word, chapterId);
+  const firstLearn = ok && !learnedKeys[key];
+  if (firstLearn) {
+    learnedKeys[key] = { firstAt:new Date().toISOString(), chapterId, char:word.char };
+    cp[chapterId] = (cp[chapterId] || 0) + 1;
+  }
+
+  const reviewLedger = { ...(s.reviewLedger || {}) };
+  const old = reviewLedger[key] || { wrong:0, correct:0, interval:0, ease:2.2, wrongStreak:0 };
+  const nextInterval = ok ? Math.max(1, Math.round((old.interval || 0) * (old.ease || 2.2)) || 1) : 0;
+  reviewLedger[key] = {
+    ...old,
+    wrong: old.wrong + (ok ? 0 : 1),
+    correct: old.correct + (ok ? 1 : 0),
+    wrongStreak: ok ? 0 : (old.wrongStreak || 0) + 1,
+    interval: nextInterval,
+    ease: Math.max(1.3, (old.ease || 2.2) + (ok ? .15 : -.25)),
+    lastSeen: today,
+    due: ok ? dateKeyAfter(nextInterval) : today,
+  };
+
+  const dueKeys = new Set(getDueReviewKeys({ ...s, reviewLedger }));
+  if (!ok) dueKeys.add(key);
+  if (ok && dueKeys.has(key)) dueKeys.delete(key);
+
+  return {
+    ...s,
+    totalLearned: Object.keys(learnedKeys).length,
+    totalCorrect: (s.totalCorrect || 0) + (ok ? 1 : 0),
+    totalAnswered: (s.totalAnswered || 0) + 1,
+    totalXP: (s.totalXP || 0) + (ok ? earned : 0),
+    todayCount: (s.todayCount || 0) + 1,
+    studyDays,
+    streak,
+    chapterProgress:cp,
+    learnedKeys,
+    reviewLedger,
+    reviewQueue:[...dueKeys],
+    sessions:(s.sessions || 0) + ((s.todayCount || 0) === 0 ? 1 : 0),
+    lastStudiedAt:new Date().toISOString(),
+  };
+}
+
+const speak = (text) => {
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN'; u.rate = 0.82; u.pitch = 1;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+};
+
+Object.assign(window, {
+  HSK_CHAPTERS, BUILT_IN_CHAPTERS, THEME_CHAPTERS, ALL_WORDS, HSK_LEVELS,
+  APP_SCHEMA_VERSION, STORE_KEYS, StorageService, store, speak,
+  getStudyChapters, getAllWords, getDueReviewKeys, getDueReviewWords,
+  makeDefaultStats, hydrateStats, recordAnswer, wordKey, todayKey,
+  getSupabaseConfig, setSupabaseConfig, createSupabaseBrowserClient,
+  pullCloudSnapshot, pushCloudSnapshot
+});
+
+</script>
+<script>
+// Situational phrase sets — real-world conversations
+
+const PHRASE_SETS = [
+  {
+    id:"restaurant", title:"식당에서", titleZh:"在餐厅", emoji:"🍜",
+    phrases:[
+      { char:"请给我菜单。", pinyin:"Qǐng gěi wǒ càidān.", meaning:"메뉴판 주세요.", tip:"처음 자리 잡았을 때" },
+      { char:"我要点菜。", pinyin:"Wǒ yào diǎn cài.", meaning:"주문할게요.", tip:"점원 부를 때" },
+      { char:"这个是什么？", pinyin:"Zhège shì shénme?", meaning:"이게 뭐예요?", tip:"메뉴 모를 때" },
+      { char:"不辣的有吗？", pinyin:"Bú là de yǒu ma?", meaning:"안 매운 거 있어요?", tip:"매운 거 못 먹을 때" },
+      { char:"好吃！", pinyin:"Hǎo chī!", meaning:"맛있어요!", tip:"칭찬할 때" },
+      { char:"再来一份。", pinyin:"Zài lái yī fèn.", meaning:"하나 더 주세요.", tip:"추가 주문" },
+      { char:"买单！", pinyin:"Mǎi dān!", meaning:"계산해 주세요!", tip:"식사 후 계산" },
+      { char:"可以打包吗？", pinyin:"Kěyǐ dǎ bāo ma?", meaning:"포장 돼요?", tip:"남은 음식 포장" },
+    ]
+  },
+  {
+    id:"shopping", title:"쇼핑할 때", titleZh:"购物", emoji:"🛍️",
+    phrases:[
+      { char:"这个多少钱？", pinyin:"Zhège duōshao qián?", meaning:"이거 얼마예요?", tip:"가격 물어볼 때" },
+      { char:"我只是看看。", pinyin:"Wǒ zhǐshì kàn kàn.", meaning:"그냥 구경만 해요.", tip:"점원이 말 걸 때" },
+      { char:"可以便宜一点吗？", pinyin:"Kěyǐ piányí yīdiǎn ma?", meaning:"좀 깎아줄 수 있어요?", tip:"흥정할 때" },
+      { char:"有没有大一点的？", pinyin:"Yǒu méiyǒu dà yīdiǎn de?", meaning:"더 큰 거 있어요?", tip:"사이즈 물어볼 때" },
+      { char:"我要这个。", pinyin:"Wǒ yào zhège.", meaning:"이걸로 할게요.", tip:"결정했을 때" },
+      { char:"可以刷卡吗？", pinyin:"Kěyǐ shuā kǎ ma?", meaning:"카드 돼요?", tip:"결제 전" },
+      { char:"能退货吗？", pinyin:"Néng tuì huò ma?", meaning:"환불 돼요?", tip:"반품할 때" },
+      { char:"有没有收据？", pinyin:"Yǒu méiyǒu shōujù?", meaning:"영수증 있어요?", tip:"영수증 요청" },
+    ]
+  },
+  {
+    id:"directions", title:"길 물어볼 때", titleZh:"问路", emoji:"🗺️",
+    phrases:[
+      { char:"请问，地铁站在哪里？", pinyin:"Qǐngwèn, dìtiě zhàn zài nǎlǐ?", meaning:"지하철역이 어디예요?", tip:"길 찾을 때" },
+      { char:"怎么走？", pinyin:"Zěnme zǒu?", meaning:"어떻게 가요?", tip:"경로 물어볼 때" },
+      { char:"直走。", pinyin:"Zhí zǒu.", meaning:"직진하세요.", tip:"방향 안내" },
+      { char:"左转。", pinyin:"Zuǒ zhuǎn.", meaning:"왼쪽으로 꺾으세요.", tip:"방향 안내" },
+      { char:"右转。", pinyin:"Yòu zhuǎn.", meaning:"오른쪽으로 꺾으세요.", tip:"방향 안내" },
+      { char:"很近。/ 很远。", pinyin:"Hěn jìn. / Hěn yuǎn.", meaning:"가까워요. / 멀어요.", tip:"거리 표현" },
+      { char:"我迷路了。", pinyin:"Wǒ mí lù le.", meaning:"길을 잃었어요.", tip:"긴급 상황" },
+      { char:"坐几号线？", pinyin:"Zuò jǐ hào xiàn?", meaning:"몇 호선 타요?", tip:"지하철 노선" },
+    ]
+  },
+  {
+    id:"transport", title:"교통 이용", titleZh:"交通", emoji:"🚇",
+    phrases:[
+      { char:"去机场多少钱？", pinyin:"Qù jīchǎng duōshao qián?", meaning:"공항까지 얼마예요?", tip:"택시 탈 때" },
+      { char:"到了告诉我。", pinyin:"Dào le gàosu wǒ.", meaning:"도착하면 알려주세요.", tip:"택시/버스에서" },
+      { char:"在哪里下车？", pinyin:"Zài nǎlǐ xià chē?", meaning:"어디서 내려요?", tip:"버스에서" },
+      { char:"我坐错了。", pinyin:"Wǒ zuò cuò le.", meaning:"잘못 탔어요.", tip:"방향 잘못 탔을 때" },
+      { char:"买一张票。", pinyin:"Mǎi yī zhāng piào.", meaning:"표 한 장 주세요.", tip:"매표소에서" },
+      { char:"几点出发？", pinyin:"Jǐ diǎn chūfā?", meaning:"몇 시에 출발해요?", tip:"시간 확인" },
+      { char:"还有多久？", pinyin:"Hái yǒu duō jiǔ?", meaning:"얼마나 더 걸려요?", tip:"대기 중" },
+    ]
+  },
+  {
+    id:"daily", title:"일상 대화", titleZh:"日常会话", emoji:"💬",
+    phrases:[
+      { char:"等一下。", pinyin:"Děng yīxià.", meaning:"잠깐만요.", tip:"양해 구할 때" },
+      { char:"我听不懂。", pinyin:"Wǒ tīng bù dǒng.", meaning:"못 알아들었어요.", tip:"이해 못 했을 때" },
+      { char:"请说慢一点。", pinyin:"Qǐng shuō màn yīdiǎn.", meaning:"천천히 말해주세요.", tip:"빠를 때" },
+      { char:"请再说一遍。", pinyin:"Qǐng zài shuō yī biàn.", meaning:"다시 한번 말해주세요.", tip:"다시 들을 때" },
+      { char:"用中文怎么说？", pinyin:"Yòng Zhōngwén zěnme shuō?", meaning:"중국어로 뭐라고 해요?", tip:"단어 모를 때" },
+      { char:"我是韩国人。", pinyin:"Wǒ shì Hánguórén.", meaning:"저는 한국 사람이에요.", tip:"자기소개" },
+      { char:"你能帮我吗？", pinyin:"Nǐ néng bāng wǒ ma?", meaning:"도와줄 수 있어요?", tip:"도움 요청" },
+      { char:"没问题！", pinyin:"Méi wèntí!", meaning:"문제없어요! 물론이죠!", tip:"흔쾌히 승낙" },
+    ]
+  },
+  {
+    id:"hotel", title:"호텔/숙소", titleZh:"酒店住宿", emoji:"🏨",
+    phrases:[
+      { char:"我有预约。", pinyin:"Wǒ yǒu yùyuē.", meaning:"예약했어요.", tip:"체크인 시" },
+      { char:"我要退房。", pinyin:"Wǒ yào tuì fáng.", meaning:"체크아웃 할게요.", tip:"체크아웃 시" },
+      { char:"房间里有问题。", pinyin:"Fángjiān lǐ yǒu wèntí.", meaning:"방에 문제가 있어요.", tip:"컴플레인" },
+      { char:"能换一个房间吗？", pinyin:"Néng huàn yī gè fángjiān ma?", meaning:"방을 바꿀 수 있어요?", tip:"방 변경 요청" },
+      { char:"早饭几点开始？", pinyin:"Zǎofàn jǐ diǎn kāishǐ?", meaning:"아침 식사 몇 시에 시작해요?", tip:"조식 확인" },
+      { char:"有免费WiFi吗？", pinyin:"Yǒu miǎnfèi WiFi ma?", meaning:"무료 와이파이 있어요?", tip:"와이파이 확인" },
+    ]
+  },
+];
+
+Object.assign(window, { PHRASE_SETS });
+
+</script>
+
+<!-- COMPONENTS -->
+<script type="text/babel">
+// Shared UI components — exported to window
+
+const TONE_COLORS = ["","#C8993C","#72B882","#A78BFA","#D9624F","#7B9B8E"];
+const TONE_LABELS = ["","¹","²","³","⁴","·"];
+
+function ToneBadge({ tone, size=18 }) {
+  return (
+    <span style={{
+      display:"inline-flex", alignItems:"center", justifyContent:"center",
+      width:size, height:size, borderRadius:5, fontSize:size*0.65, fontWeight:700, flexShrink:0,
+      background: TONE_COLORS[tone] ? TONE_COLORS[tone]+"22" : "var(--card2)",
+      color: TONE_COLORS[tone] || "var(--sub)",
+      border: `1px solid ${TONE_COLORS[tone] ? TONE_COLORS[tone]+"44" : "var(--border)"}`,
+    }}>{TONE_LABELS[tone]||"·"}</span>
+  );
+}
+
+function PinyinRow({ tones=[] }) {
+  return (
+    <div style={{display:"flex",gap:4,justifyContent:"center",flexWrap:"wrap"}}>
+      {tones.map((t,i) => <ToneBadge key={i} tone={t} size={20}/>)}
+    </div>
+  );
+}
+
+function TTSBtn({ text, size="sm" }) {
+  const [playing, setPlaying] = React.useState(false);
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setPlaying(true);
+    speak(text);
+    setTimeout(() => setPlaying(false), 1200);
+  };
+  const s = size === "lg"
+    ? { width:44, height:44, fontSize:20, borderRadius:12 }
+    : { width:32, height:32, fontSize:15, borderRadius:8 };
+  return (
+    <button onClick={handleClick} style={{
+      ...s, display:"grid", placeItems:"center",
+      background: playing ? "var(--accent-dim)" : "var(--card2)",
+      border: `1px solid ${playing ? "var(--accent)44" : "var(--border)"}`,
+      color: playing ? "var(--accent)" : "var(--sub)",
+      cursor:"pointer", transition:"all .2s", flexShrink:0,
+    }}>
+      {playing ? "◉" : "▶"}
+    </button>
+  );
+}
+
+function ProgressBar({ value=0, max=100, color="var(--accent)", height=6 }) {
+  const pct = Math.min(100, Math.round((value/max)*100));
+  return (
+    <div style={{height, background:"var(--card2)", borderRadius:99, overflow:"hidden"}}>
+      <div style={{height:"100%", width:`${pct}%`, background:color, borderRadius:99, transition:"width .5s ease"}}/>
+    </div>
+  );
+}
+
+function Chip({ label, active, onClick, color }) {
+  return (
+    <button onClick={onClick} style={{
+      padding:"5px 14px", borderRadius:99, fontSize:13, fontWeight:500,
+      border:`1.5px solid ${active ? (color||"var(--accent)") : "var(--border)"}`,
+      background: active ? (color||"var(--accent)") : "transparent",
+      color: active ? "#fff" : "var(--sub)",
+      cursor:"pointer", transition:"all .15s", whiteSpace:"nowrap",
+      fontFamily:"var(--font-ui)",
+    }}>{label}</button>
+  );
+}
+
+function Btn({ children, onClick, variant="primary", style={}, disabled=false }) {
+  const base = {
+    display:"inline-flex", alignItems:"center", justifyContent:"center", gap:8,
+    borderRadius:13, fontSize:15, fontWeight:600, cursor:disabled?"not-allowed":"pointer",
+    border:"none", fontFamily:"var(--font-ui)", transition:"all .15s",
+    opacity: disabled ? .5 : 1,
+  };
+  const variants = {
+    primary: { background:"var(--accent)", color:"#0F1512", padding:"13px 28px" },
+    ghost:   { background:"var(--card2)", color:"var(--text)", padding:"11px 22px" },
+    danger:  { background:"var(--coral-dim)", color:"var(--coral)", padding:"11px 22px", border:"1.5px solid var(--coral)33" },
+    success: { background:"var(--accent-dim)", color:"var(--accent)", padding:"11px 22px", border:"1.5px solid var(--accent)44" },
+  };
+  return (
+    <button onClick={disabled ? undefined : onClick}
+      style={{...base, ...variants[variant], ...style}}>
+      {children}
+    </button>
+  );
+}
+
+function EmptyState({ icon, title, sub }) {
+  return (
+    <div style={{textAlign:"center", padding:"56px 24px", color:"var(--sub)"}}>
+      <div style={{fontSize:48, marginBottom:14}}>{icon}</div>
+      <div style={{fontSize:17, fontWeight:600, color:"var(--text)", marginBottom:6}}>{title}</div>
+      {sub && <div style={{fontSize:14}}>{sub}</div>}
+    </div>
+  );
+}
+
+function SectionTitle({ children, sub }) {
+  return (
+    <div style={{marginBottom:16}}>
+      <div style={{fontSize:19, fontWeight:700, color:"var(--text)"}}>{children}</div>
+      {sub && <div style={{fontSize:13, color:"var(--sub)", marginTop:3}}>{sub}</div>}
+    </div>
+  );
+}
+
+function Card({ children, style={}, onClick }) {
+  return (
+    <div onClick={onClick} style={{
+      background:"var(--card)", border:"1px solid var(--border)",
+      borderRadius:16, padding:18, ...style,
+      cursor: onClick ? "pointer" : "default",
+    }}>{children}</div>
+  );
+}
+
+Object.assign(window, { ToneBadge, PinyinRow, TTSBtn, ProgressBar, Chip, Btn, EmptyState, SectionTitle, Card, TONE_COLORS });
+
+</script>
+
+<script type="text/babel">
+// HomeScreen — dashboard with XP/level, chapters & streak
+
+function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, session, syncStatus }) {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "좋은 아침이에요" : hour < 18 ? "안녕하세요" : "좋은 저녁이에요";
+  const chineseGreeting = hour < 12 ? "早上好" : hour < 18 ? "你好" : "晚上好";
+
+  const chapters = getStudyChapters(stats);
+  const allWords = getAllWords(stats);
+  const totalWords = allWords.length;
+  const learned = stats.totalLearned || 0;
+  const reviewWords = getDueReviewWords(stats);
+  const reviewCount = reviewWords.length;
+  const xp = stats.totalXP || 0;
+  const level = Math.floor(xp / 100) + 1;
+  const xpInLevel = xp % 100;
+  const levelNames = ["","입문","초급","초중급","중급","중상급","상급","고급","전문가","달인","마스터"];
+  const levelName = levelNames[Math.min(level, levelNames.length-1)] || "마스터";
+  const todayCount = stats.todayCount || 0;
+  const todayTarget = Math.max(8, Math.min(20, reviewCount + 8));
+  const todayLeft = Math.max(0, todayTarget - todayCount);
+  const levels = [...new Set(chapters.map(ch => ch.level))].sort((a,b)=>a-b);
+
+  const today = new Date();
+  const days = ["일","월","화","수","목","금","토"];
+  const studiedDays = stats.studyDays || [];
+  const last7 = Array.from({length:7}, (_,i) => {
+    const d = new Date(today); d.setDate(d.getDate()-6+i);
+    const iso = d.toISOString().slice(0,10);
+    return { label:days[d.getDay()], done:studiedDays.includes(iso) || studiedDays.includes(d.toDateString()), today:d.toDateString()===today.toDateString() };
+  });
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      {/* Header */}
+      <div style={{marginBottom:22}}>
+        <div style={{fontSize:13,color:"var(--sub)",marginBottom:4}}>{greeting} 👋</div>
+        <div style={{fontFamily:"var(--font-zh)",fontSize:30,fontWeight:700,color:"var(--accent)",lineHeight:1,marginBottom:6}}>{chineseGreeting}</div>
+        <div style={{fontSize:14,color:"var(--sub)"}}>오늘도 조금씩, 꾸준하게</div>
+      </div>
+
+      <Card onClick={onCloudSync} style={{marginBottom:14,display:"flex",alignItems:"center",gap:13,border:"1.5px solid var(--accent)22",padding:"14px 16px"}}>
+        <span style={{fontSize:22}}>{session ? "☁️" : "📱"}</span>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>
+            {session ? (session.user?.email || "클라우드 연결됨") : "기기 연동 설정"}
+          </div>
+          <div style={{fontSize:12,color:"var(--sub)",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {syncStatus || "동기화 상태 확인"}
+          </div>
+        </div>
+        <span style={{fontSize:18,color:"var(--sub)"}}>›</span>
+      </Card>
+
+      {/* Today's work */}
+      <Card style={{marginBottom:14,border:"1.5px solid var(--accent)33"}}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:14,alignItems:"flex-start",marginBottom:12}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:4}}>오늘 할 일</div>
+            <div style={{fontSize:20,fontWeight:800,color:"var(--text)",lineHeight:1.25}}>
+              {reviewCount > 0 ? `복습 ${reviewCount}개 먼저` : todayLeft > 0 ? `새 단어 ${todayLeft}개 더` : "오늘 목표 완료"}
+            </div>
+            <div style={{fontSize:12,color:"var(--sub)",marginTop:5}}>
+              오늘 {todayCount}/{todayTarget}개 진행 · 누적 {learned}개 학습
+            </div>
+          </div>
+          <Btn variant={reviewCount > 0 ? "danger" : "primary"} onClick={reviewCount > 0 ? onReview : () => onStudyChapter(chapters[0])}
+            style={{padding:"11px 16px",fontSize:13,whiteSpace:"nowrap"}}>
+            {reviewCount > 0 ? "복습 시작" : "학습 시작"}
+          </Btn>
+        </div>
+        <ProgressBar value={todayCount} max={todayTarget} color={reviewCount > 0 ? "var(--coral)" : "var(--accent)"}/>
+        {reviewWords.length > 0 && (
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:12}}>
+            {reviewWords.slice(0,3).map(w => (
+              <span key={wordKey(w)} style={{
+                fontSize:12,padding:"5px 9px",borderRadius:8,
+                background:"var(--coral-dim)",color:"var(--coral)",fontWeight:700,
+              }}>{w.char} · {w.meaning}</span>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Level + XP */}
+      <Card style={{marginBottom:14,background:"linear-gradient(135deg,var(--accent-dim),var(--card))",border:"1.5px solid var(--accent)33"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:3}}>레벨</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+              <span style={{fontSize:30,fontWeight:800,color:"var(--accent)",lineHeight:1}}>Lv.{level}</span>
+              <span style={{fontSize:13,color:"var(--sub)",fontWeight:600}}>{levelName}</span>
+            </div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:3}}>총 XP</div>
+            <div style={{fontSize:26,fontWeight:800,color:"var(--gold)",lineHeight:1}}>{xp}<span style={{fontSize:13,fontWeight:500}}> xp</span></div>
+          </div>
+        </div>
+        <ProgressBar value={xpInLevel} max={100} color="var(--accent)"/>
+        <div style={{fontSize:11,color:"var(--sub)",marginTop:5,textAlign:"right"}}>다음 레벨까지 {100-xpInLevel} XP</div>
+      </Card>
+
+      {/* Streak + Review */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+        <Card style={{display:"flex",flexDirection:"column",gap:4}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:24}}>🔥</span>
+            <span style={{fontSize:30,fontWeight:800,color:"var(--gold)",lineHeight:1}}>{stats.streak||0}</span>
+          </div>
+          <div style={{fontSize:11,color:"var(--sub)",fontWeight:500}}>일 연속 학습</div>
+        </Card>
+        <Card style={{display:"flex",flexDirection:"column",gap:4,cursor:reviewCount>0?"pointer":"default",
+          border:reviewCount>0?"1.5px solid var(--coral)44":"1px solid var(--border)"}}
+          onClick={reviewCount>0?onReview:undefined}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:24}}>🔄</span>
+            <span style={{fontSize:30,fontWeight:800,color:reviewCount>0?"var(--coral)":"var(--sub)",lineHeight:1}}>{reviewCount}</span>
+          </div>
+          <div style={{fontSize:11,color:"var(--sub)",fontWeight:500}}>SRS 복습 대기</div>
+        </Card>
+      </div>
+
+      {/* Weekly dots */}
+      <Card style={{marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:12}}>이번 주</div>
+        <div style={{display:"flex",justifyContent:"space-between"}}>
+          {last7.map((d,i)=>(
+            <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
+              <div style={{fontSize:10,color:"var(--sub2)"}}>{d.label}</div>
+              <div style={{
+                width:28,height:28,borderRadius:8,
+                background:d.done?"var(--accent)":"var(--card2)",
+                border:d.today?"2.5px solid var(--accent)":"2px solid transparent",
+                display:"grid",placeItems:"center",
+                fontSize:11,color:d.done?"#fff":"transparent",fontWeight:700,
+              }}>{d.done?"✓":""}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Total progress */}
+      <Card style={{marginBottom:18}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:14,fontWeight:600}}>전체 진도</span>
+          <span style={{fontSize:13,color:"var(--sub)"}}>{learned} / {totalWords}단어</span>
+        </div>
+        <ProgressBar value={learned} max={totalWords}/>
+      </Card>
+
+      <Card onClick={onAiAssist} style={{marginBottom:18,display:"flex",alignItems:"center",gap:13,border:"1.5px solid var(--gold)44",background:"var(--gold-dim)"}}>
+        <span style={{fontSize:24}}>🤖</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>AI 도움받기</div>
+          <div style={{fontSize:12,color:"var(--sub)",marginTop:2}}>API 비용 없이 프롬프트를 복사해 Gemini 또는 ChatGPT 웹에서 이어가요</div>
+        </div>
+        <span style={{fontSize:18,color:"var(--gold)"}}>›</span>
+      </Card>
+
+      {/* Chapters */}
+      <SectionTitle sub={`${chapters.length}개 챕터 · ${totalWords}개 단어`}>학습 챕터</SectionTitle>
+
+      {levels.map(level=>(
+        <div key={level} style={{marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--sub)",letterSpacing:".08em",textTransform:"uppercase",marginBottom:8}}>
+            {level === 0 ? "내 단어" : `HSK ${level}`}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {chapters.filter(c=>c.level===level).map(ch=>{
+              const done = (stats.chapterProgress||{})[ch.id]||0;
+              const total = ch.words.length;
+              const isComplete = done >= total;
+              return (
+                <div key={ch.id} onClick={()=>onStudyChapter(ch)}
+                  style={{display:"flex",alignItems:"center",gap:14,
+                    background:"var(--card)",border:"1px solid var(--border)",
+                    borderRadius:14,padding:"13px 16px",cursor:"pointer",transition:"all .15s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--accent)55";e.currentTarget.style.background="var(--card2)"}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.background="var(--card)"}}>
+                  <div style={{fontSize:24,width:34,textAlign:"center",flexShrink:0}}>{ch.emoji}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                      <span style={{fontSize:14,fontWeight:600,color:"var(--text)"}}>{ch.title}</span>
+                      <span style={{fontSize:11,color:"var(--sub2)",fontFamily:"var(--font-zh)"}}>{ch.titleZh}</span>
+                    </div>
+                    <ProgressBar value={done} max={total} height={4}/>
+                    <div style={{fontSize:11,color:"var(--sub)",marginTop:4}}>{done}/{total} {isComplete?"· 완료 ✓":""}</div>
+                  </div>
+                  <div style={{fontSize:11,fontWeight:700,padding:"4px 10px",borderRadius:99,flexShrink:0,
+                    background:isComplete?"var(--accent-dim)":"var(--card2)",
+                    color:isComplete?"var(--accent)":"var(--sub)"}}>{isComplete?"완료":"학습"}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+Object.assign(window, { HomeScreen });
+
+</script>
+
+<script type="text/babel">
+// StudyScreen — 3 modes: Flashcard / Listening / Fill-in-blank + XP/combo feedback
+
+function StudyScreen({ chapter, stats, onResult, onBack }) {
+  const chapters = getStudyChapters(stats);
+  const allWords = getAllWords(stats);
+  const [mode, setMode] = React.useState("card"); // card | listen | fill
+  const [selectedChapter, setSelectedChapter] = React.useState(chapter || chapters[0]);
+  const [queue, setQueue] = React.useState([]);
+  const [idx, setIdx] = React.useState(0);
+  const [sessionDone, setSessionDone] = React.useState(false);
+  const [correct, setCorrect] = React.useState(0);
+  const [combo, setCombo] = React.useState(0);
+  const [xpPop, setXpPop] = React.useState(null); // {xp, key}
+  const [flipped, setFlipped] = React.useState(false);
+  const [answered, setAnswered] = React.useState(false);
+  const [showStroke, setShowStroke] = React.useState(false);
+  const [choices, setChoices] = React.useState([]);
+  const [selected, setSelected] = React.useState(null);
+  const hwRef = React.useRef(null);
+  const writerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (chapter) setSelectedChapter(chapter);
+  }, [chapter?.id]);
+
+  // Build queue when chapter or mode changes
+  React.useEffect(() => {
+    const words = [...selectedChapter.words].sort(() => Math.random() - .5);
+    setQueue(words); setIdx(0); setFlipped(false); setAnswered(false);
+    setSessionDone(false); setCorrect(0); setCombo(0); setShowStroke(false);
+    setSelected(null);
+  }, [selectedChapter, mode]);
+
+  // Build choices for quiz modes
+  React.useEffect(() => {
+    if (!queue[idx]) return;
+    const w = queue[idx];
+    const pool = allWords.filter(x => x.char !== w.char && x.level === selectedChapter.level);
+    const shuffled = [...pool].sort(() => Math.random() - .5).slice(0, 3);
+    const opts = [...shuffled.map(x => ({ char: x.char, meaning: x.meaning, correct: false })),
+      { char: w.char, meaning: w.meaning, correct: true }].sort(() => Math.random() - .5);
+    setChoices(opts);
+    setSelected(null); setAnswered(false); setFlipped(false);
+    if (mode === "listen") setTimeout(() => speak(w.char), 300);
+  }, [idx, queue, mode]);
+
+  // Stroke order
+  React.useEffect(() => {
+    if (flipped && showStroke && hwRef.current && queue[idx]) {
+      const char = queue[idx].char[0];
+      hwRef.current.innerHTML = '';
+      if (writerRef.current) { try { writerRef.current.cancelAnimation(); } catch{} }
+      try {
+        writerRef.current = HanziWriter.create(hwRef.current, char, {
+          width:130, height:130, padding:8,
+          strokeColor:'#5B7EE8', radicalColor:'#E09040',
+          outlineColor:'#D8DFF2', showOutline:true,
+          strokeAnimationSpeed:1.2, delayBetweenStrokes:60,
+        });
+        writerRef.current.animateCharacter();
+      } catch { hwRef.current.innerHTML = '<div style="color:var(--sub);font-size:12px;padding:16px;text-align:center">데이터 없음</div>'; }
+    }
+  }, [flipped, showStroke, idx, queue]);
+
+  const word = queue[idx];
+  const total = queue.length;
+
+  const handleAnswer = (ok) => {
+    const earned = ok ? (combo >= 2 ? 30 : combo >= 1 ? 20 : 10) : 0;
+    const newCombo = ok ? combo + 1 : 0;
+    setCombo(newCombo);
+    if (ok && earned) setXpPop({ xp: earned, combo: newCombo, key: Date.now() });
+    onResult(ok, word, selectedChapter.id, earned);
+    setAnswered(true);
+    if (ok) setCorrect(c => c+1);
+  };
+
+  const next = () => {
+    if (idx+1 >= total) { setSessionDone(true); return; }
+    setIdx(i => i+1); setFlipped(false); setAnswered(false);
+    setShowStroke(false); setSelected(null);
+  };
+
+  if (sessionDone) return (
+    <div style={{animation:"fadeUp .3s ease",textAlign:"center",padding:"48px 0"}}>
+      <div style={{fontSize:52,marginBottom:12}}>{correct===total?"🏆":correct>=total*.7?"🎉":"💪"}</div>
+      <div style={{fontFamily:"var(--font-zh)",fontSize:26,color:"var(--accent)",marginBottom:4}}>完成！</div>
+      <div style={{fontSize:16,fontWeight:700,color:"var(--text)",marginBottom:4}}>세션 완료</div>
+      <div style={{fontSize:14,color:"var(--sub)",marginBottom:8}}>
+        {total}개 중 <span style={{color:"var(--accent)",fontWeight:700}}>{correct}개</span> 정답
+      </div>
+      <div style={{fontSize:13,color:"var(--gold)",fontWeight:600,marginBottom:28}}>
+        +{correct*10 + (correct > 2 ? 20 : 0)} XP 획득!
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+        <Btn variant="ghost" onClick={()=>{setIdx(0);setFlipped(false);setAnswered(false);setSessionDone(false);setCorrect(0);setCombo(0);}}>
+          다시 하기
+        </Btn>
+        <Btn variant="primary" onClick={onBack}>홈으로</Btn>
+      </div>
+    </div>
+  );
+
+  if (!word) return null;
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both",position:"relative"}}>
+      {/* XP Pop animation */}
+      {xpPop && <XpPopup key={xpPop.key} xp={xpPop.xp} combo={xpPop.combo} onDone={()=>setXpPop(null)}/>}
+
+      {/* Chapter selector */}
+      <div style={{display:"flex",gap:8,marginBottom:16,overflowX:"auto",paddingBottom:4}}>
+        {chapters.map(ch=>(
+          <Chip key={ch.id} label={`${ch.emoji} ${ch.title}`}
+            active={selectedChapter.id===ch.id} onClick={()=>setSelectedChapter(ch)}/>
+        ))}
+      </div>
+
+      {/* Mode tabs */}
+      <div style={{display:"flex",gap:6,marginBottom:18,background:"var(--card2)",padding:4,borderRadius:12}}>
+        {[["card","🃏 플래시카드"],["listen","🎧 듣기 퀴즈"],["fill","✏️ 빈칸 채우기"]].map(([m,l])=>(
+          <button key={m} onClick={()=>setMode(m)} style={{
+            flex:1,padding:"8px 4px",borderRadius:9,fontSize:12,fontWeight:600,
+            background:mode===m?"var(--card)":"transparent",
+            color:mode===m?"var(--accent)":"var(--sub)",
+            border:"none",cursor:"pointer",fontFamily:"var(--font-ui)",
+            boxShadow:mode===m?"0 1px 6px rgba(0,0,0,.06)":"none",
+            transition:"all .15s",
+          }}>{l}</button>
+        ))}
+      </div>
+
+      {/* Progress row */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+        <span style={{fontSize:12,color:"var(--sub)"}}>{selectedChapter.title} · {idx+1}/{total}</span>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {combo >= 2 && <span style={{fontSize:12,fontWeight:700,color:"var(--gold)"}}>🔥 {combo}연속!</span>}
+          <span style={{fontSize:12,fontWeight:700,color:"var(--accent)"}}>✓ {correct}</span>
+        </div>
+      </div>
+      <div style={{height:5,marginBottom:18}}><ProgressBar value={idx} max={total}/></div>
+
+      {/* ── CARD MODE ── */}
+      {mode==="card" && (
+        <>
+          <div style={{perspective:1200,width:"100%",maxWidth:400,margin:"0 auto",height:250,cursor:answered?"default":"pointer"}}
+            onClick={()=>!answered&&setFlipped(f=>!f)}>
+            <div style={{
+              position:"relative",width:"100%",height:"100%",
+              transformStyle:"preserve-3d",transition:"transform .5s cubic-bezier(.4,0,.2,1)",
+              transform:flipped?"rotateY(180deg)":"rotateY(0)",
+            }}>
+              <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",
+                background:"var(--card)",border:"1px solid var(--border)",borderRadius:22,
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,
+                boxShadow:"0 6px 24px rgba(91,126,232,.13)"}}>
+                <div style={{position:"absolute",top:12,right:14,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,background:"var(--card2)",color:"var(--sub)"}}>HSK {selectedChapter.level}</div>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:80,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+                <PinyinRow tones={word.tones}/>
+                <div style={{position:"absolute",bottom:12,fontSize:11,color:"var(--sub2)"}}>탭하여 뒤집기</div>
+              </div>
+              <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",
+                transform:"rotateY(180deg)",
+                background:"var(--surface)",border:"1px solid var(--border)",borderRadius:22,
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:20,
+                boxShadow:"0 6px 24px rgba(91,126,232,.11)",overflowY:"auto"}}>
+                <div style={{position:"absolute",top:12,right:14,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,background:"var(--card2)",color:"var(--sub)"}}>HSK {selectedChapter.level}</div>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:44,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+                <div style={{fontSize:20,color:"var(--accent)",fontWeight:600}}>{word.pinyin}</div>
+                <PinyinRow tones={word.tones}/>
+                <div style={{fontSize:16,color:"var(--text)",fontWeight:500}}>{word.meaning}</div>
+                <div style={{display:"flex",gap:8,alignItems:"center",marginTop:4}}>
+                  <TTSBtn text={word.char} size="lg"/>
+                  <button onClick={e=>{e.stopPropagation();setShowStroke(s=>!s);}} style={{
+                    padding:"6px 14px",borderRadius:10,fontSize:12,fontWeight:600,
+                    background:showStroke?"var(--accent-dim)":"var(--card2)",
+                    border:`1px solid ${showStroke?"var(--accent)44":"var(--border)"}`,
+                    color:showStroke?"var(--accent)":"var(--sub)",
+                    cursor:"pointer",fontFamily:"var(--font-ui)",
+                  }}>획순 {showStroke?"▲":"▼"}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          {flipped&&showStroke&&(
+            <div style={{animation:"fadeUp .25s ease",background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:14,marginTop:10,maxWidth:400,margin:"10px auto 0",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+              <div style={{fontSize:11,color:"var(--sub)",fontWeight:600,letterSpacing:".05em"}}>획순</div>
+              <div ref={hwRef} style={{width:130,height:130}}/>
+            </div>
+          )}
+          {flipped&&(
+            <div style={{animation:"fadeUp .3s ease",background:"var(--card)",border:"1px solid var(--border)",borderRadius:14,padding:14,marginTop:10,maxWidth:400,margin:"10px auto 0"}}>
+              <div style={{fontSize:11,color:"var(--sub)",fontWeight:600,marginBottom:7}}>예문</div>
+              <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"var(--font-zh)",fontSize:15,color:"var(--text)",lineHeight:1.5,marginBottom:2}}>{word.example}</div>
+                  <div style={{fontSize:12,color:"var(--accent)",marginBottom:2}}>{word.exPinyin}</div>
+                  <div style={{fontSize:12,color:"var(--sub)"}}>{word.exMeaning}</div>
+                </div>
+                <TTSBtn text={word.example}/>
+              </div>
+            </div>
+          )}
+          {flipped&&!answered&&(
+            <div style={{display:"flex",gap:10,justifyContent:"center",marginTop:18,maxWidth:400,margin:"18px auto 0"}}>
+              <button onClick={()=>handleAnswer(false)} style={{flex:1,padding:"13px 0",borderRadius:13,fontSize:15,fontWeight:700,background:"var(--coral-dim)",color:"var(--coral)",border:"1.5px solid var(--coral)33",cursor:"pointer",fontFamily:"var(--font-ui)"}}>✕ 몰랐어</button>
+              <button onClick={()=>handleAnswer(true)} style={{flex:1,padding:"13px 0",borderRadius:13,fontSize:15,fontWeight:700,background:"var(--accent-dim)",color:"var(--accent)",border:"1.5px solid var(--accent)44",cursor:"pointer",fontFamily:"var(--font-ui)"}}>○ 알았어</button>
+            </div>
+          )}
+          {flipped&&answered&&<div style={{textAlign:"center",marginTop:18,maxWidth:400,margin:"18px auto 0"}}><Btn variant="primary" onClick={next} style={{width:"100%"}}>{idx+1<total?"다음 카드 →":"결과 보기"}</Btn></div>}
+          {!flipped&&<div style={{textAlign:"center",marginTop:16}}><Btn variant="ghost" onClick={()=>setFlipped(true)}>뒤집기</Btn></div>}
+        </>
+      )}
+
+      {/* ── LISTEN MODE ── */}
+      {mode==="listen" && (
+        <div style={{animation:"fadeUp .25s ease"}}>
+          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:20,padding:"28px 20px",marginBottom:16,textAlign:"center",boxShadow:"0 6px 24px rgba(91,126,232,.10)"}}>
+            <div style={{fontSize:13,color:"var(--sub)",fontWeight:600,marginBottom:18}}>음성을 듣고 맞는 뜻을 고르세요</div>
+            <button onClick={()=>speak(word.char)} style={{
+              width:72,height:72,borderRadius:"50%",border:"none",cursor:"pointer",
+              background:"var(--accent-dim)",color:"var(--accent)",fontSize:30,
+              display:"grid",placeItems:"center",margin:"0 auto 12px",
+              transition:"all .15s",fontFamily:"var(--font-ui)",
+            }} onMouseEnter={e=>e.currentTarget.style.background="var(--accent)33"}
+               onMouseLeave={e=>e.currentTarget.style.background="var(--accent-dim)"}>▶</button>
+            <div style={{fontSize:12,color:"var(--sub2)"}}>다시 듣기</div>
+            {answered&&<div style={{fontFamily:"var(--font-zh)",fontSize:36,color:"var(--text)",marginTop:14,fontWeight:700}}>{word.char}<span style={{fontSize:16,color:"var(--accent)",marginLeft:8}}>{word.pinyin}</span></div>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {choices.map((c,i)=>{
+              const state = !answered?"idle":c.correct?"correct":selected===i?"wrong":"idle";
+              return(
+                <button key={i} onClick={()=>{if(answered)return;setSelected(i);handleAnswer(c.correct);}} style={{
+                  padding:"16px 12px",borderRadius:14,fontSize:14,fontWeight:600,cursor:answered?"default":"pointer",
+                  background:state==="correct"?"var(--accent-dim)":state==="wrong"?"var(--coral-dim)":"var(--card)",
+                  border:`2px solid ${state==="correct"?"var(--accent)":state==="wrong"?"var(--coral)":"var(--border)"}`,
+                  color:state==="correct"?"var(--accent)":state==="wrong"?"var(--coral)":"var(--text)",
+                  fontFamily:"var(--font-ui)",transition:"all .15s",textAlign:"center",
+                }}>{c.meaning}</button>
+              );
+            })}
+          </div>
+          {answered&&<div style={{textAlign:"center",marginTop:18}}><Btn variant="primary" onClick={next} style={{width:"100%",maxWidth:400}}>{idx+1<total?"다음 →":"결과 보기"}</Btn></div>}
+        </div>
+      )}
+
+      {/* ── FILL MODE ── */}
+      {mode==="fill" && (
+        <div style={{animation:"fadeUp .25s ease"}}>
+          <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:20,padding:"22px 20px",marginBottom:16,boxShadow:"0 6px 24px rgba(91,126,232,.10)"}}>
+            <div style={{fontSize:13,color:"var(--sub)",fontWeight:600,marginBottom:14}}>빈칸에 알맞은 단어를 고르세요</div>
+            <div style={{fontFamily:"var(--font-zh)",fontSize:20,color:"var(--text)",lineHeight:1.8,letterSpacing:".05em"}}>
+              {(() => {
+                const parts = word.example.split(word.char);
+                if(parts.length < 2) return <span style={{fontFamily:"var(--font-zh)",fontSize:20}}>{word.example}</span>;
+                return parts.map((p,i)=>(
+                  <React.Fragment key={i}>
+                    {p}
+                    {i<parts.length-1&&<span style={{
+                      display:"inline-block",minWidth:60,borderBottom:"2.5px solid var(--accent)",
+                      verticalAlign:"bottom",textAlign:"center",
+                      color:"var(--accent)",fontWeight:700,fontSize:18,
+                      paddingBottom:2,marginLeft:2,marginRight:2,
+                    }}>{answered?word.char:"＿＿"}</span>}
+                  </React.Fragment>
+                ));
+              })()}
+            </div>
+            <div style={{fontSize:12,color:"var(--sub)",marginTop:10}}>{word.exMeaning}</div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            {choices.map((c,i)=>{
+              const state = !answered?"idle":c.correct?"correct":selected===i?"wrong":"idle";
+              return(
+                <button key={i} onClick={()=>{if(answered)return;setSelected(i);handleAnswer(c.correct);}} style={{
+                  padding:"16px 12px",borderRadius:14,cursor:answered?"default":"pointer",
+                  background:state==="correct"?"var(--accent-dim)":state==="wrong"?"var(--coral-dim)":"var(--card)",
+                  border:`2px solid ${state==="correct"?"var(--accent)":state==="wrong"?"var(--coral)":"var(--border)"}`,
+                  color:state==="correct"?"var(--accent)":state==="wrong"?"var(--coral)":"var(--text)",
+                  fontFamily:"var(--font-zh)",fontSize:22,fontWeight:700,
+                  transition:"all .15s",textAlign:"center",
+                }}>{c.char}</button>
+              );
+            })}
+          </div>
+          {answered&&(
+            <div style={{marginTop:14}}>
+              <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:"10px 14px",marginBottom:12}}>
+                <div style={{fontSize:12,color:"var(--accent)",marginBottom:2}}>{word.pinyin}</div>
+                <div style={{fontSize:13,color:"var(--sub)"}}>{word.exPinyin}</div>
+              </div>
+              <Btn variant="primary" onClick={next} style={{width:"100%"}}>{idx+1<total?"다음 →":"결과 보기"}</Btn>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function XpPopup({ xp, combo, onDone }) {
+  React.useEffect(() => { const t = setTimeout(onDone, 1200); return ()=>clearTimeout(t); }, []);
+  return (
+    <div style={{
+      position:"fixed",top:"30%",left:"50%",transform:"translateX(-50%)",
+      pointerEvents:"none",zIndex:300,
+      animation:"xpFloat 1.2s ease forwards",
+      textAlign:"center",
+    }}>
+      <div style={{fontSize:22,fontWeight:800,color:"var(--gold)",textShadow:"0 2px 8px rgba(0,0,0,.15)"}}>
+        +{xp} XP {combo>=3?"🔥🔥":""}
+      </div>
+      {combo>=2&&<div style={{fontSize:13,fontWeight:700,color:"var(--accent)",marginTop:2}}>{combo}연속!</div>}
+      <style>{`@keyframes xpFloat{0%{opacity:0;transform:translateX(-50%) translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-50px)}}`}</style>
+    </div>
+  );
+}
+
+Object.assign(window, { StudyScreen, XpPopup });
+
+</script>
+
+<script type="text/babel">
+// VocabScreen — browse all words by chapter
+
+function VocabScreen({ stats, onStudyChapter, onToggleWordFavorite, onAddUserWord }) {
+  const [query, setQuery] = React.useState("");
+  const [level, setLevel] = React.useState("all");
+  const [tag, setTag] = React.useState("all");
+  const [difficulty, setDifficulty] = React.useState("all");
+  const [onlyFav, setOnlyFav] = React.useState(false);
+  const [showAdd, setShowAdd] = React.useState(false);
+  const [expanded, setExpanded] = React.useState({});
+
+  const toggle = (id) => setExpanded(e => ({...e, [id]: !e[id]}));
+  const chapters = getStudyChapters(stats);
+  const allWords = getAllWords(stats);
+  const favWords = (stats.favorites && stats.favorites.words) || {};
+  const tags = [...new Set(allWords.flatMap(w => w.tags || []))].sort((a,b)=>a.localeCompare(b,"ko"));
+
+  const filtered = chapters
+    .filter(ch => level === "all" || ch.level === Number(level))
+    .map(ch => ({
+      ...ch,
+      words: ch.words.filter(w => {
+        const q = query.trim().toLowerCase();
+        const haystack = [w.char, w.pinyin, w.meaning, w.example, w.exMeaning, ...(w.tags||[])].join(" ").toLowerCase();
+        const queryOk = !q || haystack.includes(q);
+        const tagOk = tag === "all" || (w.tags || []).includes(tag);
+        const difficultyOk = difficulty === "all" || Number(w.difficulty || 1) === Number(difficulty);
+        const favOk = !onlyFav || !!favWords[wordKey(w)];
+        return queryOk && tagOk && difficultyOk && favOk;
+      })
+    }))
+    .filter(ch => ch.words.length > 0);
+
+  const totalShown = filtered.reduce((a,c) => a + c.words.length, 0);
+  const startFilteredStudy = () => {
+    const words = filtered.flatMap(ch => ch.words).slice(0, 40);
+    if (!words.length) return;
+    onStudyChapter({
+      id:"search-session",
+      level:0,
+      title:"검색 결과",
+      titleZh:"搜索结果",
+      emoji:"🔎",
+      words,
+    });
+  };
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <div style={{display:"flex",justifyContent:"space-between",gap:10,alignItems:"flex-start",marginBottom:4}}>
+        <SectionTitle sub={`전체 ${allWords.length}개 · 지금 ${totalShown}개 표시`}>단어장</SectionTitle>
+        <Btn variant="success" onClick={()=>setShowAdd(s=>!s)} style={{padding:"9px 13px",fontSize:13,whiteSpace:"nowrap"}}>
+          + 단어
+        </Btn>
+      </div>
+
+      {/* Search */}
+      <div style={{position:"relative", marginBottom:14}}>
+        <span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"var(--sub)",pointerEvents:"none"}}>🔍</span>
+        <input value={query} onChange={e=>setQuery(e.target.value)}
+          placeholder="한자, 병음, 뜻으로 검색…"
+          style={{
+            width:"100%", padding:"10px 14px 10px 38px",
+            background:"var(--card)", border:"1.5px solid var(--border)",
+            borderRadius:12, fontSize:15, color:"var(--text)",
+            outline:"none", fontFamily:"var(--font-ui)",
+            transition:"border-color .15s",
+          }}
+          onFocus={e=>e.target.style.borderColor="var(--accent)"}
+          onBlur={e=>e.target.style.borderColor="var(--border)"}
+        />
+      </div>
+
+      {showAdd && <UserWordForm onAdd={(word)=>{onAddUserWord(word);setShowAdd(false);}} onCancel={()=>setShowAdd(false)}/>}
+
+      {/* Filters */}
+      <div style={{display:"flex", gap:8, marginBottom:10, overflowX:"auto", paddingBottom:2}}>
+        <Chip label="전체" active={level==="all"} onClick={()=>setLevel("all")}/>
+        {[...new Set(chapters.map(ch => ch.level))].sort((a,b)=>a-b).map(l => (
+          <Chip key={l} label={l===0 ? "내 단어" : `HSK ${l}`} active={level===String(l)} onClick={()=>setLevel(String(l))}/>
+        ))}
+      </div>
+      <div style={{display:"flex", gap:8, marginBottom:14, overflowX:"auto", paddingBottom:2}}>
+        <Chip label="모든 태그" active={tag==="all"} onClick={()=>setTag("all")}/>
+        {tags.slice(0,18).map(t => <Chip key={t} label={t} active={tag===t} onClick={()=>setTag(t)} color="var(--gold)"/>)}
+      </div>
+      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:20,flexWrap:"wrap"}}>
+        {[["all","난이도 전체"],["1","쉬움"],["2","보통"],["3","어려움"]].map(([k,l])=>(
+          <Chip key={k} label={l} active={difficulty===k} onClick={()=>setDifficulty(k)} color="var(--coral)"/>
+        ))}
+        <Chip label="즐겨찾기" active={onlyFav} onClick={()=>setOnlyFav(v=>!v)} color="var(--gold)"/>
+        <Btn variant="primary" onClick={startFilteredStudy} disabled={totalShown===0}
+          style={{padding:"8px 14px",fontSize:13,marginLeft:"auto"}}>
+          결과 학습
+        </Btn>
+      </div>
+
+      {filtered.length === 0 && <EmptyState icon="🔎" title="검색 결과 없음" sub="다른 키워드로 검색해 보세요"/>}
+
+      {filtered.map(ch => {
+        const isOpen = expanded[ch.id] !== false; // default open
+        const done = (stats.chapterProgress||{})[ch.id]||0;
+        return (
+          <div key={ch.id} style={{marginBottom:12}}>
+            {/* Chapter header */}
+            <div onClick={()=>toggle(ch.id)} style={{
+              display:"flex", alignItems:"center", gap:12,
+              background:"var(--card)", border:"1px solid var(--border)",
+              borderRadius: isOpen ? "14px 14px 0 0" : 14,
+              padding:"12px 16px", cursor:"pointer",
+              transition:"border-radius .2s",
+            }}>
+              <span style={{fontSize:22}}>{ch.emoji}</span>
+              <div style={{flex:1}}>
+                <div style={{display:"flex", alignItems:"center", gap:8}}>
+                  <span style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>{ch.title}</span>
+                  <span style={{fontSize:11,color:"var(--sub2)",fontFamily:"var(--font-zh)"}}>{ch.titleZh}</span>
+                  <span style={{fontSize:11,padding:"2px 8px",borderRadius:99,background:"var(--card2)",color:"var(--sub)"}}>HSK {ch.level}</span>
+                </div>
+                <div style={{fontSize:11,color:"var(--sub)",marginTop:2}}>{done}/{ch.words.length} 학습완료</div>
+              </div>
+              <button onClick={(e)=>{e.stopPropagation();onStudyChapter(ch);}} style={{
+                border:"none",borderRadius:9,padding:"7px 10px",fontSize:12,fontWeight:700,
+                background:"var(--accent-dim)",color:"var(--accent)",cursor:"pointer",fontFamily:"var(--font-ui)",
+              }}>학습</button>
+              <span style={{color:"var(--sub)", fontSize:18, transition:"transform .2s", transform: isOpen?"rotate(180deg)":"rotate(0)"}}>›</span>
+            </div>
+
+            {/* Words list */}
+            {isOpen && (
+              <div style={{
+                background:"var(--surface)", border:"1px solid var(--border)",
+                borderTop:"none", borderRadius:"0 0 14px 14px", overflow:"hidden",
+              }}>
+                {ch.words.map((w,i) => (
+                  <div key={i} style={{
+                    display:"flex", alignItems:"center", gap:14,
+                    padding:"11px 16px",
+                    borderBottom: i < ch.words.length-1 ? "1px solid var(--border)" : "none",
+                  }}>
+                    <div style={{
+                      fontFamily:"var(--font-zh)", fontSize:28,
+                      color:"var(--text)", minWidth:42, textAlign:"center",
+                    }}>{w.char}</div>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{fontSize:13, color:"var(--accent)", fontWeight:500, marginBottom:2}}>{w.pinyin}</div>
+                      <div style={{fontSize:14, color:"var(--text)"}}>{w.meaning}</div>
+                      <div style={{fontSize:11, color:"var(--sub)", marginTop:3, fontFamily:"var(--font-zh)"}}>{w.example}</div>
+                    </div>
+                    <div style={{display:"flex", flexDirection:"column", gap:4, alignItems:"center"}}>
+                      <button onClick={()=>onToggleWordFavorite(w)} title="즐겨찾기" style={{
+                        width:32,height:32,borderRadius:8,border:"1px solid var(--border)",cursor:"pointer",
+                        background:favWords[wordKey(w)]?"var(--gold-dim)":"var(--card2)",
+                        color:favWords[wordKey(w)]?"var(--gold)":"var(--sub)",fontSize:15,
+                      }}>{favWords[wordKey(w)]?"★":"☆"}</button>
+                      <TTSBtn text={w.char}/>
+                      <div style={{display:"flex",gap:2}}>
+                        {(w.tones||[]).map((t,ti) => <ToneBadge key={ti} tone={t} size={14}/>)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function UserWordForm({ onAdd, onCancel }) {
+  const [form, setForm] = React.useState({
+    char:"", pinyin:"", meaning:"", tags:"사용자", example:"", exPinyin:"", exMeaning:"", difficulty:"1", frequency:"3"
+  });
+  const update = (key, value) => setForm(f => ({ ...f, [key]:value }));
+  const submit = () => {
+    if (!form.char.trim() || !form.meaning.trim()) {
+      alert("중국어 단어와 뜻은 꼭 입력해 주세요.");
+      return;
+    }
+    onAdd({
+      ...form,
+      id:`user-${Date.now()}`,
+      char:form.char.trim(),
+      pinyin:form.pinyin.trim(),
+      meaning:form.meaning.trim(),
+      tags:form.tags.split(",").map(t=>t.trim()).filter(Boolean),
+      difficulty:Number(form.difficulty || 1),
+      frequency:Number(form.frequency || 3),
+      createdAt:new Date().toISOString(),
+    });
+  };
+  const inputStyle = {
+    width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",
+    background:"var(--card)",color:"var(--text)",fontSize:14,outline:"none",fontFamily:"var(--font-ui)",
+  };
+  return (
+    <Card style={{marginBottom:16,border:"1.5px solid var(--accent)44"}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:12}}>내 단어 추가</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+        <input style={inputStyle} value={form.char} onChange={e=>update("char",e.target.value)} placeholder="중국어"/>
+        <input style={inputStyle} value={form.pinyin} onChange={e=>update("pinyin",e.target.value)} placeholder="병음"/>
+        <input style={inputStyle} value={form.meaning} onChange={e=>update("meaning",e.target.value)} placeholder="뜻"/>
+        <input style={inputStyle} value={form.tags} onChange={e=>update("tags",e.target.value)} placeholder="태그, 쉼표 구분"/>
+      </div>
+      <textarea style={{...inputStyle,minHeight:74,resize:"vertical",marginBottom:10}} value={form.example}
+        onChange={e=>update("example",e.target.value)} placeholder="예문"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        <input style={inputStyle} value={form.exPinyin} onChange={e=>update("exPinyin",e.target.value)} placeholder="예문 병음"/>
+        <input style={inputStyle} value={form.exMeaning} onChange={e=>update("exMeaning",e.target.value)} placeholder="예문 뜻"/>
+      </div>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end",flexWrap:"wrap"}}>
+        <Btn variant="ghost" onClick={onCancel} style={{padding:"9px 14px",fontSize:13}}>취소</Btn>
+        <Btn variant="primary" onClick={submit} style={{padding:"9px 14px",fontSize:13}}>추가</Btn>
+      </div>
+    </Card>
+  );
+}
+
+Object.assign(window, { VocabScreen, UserWordForm });
+
+</script>
+
+<script type="text/babel">
+// PhraseScreen — situational conversation cards
+
+function PhraseScreen({ stats, onTogglePhraseFavorite }) {
+  const [activeSet, setActiveSet] = React.useState(PHRASE_SETS[0]);
+  const [studyMode, setStudyMode] = React.useState(false);
+  const [idx, setIdx] = React.useState(0);
+  const [showBack, setShowBack] = React.useState(false);
+  const phraseFavs = (stats.favorites && stats.favorites.phrases) || {};
+
+  const phrase = activeSet.phrases[idx];
+  const total = activeSet.phrases.length;
+  const phraseKey = (set=activeSet, p=phrase) => `${set.id}:${p.char}`;
+
+  const next = () => {
+    if (idx+1 >= total) { setStudyMode(false); setIdx(0); setShowBack(false); return; }
+    setIdx(i=>i+1); setShowBack(false);
+  };
+  const prev = () => { if(idx>0){setIdx(i=>i-1);setShowBack(false);} };
+
+  if (studyMode) return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <button onClick={()=>{setStudyMode(false);setIdx(0);setShowBack(false);}} style={{
+          background:"var(--card2)",border:"1px solid var(--border)",
+          borderRadius:10,padding:"6px 14px",fontSize:13,fontWeight:600,
+          color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
+        }}>← 뒤로</button>
+        <div style={{fontSize:15,fontWeight:700}}>{activeSet.emoji} {activeSet.title}</div>
+        <div style={{marginLeft:"auto",fontSize:12,color:"var(--sub)"}}>{idx+1}/{total}</div>
+      </div>
+      <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
+        <button onClick={()=>onTogglePhraseFavorite(activeSet, phrase)} style={{
+          border:"1px solid var(--border)",borderRadius:10,padding:"8px 12px",fontSize:13,fontWeight:700,
+          background:phraseFavs[phraseKey()]?"var(--gold-dim)":"var(--card)",color:phraseFavs[phraseKey()]?"var(--gold)":"var(--sub)",
+          cursor:"pointer",fontFamily:"var(--font-ui)",
+        }}>{phraseFavs[phraseKey()]?"★ 즐겨찾기됨":"☆ 표현 즐겨찾기"}</button>
+      </div>
+      <div style={{height:5,marginBottom:20}}><ProgressBar value={idx} max={total}/></div>
+
+      {/* Phrase card */}
+      <div style={{perspective:1200,width:"100%",maxWidth:420,margin:"0 auto",height:230,cursor:"pointer",marginBottom:16}}
+        onClick={()=>setShowBack(b=>!b)}>
+        <div style={{
+          position:"relative",width:"100%",height:"100%",
+          transformStyle:"preserve-3d",
+          transition:"transform .45s cubic-bezier(.4,0,.2,1)",
+          transform:showBack?"rotateY(180deg)":"rotateY(0)",
+        }}>
+          {/* Front */}
+          <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",
+            background:"var(--card)",border:"1px solid var(--border)",
+            borderRadius:22,display:"flex",flexDirection:"column",
+            alignItems:"center",justifyContent:"center",gap:12,padding:24,
+            boxShadow:"0 6px 24px rgba(91,126,232,.11)"}}>
+            <div style={{position:"absolute",top:12,left:14,fontSize:11,fontWeight:700,
+              padding:"3px 10px",borderRadius:99,background:"var(--accent-dim)",color:"var(--accent)"}}>
+              {activeSet.emoji} {activeSet.title}
+            </div>
+            <div style={{fontFamily:"var(--font-zh)",fontSize:22,color:"var(--text)",
+              lineHeight:1.6,textAlign:"center",fontWeight:600}}>{phrase.char}</div>
+            <div style={{fontSize:12,color:"var(--sub)",textAlign:"center",fontStyle:"italic"}}>상황: {phrase.tip}</div>
+            <div style={{position:"absolute",bottom:12,fontSize:11,color:"var(--sub2)"}}>탭하여 뜻 보기</div>
+          </div>
+          {/* Back */}
+          <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",
+            transform:"rotateY(180deg)",
+            background:"var(--surface)",border:"1px solid var(--border)",
+            borderRadius:22,display:"flex",flexDirection:"column",
+            alignItems:"center",justifyContent:"center",gap:10,padding:24,
+            boxShadow:"0 6px 24px rgba(91,126,232,.09)"}}>
+            <div style={{fontFamily:"var(--font-zh)",fontSize:18,color:"var(--text)",textAlign:"center",lineHeight:1.6}}>{phrase.char}</div>
+            <div style={{fontSize:14,color:"var(--accent)",fontWeight:500,textAlign:"center"}}>{phrase.pinyin}</div>
+            <div style={{fontSize:20,fontWeight:700,color:"var(--text)",textAlign:"center"}}>{phrase.meaning}</div>
+            <TTSBtn text={phrase.char} size="lg"/>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav buttons */}
+      <div style={{display:"flex",gap:10,maxWidth:420,margin:"0 auto"}}>
+        <Btn variant="ghost" onClick={prev} style={{flex:1}} disabled={idx===0}>← 이전</Btn>
+        <Btn variant="primary" onClick={next} style={{flex:1}}>
+          {idx+1<total?"다음 →":"완료 🎉"}
+        </Btn>
+      </div>
+
+      {/* Tip */}
+      {showBack && (
+        <div style={{animation:"fadeUp .2s ease",
+          background:"var(--card)",border:"1px solid var(--border)",
+          borderRadius:14,padding:"12px 16px",marginTop:14,
+          maxWidth:420,margin:"14px auto 0",
+          display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:18}}>💡</span>
+          <div style={{fontSize:13,color:"var(--sub)"}}>
+            <strong style={{color:"var(--text)"}}>사용 상황:</strong> {phrase.tip}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Browse mode
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="실생활에서 바로 쓰는 문장들">상황별 회화</SectionTitle>
+
+      {/* Category cards */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
+        {PHRASE_SETS.map(set=>(
+          <div key={set.id} onClick={()=>{setActiveSet(set);setIdx(0);setShowBack(false);}}
+            style={{
+              background:"var(--card)",border:`1.5px solid ${activeSet.id===set.id?"var(--accent)":"var(--border)"}`,
+              borderRadius:14,padding:"14px 14px",cursor:"pointer",
+              background:activeSet.id===set.id?"var(--accent-dim)":"var(--card)",
+              transition:"all .15s",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--accent)66";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=activeSet.id===set.id?"var(--accent)":"var(--border)";}}>
+            <div style={{fontSize:24,marginBottom:6}}>{set.emoji}</div>
+            <div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:2}}>{set.title}</div>
+            <div style={{fontSize:11,fontFamily:"var(--font-zh)",color:"var(--sub)"}}>{set.titleZh}</div>
+            <div style={{fontSize:11,color:"var(--sub2)",marginTop:4}}>{set.phrases.length}개 문장</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Phrase list for selected category */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <div style={{fontSize:15,fontWeight:700,color:"var(--text)"}}>
+          {activeSet.emoji} {activeSet.title}
+        </div>
+        <Btn variant="primary" onClick={()=>setStudyMode(true)} style={{padding:"8px 18px",fontSize:13}}>
+          카드로 학습 →
+        </Btn>
+      </div>
+
+      <div style={{background:"var(--card)",border:"1px solid var(--border)",borderRadius:16,overflow:"hidden"}}>
+        {activeSet.phrases.map((p,i)=>(
+          <div key={i} style={{
+            display:"flex",alignItems:"center",gap:14,
+            padding:"13px 16px",
+            borderBottom:i<activeSet.phrases.length-1?"1px solid var(--border)":"none",
+          }}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontFamily:"var(--font-zh)",fontSize:16,color:"var(--text)",marginBottom:2,lineHeight:1.4}}>{p.char}</div>
+              <div style={{fontSize:12,color:"var(--accent)",marginBottom:1}}>{p.pinyin}</div>
+              <div style={{fontSize:13,color:"var(--sub)"}}>{p.meaning}</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
+              <button onClick={()=>onTogglePhraseFavorite(activeSet, p)} title="즐겨찾기" style={{
+                width:32,height:32,borderRadius:8,border:"1px solid var(--border)",cursor:"pointer",
+                background:phraseFavs[phraseKey(activeSet,p)]?"var(--gold-dim)":"var(--card2)",
+                color:phraseFavs[phraseKey(activeSet,p)]?"var(--gold)":"var(--sub)",fontSize:15,
+              }}>{phraseFavs[phraseKey(activeSet,p)]?"★":"☆"}</button>
+              <TTSBtn text={p.char}/>
+              <div style={{fontSize:10,color:"var(--sub2)",textAlign:"right",maxWidth:70,lineHeight:1.3}}>{p.tip}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { PhraseScreen });
+
+</script>
+
+<script type="text/babel">
+// ReviewScreen — wrong-answer queue
+
+function ReviewScreen({ stats, onResult, onBack }) {
+  const [queue, setQueue] = React.useState(() => {
+    return getDueReviewWords(stats);
+  });
+  const [idx, setIdx] = React.useState(0);
+  const [flipped, setFlipped] = React.useState(false);
+  const [answered, setAnswered] = React.useState(false);
+  const [cleared, setCleared] = React.useState(0);
+  const [okLast, setOkLast] = React.useState(false);
+
+  if (queue.length === 0) return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="오늘 만기된 단어와 자주 틀린 단어를 다시 봐요">SRS 복습</SectionTitle>
+      <EmptyState icon="🌿" title="복습할 카드가 없어요"
+        sub={cleared > 0 ? `${cleared}개 단어를 완전히 익혔어요!` : "학습 중 '몰랐어'를 누르면 여기에 쌓여요"}/>
+      <div style={{textAlign:"center", marginTop:24}}>
+        <Btn variant="primary" onClick={onBack}>홈으로</Btn>
+      </div>
+    </div>
+  );
+
+  const word = queue[idx];
+  const total = queue.length;
+  const reviewInfo = (stats.reviewLedger || {})[wordKey(word)] || {};
+
+  const handleAnswer = (ok) => {
+    onResult(ok, word, word.chapterId, ok ? 12 : 0);
+    if (ok) setCleared(c => c+1);
+    setOkLast(ok);
+    setAnswered(true);
+  };
+
+  const next = () => {
+    if (okLast) {
+      const nq = queue.filter((_,i) => i !== idx);
+      if (nq.length === 0) { setQueue([]); return; }
+      setQueue(nq);
+      setIdx(i => Math.min(i, nq.length - 1));
+    } else {
+      setIdx(i => (i+1) % queue.length);
+    }
+    setFlipped(false); setAnswered(false);
+  };
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <SectionTitle>SRS 복습</SectionTitle>
+        <div style={{
+          fontSize:13, fontWeight:700, padding:"4px 12px", borderRadius:99,
+          background:"var(--coral-dim)", color:"var(--coral)", marginBottom:16,
+        }}>{queue.length}개 남음</div>
+      </div>
+
+      <div style={{marginBottom:12}}>
+        <ProgressBar value={cleared} max={cleared+queue.length} color="var(--coral)"/>
+        <div style={{fontSize:11,color:"var(--sub)",marginTop:4,textAlign:"right"}}>{cleared}개 완료</div>
+      </div>
+
+      {/* Card */}
+      <div style={{perspective:1200, width:"100%", maxWidth:400, margin:"0 auto", height:240, cursor:answered?"default":"pointer"}}
+        onClick={()=>!answered&&setFlipped(f=>!f)}>
+        <div style={{
+          position:"relative", width:"100%", height:"100%",
+          transformStyle:"preserve-3d",
+          transition:"transform .5s cubic-bezier(.4,0,.2,1)",
+          transform: flipped ? "rotateY(180deg)" : "rotateY(0)",
+        }}>
+          <div style={{
+            position:"absolute",inset:0,backfaceVisibility:"hidden",
+            background:"var(--card)",border:"1px solid var(--border)",
+            borderRadius:22,display:"flex",flexDirection:"column",
+            alignItems:"center",justifyContent:"center",gap:10,
+            boxShadow:"0 6px 24px rgba(91,126,232,.12)",
+          }}>
+            <div style={{
+              position:"absolute",top:12,left:14,fontSize:11,fontWeight:700,
+              padding:"3px 10px",borderRadius:99,
+              background:"var(--coral-dim)",color:"var(--coral)",
+            }}>복습 {idx+1}/{total}</div>
+            {(reviewInfo.wrong || 0) > 0 && (
+              <div style={{
+                position:"absolute",top:12,right:14,fontSize:11,fontWeight:700,
+                padding:"3px 10px",borderRadius:99,
+                background:"var(--gold-dim)",color:"var(--gold)",
+              }}>오답 {reviewInfo.wrong}회</div>
+            )}
+            <div style={{fontFamily:"var(--font-zh)",fontSize:72,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+            <PinyinRow tones={word.tones}/>
+            <div style={{position:"absolute",bottom:12,fontSize:11,color:"var(--sub2)"}}>탭하여 뒤집기</div>
+          </div>
+          <div style={{
+            position:"absolute",inset:0,backfaceVisibility:"hidden",
+            transform:"rotateY(180deg)",
+            background:"var(--surface)",border:"1px solid var(--border)",
+            borderRadius:22,display:"flex",flexDirection:"column",
+            alignItems:"center",justifyContent:"center",gap:8,padding:20,
+            boxShadow:"0 6px 24px rgba(91,126,232,.10)",
+          }}>
+            <div style={{fontFamily:"var(--font-zh)",fontSize:42,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+            <div style={{fontSize:19,color:"var(--accent)",fontWeight:600}}>{word.pinyin}</div>
+            <div style={{fontSize:15,color:"var(--text)",fontWeight:500}}>{word.meaning}</div>
+            <TTSBtn text={word.char} size="lg"/>
+          </div>
+        </div>
+      </div>
+
+      {/* Example */}
+      {flipped && (
+        <div style={{
+          animation:"fadeUp .25s ease",
+          background:"var(--card)",border:"1px solid var(--border)",
+          borderRadius:14,padding:14,marginTop:12,
+          maxWidth:400,margin:"12px auto 0",
+        }}>
+          <div style={{fontSize:11,color:"var(--sub)",fontWeight:600,marginBottom:6}}>예문</div>
+          <div style={{fontFamily:"var(--font-zh)",fontSize:15,color:"var(--text)",marginBottom:2,lineHeight:1.5}}>{word.example}</div>
+          <div style={{fontSize:12,color:"var(--accent)",marginBottom:2}}>{word.exPinyin}</div>
+          <div style={{fontSize:12,color:"var(--sub)"}}>{word.exMeaning}</div>
+        </div>
+      )}
+
+      {flipped && !answered && (
+        <div style={{animation:"fadeUp .2s ease",display:"flex",gap:12,justifyContent:"center",marginTop:18,maxWidth:400,margin:"18px auto 0"}}>
+          <button onClick={()=>handleAnswer(false)} style={{
+            flex:1,padding:"13px 0",borderRadius:13,fontSize:15,fontWeight:700,
+            background:"var(--coral-dim)",color:"var(--coral)",
+            border:"1.5px solid var(--coral)33",cursor:"pointer",fontFamily:"var(--font-ui)",
+          }}>✕ 아직 몰라</button>
+          <button onClick={()=>handleAnswer(true)} style={{
+            flex:1,padding:"13px 0",borderRadius:13,fontSize:15,fontWeight:700,
+            background:"var(--accent-dim)",color:"var(--accent)",
+            border:"1.5px solid var(--accent)44",cursor:"pointer",fontFamily:"var(--font-ui)",
+          }}>○ 이젠 알아!</button>
+        </div>
+      )}
+      {flipped && answered && (
+        <div style={{textAlign:"center",marginTop:18,maxWidth:400,margin:"18px auto 0"}}>
+          {okLast
+            ? <div style={{fontSize:13,color:"var(--accent)",fontWeight:600,marginBottom:12}}>✓ 복습 목록에서 제거돼요</div>
+            : <div style={{fontSize:13,color:"var(--coral)",fontWeight:600,marginBottom:12}}>다음에 다시 나와요</div>
+          }
+          <Btn variant="primary" onClick={next} style={{width:"100%"}}>
+            {queue.length <= 1 && okLast ? "완료!" : "다음 →"}
+          </Btn>
+        </div>
+      )}
+      {!flipped && (
+        <div style={{textAlign:"center",marginTop:16}}>
+          <Btn variant="ghost" onClick={()=>setFlipped(true)}>뒤집기</Btn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { ReviewScreen });
+
+</script>
+
+<script type="text/babel">
+// StatsScreen — with XP, level, combo record
+
+function StatsScreen({ stats }) {
+  const chapters = getStudyChapters(stats);
+  const allWords = getAllWords(stats);
+  const total = allWords.length;
+  const learned = stats.totalLearned || 0;
+  const pct = total > 0 ? Math.round(learned/total*100) : 0;
+  const accuracy = stats.totalAnswered > 0 ? Math.round(stats.totalCorrect/stats.totalAnswered*100) : 0;
+  const xp = stats.totalXP || 0;
+  const level = Math.floor(xp/100)+1;
+  const xpInLevel = xp % 100;
+  const levelNames = ["","입문","초급","초중급","중급","중상급","상급","고급","전문가","달인","마스터"];
+  const levelName = levelNames[Math.min(level,levelNames.length-1)] || "마스터";
+  const circumference = 2*Math.PI*52;
+  const dueReviews = getDueReviewWords(stats);
+  const wrongHotlist = allWords
+    .map(w => ({ word:w, info:(stats.reviewLedger || {})[wordKey(w)] || {} }))
+    .filter(x => (x.info.wrong || 0) > 0)
+    .sort((a,b) => (b.info.wrong || 0) - (a.info.wrong || 0))
+    .slice(0,5);
+
+  const today = new Date();
+  const studiedDays = stats.studyDays || [];
+  const last14 = Array.from({length:14},(_,i)=>{
+    const d = new Date(today); d.setDate(d.getDate()-13+i);
+    const iso = d.toISOString().slice(0,10);
+    return { day:d.getDate(), done:studiedDays.includes(iso) || studiedDays.includes(d.toDateString()) };
+  });
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="나의 학습 기록">통계</SectionTitle>
+
+      {/* XP / Level banner */}
+      <Card style={{marginBottom:14,display:"flex",alignItems:"center",gap:18,
+        background:"linear-gradient(135deg,var(--accent-dim),var(--card))",
+        border:"1.5px solid var(--accent)33"}}>
+        <div style={{position:"relative",width:80,height:80,flexShrink:0}}>
+          <svg viewBox="0 0 80 80" style={{width:80,height:80,transform:"rotate(-90deg)"}}>
+            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--card2)" strokeWidth="7"/>
+            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" strokeWidth="7"
+              strokeDasharray={2*Math.PI*34}
+              strokeDashoffset={2*Math.PI*34*(1-xpInLevel/100)}
+              strokeLinecap="round" style={{transition:"stroke-dashoffset .8s ease"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{fontSize:16,fontWeight:800,color:"var(--accent)",lineHeight:1}}>{level}</div>
+            <div style={{fontSize:8,color:"var(--sub)"}}>LV</div>
+          </div>
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:18,fontWeight:800,color:"var(--text)",marginBottom:2}}>
+            Lv.{level} <span style={{fontSize:13,fontWeight:600,color:"var(--sub)"}}>{levelName}</span>
+          </div>
+          <div style={{fontSize:13,color:"var(--gold)",fontWeight:700,marginBottom:6}}>{xp} XP 총 획득</div>
+          <ProgressBar value={xpInLevel} max={100}/>
+          <div style={{fontSize:11,color:"var(--sub)",marginTop:4}}>다음 레벨까지 {100-xpInLevel} XP</div>
+        </div>
+      </Card>
+
+      {/* Circular word progress */}
+      <Card style={{textAlign:"center",marginBottom:14,padding:"24px 20px"}}>
+        <div style={{position:"relative",width:120,height:120,margin:"0 auto 14px"}}>
+          <svg viewBox="0 0 120 120" style={{width:120,height:120,transform:"rotate(-90deg)"}}>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--card2)" strokeWidth="10"/>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" strokeWidth="10"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference*(1-pct/100)}
+              strokeLinecap="round" style={{transition:"stroke-dashoffset 1s ease"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{fontSize:28,fontWeight:800,color:"var(--text)",lineHeight:1}}>{pct}%</div>
+            <div style={{fontSize:10,color:"var(--sub)"}}>완료</div>
+          </div>
+        </div>
+        <div style={{fontSize:14,color:"var(--sub)"}}>
+          전체 <strong style={{color:"var(--text)"}}>{total}</strong>개 중{" "}
+          <strong style={{color:"var(--accent)"}}>{learned}</strong>개 학습
+        </div>
+      </Card>
+
+      {/* Key stats grid */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+        {[
+          {icon:"🔥",val:`${stats.streak||0}일`,lbl:"연속 학습",color:"var(--gold)"},
+          {icon:"🎯",val:`${accuracy}%`,lbl:"정확도",color:"var(--accent)"},
+          {icon:"✓",val:`${stats.totalCorrect||0}`,lbl:"총 정답",color:"var(--accent)"},
+          {icon:"🔄",val:`${dueReviews.length}`,lbl:"오늘 복습",color:"var(--coral)"},
+          {icon:"★",val:`${Object.keys((stats.favorites||{}).words||{}).length}`,lbl:"단어 즐겨찾기",color:"var(--gold)"},
+          {icon:"📚",val:`${(stats.userWords||[]).length}`,lbl:"내 단어",color:"var(--sub)"},
+        ].map(({icon,val,lbl,color})=>(
+          <Card key={lbl} style={{display:"flex",flexDirection:"column",gap:3}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:18}}>{icon}</span>
+              <span style={{fontSize:24,fontWeight:800,color,lineHeight:1}}>{val}</span>
+            </div>
+            <div style={{fontSize:11,color:"var(--sub)",fontWeight:500}}>{lbl}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* 2-week calendar */}
+      <Card style={{marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:12}}>최근 2주</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:5}}>
+          {last14.map((d,i)=>(
+            <div key={i} style={{
+              aspectRatio:"1",borderRadius:7,display:"grid",placeItems:"center",
+              background:d.done?"var(--accent)":"var(--card2)",
+              fontSize:10,fontWeight:600,color:d.done?"#fff":"var(--sub2)",
+            }}>{d.day}</div>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:12,marginTop:10,fontSize:11,color:"var(--sub)"}}>
+          <span><span style={{display:"inline-block",width:10,height:10,background:"var(--accent)",borderRadius:3,marginRight:4,verticalAlign:"middle"}}/>학습함</span>
+          <span><span style={{display:"inline-block",width:10,height:10,background:"var(--card2)",borderRadius:3,marginRight:4,verticalAlign:"middle"}}/>미학습</span>
+        </div>
+      </Card>
+
+      {/* HSK level bars */}
+      <Card>
+        <div style={{fontSize:11,fontWeight:700,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:14}}>HSK 레벨별 진도</div>
+        {[...new Set(chapters.map(ch=>ch.level))].sort((a,b)=>a-b).map(lv=>{
+          const chs = chapters.filter(c=>c.level===lv);
+          const lvTotal = chs.reduce((a,c)=>a+c.words.length,0);
+          const lvDone = chs.reduce((a,c)=>a+Math.min(c.words.length,(stats.chapterProgress||{})[c.id]||0),0);
+          return (
+            <div key={lv} style={{marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                <span style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>{lv===0?"내 단어":`HSK ${lv}`}</span>
+                <span style={{fontSize:12,color:"var(--sub)"}}>{lvDone}/{lvTotal}</span>
+              </div>
+              <ProgressBar value={lvDone} max={lvTotal}
+                color={lv===1?"var(--accent)":lv===2?"var(--gold)":"var(--accent-bright)"}/>
+            </div>
+          );
+        })}
+      </Card>
+
+      {wrongHotlist.length>0&&(
+        <Card style={{marginTop:14}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:12}}>자주 틀린 단어</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {wrongHotlist.map(({word,info})=>(
+              <div key={wordKey(word)} style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:24,minWidth:48}}>{word.char}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,color:"var(--accent)",fontWeight:700}}>{word.pinyin}</div>
+                  <div style={{fontSize:13,color:"var(--text)"}}>{word.meaning}</div>
+                </div>
+                <div style={{fontSize:12,fontWeight:800,color:"var(--coral)",background:"var(--coral-dim)",borderRadius:8,padding:"5px 8px"}}>
+                  {info.wrong}회
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {dueReviews.length>0&&(
+        <div style={{marginTop:12,padding:"13px 16px",borderRadius:14,
+          background:"var(--coral-dim)",border:"1px solid var(--coral)33",
+          display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:20}}>🔄</span>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--coral)"}}>복습 {dueReviews.length}개 대기</div>
+            <div style={{fontSize:12,color:"var(--sub)"}}>복습 탭에서 확인해보세요</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { StatsScreen });
+
+</script>
+
+<script type="text/babel">
+// ChatScreen — free web handoff. No API keys, no direct AI network calls.
+
+const AI_PROMPT_MODES = [
+  { id:"correct", label:"첨삭", hint:"문장 교정", template:(text)=>`다음 중국어 문장을 한국어로 짧고 명확하게 첨삭해줘. 문법 오류, 더 자연스러운 표현, 수정 예문 2개를 보여줘. 문장: ${text}` },
+  { id:"conversation", label:"회화", hint:"상황 연습", template:(text)=>`너는 중국 여행 회화 튜터야. 한국어 설명은 짧게 하고, 중국어 회화를 먼저 보여줘. 상황: ${text}. 내 수준은 초급이야.` },
+  { id:"compare", label:"차이", hint:"표현 비교", template:(text)=>`${text} 의 차이를 한국어로 쉽게 설명하고 각각 예문 2개씩 보여줘.` },
+  { id:"quiz", label:"퀴즈", hint:"복습 문제", template:(text)=>`아래 중국어 표현으로 초급 학습자용 퀴즈 5문제를 만들어줘. 정답과 짧은 해설도 한국어로 붙여줘. 표현: ${text}` },
+];
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+function ChatScreen() {
+  const [mode, setMode] = React.useState("correct");
+  const [input, setInput] = React.useState("");
+  const [copied, setCopied] = React.useState(false);
+  const active = AI_PROMPT_MODES.find(m => m.id === mode) || AI_PROMPT_MODES[0];
+  const prompt = active.template(input.trim() || "[여기에 문장이나 상황을 입력하세요]");
+
+  const copyPrompt = async () => {
+    await copyText(prompt);
+    setCopied(true);
+    setTimeout(()=>setCopied(false), 1400);
+  };
+  const openWeb = async (url) => {
+    await copyPrompt();
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+  const examples = [
+    "我昨天去餐厅吃饭，但是我不知道怎么点菜。",
+    "공항에서 택시를 타고 호텔로 가는 상황",
+    "一点儿 와 有点儿",
+  ];
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="앱 안에서 AI API를 호출하지 않아요. 프롬프트를 복사한 뒤 무료 웹에서 붙여넣어 이어가세요.">AI 도움받기</SectionTitle>
+
+      <Card style={{marginBottom:14,border:"1.5px solid var(--gold)44",background:"var(--gold-dim)"}}>
+        <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+          <span style={{fontSize:24}}>🔗</span>
+          <div>
+            <div style={{fontSize:14,fontWeight:800,color:"var(--text)",marginBottom:4}}>무료 웹 연결 방식</div>
+            <div style={{fontSize:13,color:"var(--sub)",lineHeight:1.55}}>
+              자동 로그인이나 자동 전송은 하지 않습니다. 아래 버튼은 프롬프트를 복사하고 외부 서비스를 새 탭으로 열어줍니다.
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
+        {AI_PROMPT_MODES.map(m=>(
+          <button key={m.id} onClick={()=>setMode(m.id)} style={{
+            minHeight:58,borderRadius:12,border:`1.5px solid ${mode===m.id?"var(--accent)":"var(--border)"}`,
+            background:mode===m.id?"var(--accent-dim)":"var(--card)",color:mode===m.id?"var(--accent)":"var(--sub)",
+            cursor:"pointer",fontFamily:"var(--font-ui)",fontWeight:800,fontSize:13,
+          }}>
+            <div>{m.label}</div>
+            <div style={{fontSize:10,fontWeight:600,marginTop:2}}>{m.hint}</div>
+          </button>
+        ))}
+      </div>
+
+      <Card style={{marginBottom:14}}>
+        <div style={{fontSize:12,fontWeight:800,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:8}}>입력</div>
+        <textarea value={input} onChange={e=>setInput(e.target.value)}
+          placeholder="중국어 문장, 회화 상황, 비교할 표현을 입력하세요"
+          style={{
+            width:"100%",minHeight:110,resize:"vertical",padding:"12px 14px",
+            background:"var(--card2)",border:"1.5px solid var(--border)",borderRadius:12,
+            color:"var(--text)",fontSize:15,lineHeight:1.55,outline:"none",fontFamily:"var(--font-ui)",
+          }}/>
+        <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:10}}>
+          {examples.map(ex=>(
+            <button key={ex} onClick={()=>setInput(ex)} style={{
+              border:"1px solid var(--border)",borderRadius:9,padding:"6px 9px",fontSize:12,
+              background:"var(--card)",color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
+            }}>{ex}</button>
+          ))}
+        </div>
+      </Card>
+
+      <Card style={{marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",marginBottom:10}}>
+          <div style={{fontSize:12,fontWeight:800,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase"}}>생성된 프롬프트</div>
+          <button onClick={copyPrompt} style={{
+            border:"none",borderRadius:10,padding:"8px 12px",fontSize:13,fontWeight:800,
+            background:copied?"var(--accent-dim)":"var(--card2)",color:copied?"var(--accent)":"var(--text)",
+            cursor:"pointer",fontFamily:"var(--font-ui)",
+          }}>{copied?"복사됨":"복사"}</button>
+        </div>
+        <div style={{
+          whiteSpace:"pre-wrap",lineHeight:1.65,fontSize:14,color:"var(--text)",
+          background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:14,
+        }}>{prompt}</div>
+      </Card>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <Btn variant="primary" onClick={()=>openWeb("https://gemini.google.com/app")} style={{width:"100%",padding:"14px 12px"}}>
+          Gemini에서 이어하기
+        </Btn>
+        <Btn variant="success" onClick={()=>openWeb("https://chatgpt.com/")} style={{width:"100%",padding:"14px 12px"}}>
+          ChatGPT에서 이어하기
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { ChatScreen });
+
+</script>
+
+<script type="text/babel">
+// BackupScreen — manual device-to-device handoff using JSON files.
+
+function BackupScreen({
+  stats, tweaks, onImport,
+  supabaseConfig, session, syncStatus,
+  onSaveSupabaseConfig, onSendMagicLink, onSignOut, onPullCloud, onPushCloud
+}) {
+  const [status, setStatus] = React.useState("");
+  const [cloudForm, setCloudForm] = React.useState(() => ({
+    url:supabaseConfig?.url || "",
+    anonKey:supabaseConfig?.anonKey || "",
+    email:"",
+  }));
+  const fileRef = React.useRef(null);
+  React.useEffect(() => {
+    setCloudForm(f => ({ ...f, url:supabaseConfig?.url || "", anonKey:supabaseConfig?.anonKey || "" }));
+  }, [supabaseConfig?.url, supabaseConfig?.anonKey]);
+  const exportData = () => {
+    const payload = StorageService.exportPayload(stats, tweaks);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chinese-study-backup-${todayKey()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    setStatus("백업 파일을 만들었어요.");
+  };
+  const importFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload = JSON.parse(reader.result);
+        const studyState = payload.studyState || payload.stats || payload;
+        const nextStats = { ...makeDefaultStats(), ...studyState };
+        onImport(nextStats, payload.tweaks || null);
+        setStatus("복원 완료. 이 기기에서 이어서 학습할 수 있어요.");
+      } catch (e) {
+        setStatus("JSON 파일을 읽지 못했어요. 백업 파일인지 확인해 주세요.");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  };
+  const sample = {
+    progress:"chapterProgress / learnedKeys",
+    review:"reviewLedger / reviewQueue",
+    favorites:"favorites.words / favorites.phrases",
+    customWords:"userWords",
+    stats:"totalXP / totalAnswered / studyDays",
+  };
+  const sqlGuide = `create table if not exists public.study_snapshots (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.study_snapshots enable row level security;
+
+create policy "select own snapshot"
+on public.study_snapshots
+for select
+to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "insert own snapshot"
+on public.study_snapshots
+for insert
+to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "update own snapshot"
+on public.study_snapshots
+for update
+to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);`;
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="혼자 쓰는 최적 조합: Supabase 로그인 동기화 + localStorage 캐시 + JSON 백업">동기화 / 백업</SectionTitle>
+
+      <Card style={{marginBottom:14,border:"1.5px solid var(--accent)44"}}>
+        <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"flex-start",marginBottom:12}}>
+          <div>
+            <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>Supabase 동기화</div>
+            <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.55}}>
+              매직링크 로그인 후 현재 학습 상태를 `study_snapshots` 테이블의 `jsonb` 한 행으로 저장합니다.
+            </div>
+          </div>
+          <div style={{
+            fontSize:12,fontWeight:800,padding:"6px 9px",borderRadius:9,
+            background:session?"var(--accent-dim)":"var(--card2)",
+            color:session?"var(--accent)":"var(--sub)"
+          }}>{session ? "로그인됨" : "설정 필요"}</div>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10,marginBottom:10}}>
+          <input value={cloudForm.url} onChange={e=>setCloudForm(f=>({...f,url:e.target.value}))} placeholder="Supabase Project URL"
+            style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
+          <input value={cloudForm.anonKey} onChange={e=>setCloudForm(f=>({...f,anonKey:e.target.value}))} placeholder="Supabase anon public key"
+            style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+          <Btn variant="ghost" onClick={()=>onSaveSupabaseConfig({ url:cloudForm.url, anonKey:cloudForm.anonKey })} style={{padding:"9px 14px",fontSize:13}}>
+            설정 저장
+          </Btn>
+          <input value={cloudForm.email} onChange={e=>setCloudForm(f=>({...f,email:e.target.value}))} placeholder="매직링크 받을 이메일"
+            style={{flex:"1 1 220px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
+          <Btn variant="primary" onClick={()=>onSendMagicLink(cloudForm.email)} style={{padding:"9px 14px",fontSize:13}}>
+            매직링크 로그인
+          </Btn>
+        </div>
+
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <Btn variant="success" onClick={onPullCloud} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>클라우드에서 불러오기</Btn>
+          <Btn variant="primary" onClick={onPushCloud} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>클라우드에 저장</Btn>
+          <Btn variant="ghost" onClick={onSignOut} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>로그아웃</Btn>
+          <span style={{fontSize:12,color:"var(--sub)"}}>
+            {syncStatus || (session ? `로그인 사용자: ${session.user?.email || session.user?.id}` : "Supabase 설정 후 로그인 가능")}
+          </span>
+        </div>
+        <div style={{fontSize:11,color:"var(--sub)",marginTop:10,lineHeight:1.5}}>
+          Supabase 대시보드의 Authentication 설정에서 Site URL과 Redirect URL에 이 앱 주소를 등록해야 매직링크 로그인이 정상적으로 돌아옵니다.
+        </div>
+      </Card>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10,marginBottom:14}}>
+        <Card style={{display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{fontSize:24}}>⬇</div>
+          <div>
+            <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>백업 내보내기</div>
+            <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.5}}>진도, 오답노트, 즐겨찾기, 내 단어를 JSON 파일로 저장해요.</div>
+          </div>
+          <Btn variant="primary" onClick={exportData} style={{width:"100%",marginTop:"auto"}}>JSON 내보내기</Btn>
+        </Card>
+        <Card style={{display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{fontSize:24}}>⬆</div>
+          <div>
+            <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>백업 불러오기</div>
+            <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.5}}>다른 기기에서 만든 JSON 파일을 선택하면 현재 기기에 복원돼요.</div>
+          </div>
+          <input ref={fileRef} type="file" accept="application/json,.json" style={{display:"none"}} onChange={e=>importFile(e.target.files?.[0])}/>
+          <Btn variant="success" onClick={()=>fileRef.current?.click()} style={{width:"100%",marginTop:"auto"}}>JSON 불러오기</Btn>
+        </Card>
+      </div>
+
+      {status && (
+        <div style={{marginBottom:14,padding:"11px 13px",borderRadius:12,background:"var(--accent-dim)",color:"var(--accent)",fontSize:13,fontWeight:700}}>
+          {status}
+        </div>
+      )}
+
+      <Card>
+        <div style={{fontSize:14,fontWeight:800,marginBottom:8}}>저장 데이터 구조</div>
+        <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.65,marginBottom:12}}>
+          나중에 Supabase로 옮길 때 아래 묶음을 테이블로 분리하면 됩니다. 현재는 모두 localStorage와 백업 JSON에 보관돼요.
+        </div>
+        <pre style={{
+          whiteSpace:"pre-wrap",background:"var(--surface)",border:"1px solid var(--border)",
+          borderRadius:12,padding:14,fontSize:12,lineHeight:1.5,color:"var(--text)",overflowX:"auto",
+        }}>{JSON.stringify(sample, null, 2)}</pre>
+      </Card>
+
+      <Card style={{marginTop:14}}>
+        <div style={{fontSize:14,fontWeight:800,marginBottom:8}}>Supabase SQL</div>
+        <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.65,marginBottom:12}}>
+          SQL Editor에 아래를 한 번 실행하면 개인용 스냅샷 동기화 테이블과 RLS가 준비됩니다.
+        </div>
+        <pre style={{
+          whiteSpace:"pre-wrap",background:"var(--surface)",border:"1px solid var(--border)",
+          borderRadius:12,padding:14,fontSize:12,lineHeight:1.5,color:"var(--text)",overflowX:"auto",
+        }}>{sqlGuide}</pre>
+      </Card>
+    </div>
+  );
+}
+
+Object.assign(window, { BackupScreen });
+
+</script>
+
+<!-- APP -->
+<script type="text/babel">
+
+const TWEAK_DEFAULTS = {
+  "accent": "periwinkle",
+  "zhFont": "serif",
+  "density": "comfortable"
+};
+
+const ACCENT_OPTIONS = {
+  blue:      { accent:"#5B7EE8", bright:"#7B96EE", dim:"rgba(91,126,232,.10)"   },
+  indigo:    { accent:"#6B5FD8", bright:"#8B7EE8", dim:"rgba(107,95,216,.10)"   },
+  sky:       { accent:"#3A9ED8", bright:"#5AB4E4", dim:"rgba(58,158,216,.10)"   },
+  periwinkle:{ accent:"#7B8EE0", bright:"#9BAAE8", dim:"rgba(123,142,224,.10)"  },
+};
+
+const NAV = [
+  { id:"home",   label:"홈",    icon:"🏠" },
+  { id:"study",  label:"학습",  icon:"🎯" },
+  { id:"vocab",  label:"단어장", icon:"📖" },
+  { id:"phrase", label:"회화",  icon:"💬" },
+  { id:"review", label:"복습",  icon:"🔄" },
+  { id:"chat",   label:"AI도움", icon:"🤖" },
+  { id:"stats",  label:"통계",  icon:"📊" },
+  { id:"backup", label:"동기화", icon:"💾" },
+];
+
+function applyAccent(key) {
+  const c = ACCENT_OPTIONS[key] || ACCENT_OPTIONS.periwinkle;
+  document.documentElement.style.setProperty("--accent", c.accent);
+  document.documentElement.style.setProperty("--accent-bright", c.bright);
+  document.documentElement.style.setProperty("--accent-dim", c.dim);
+}
+
+function App() {
+  const bootstrappedUserRef = React.useRef(null);
+  const [screen, setScreen] = React.useState(() => store.get("screen","home"));
+  const [activeChapter, setActiveChapter] = React.useState(null);
+  const [tweaksOpen, setTweaksOpen] = React.useState(false);
+  const [tweaks, setTweaks] = React.useState(() => ({...TWEAK_DEFAULTS, ...store.get("tweaks", {})}));
+  const [stats, setStats] = React.useState(() => hydrateStats(store.get("stats", makeDefaultStats())));
+  const [supabaseConfig, setSupabaseConfigState] = React.useState(() => getSupabaseConfig());
+  const [supabaseClient, setSupabaseClient] = React.useState(null);
+  const [session, setSession] = React.useState(null);
+  const [syncStatus, setSyncStatus] = React.useState("로컬 저장 사용 중");
+
+  React.useEffect(() => { store.set("screen", screen); }, [screen]);
+  React.useEffect(() => { store.set("stats", stats); }, [stats]);
+  React.useEffect(() => {
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("./sw.js").catch(()=>{});
+    }
+  }, []);
+  React.useEffect(() => { applyAccent(tweaks.accent); }, [tweaks.accent]);
+  React.useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--font-zh", tweaks.zhFont==="sans" ? "'Noto Sans SC',sans-serif" : "'Noto Serif SC',serif"
+    );
+  }, [tweaks.zhFont]);
+  React.useEffect(() => {
+    const client = createSupabaseBrowserClient(supabaseConfig);
+    setSupabaseClient(client);
+    if (!client) {
+      setSession(null);
+      bootstrappedUserRef.current = null;
+      setSyncStatus("로컬 저장 사용 중");
+      return;
+    }
+    let unsub = null;
+    client.auth.getSession().then(({ data }) => {
+      setSession(data.session || null);
+      setSyncStatus(data.session ? `로그인됨: ${data.session.user?.email || "사용자"}` : "Supabase 설정 완료");
+    });
+    const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession || null);
+      setSyncStatus(nextSession ? `로그인됨: ${nextSession.user?.email || "사용자"}` : "로그아웃됨");
+    });
+    unsub = data?.subscription;
+    return () => unsub?.unsubscribe?.();
+  }, [supabaseConfig.url, supabaseConfig.anonKey]);
+  React.useEffect(() => {
+    if (!supabaseClient || !session?.user?.id) return;
+    if (bootstrappedUserRef.current === session.user.id) return;
+    bootstrappedUserRef.current = session.user.id;
+    (async () => {
+      const { data } = await pullCloudSnapshot(supabaseClient, session.user.id);
+      const remoteState = data?.data?.studyState;
+      const remoteTweaks = data?.data?.tweaks;
+      if (!remoteState) {
+        await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
+        setSyncStatus("클라우드 초기 저장 완료");
+        return;
+      }
+      const localStamp = String(stats.lastStudiedAt || "");
+      const remoteStamp = String(remoteState.lastStudiedAt || data.updated_at || "");
+      if (remoteStamp > localStamp) {
+        setStats(hydrateStats(remoteState));
+        if (remoteTweaks) setTweaks({...TWEAK_DEFAULTS, ...remoteTweaks});
+        setSyncStatus("클라우드 최신 데이터를 가져왔어요.");
+      } else {
+        await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
+        setSyncStatus("로컬 최신 데이터를 클라우드에 반영했어요.");
+      }
+    })();
+  }, [supabaseClient, session?.user?.id]);
+
+  const applyTweak = (key, val) => {
+    const next = {...tweaks, [key]:val};
+    setTweaks(next);
+    store.set("tweaks", next);
+  };
+
+  const handleStudyChapter = (ch) => {
+    setActiveChapter(ch);
+    setScreen("study");
+  };
+
+  const handleResult = (ok, word, chapterId, earned=10) => {
+    setStats(s => recordAnswer(s, ok, word, chapterId, earned));
+  };
+
+  const handleToggleWordFavorite = (word) => {
+    setStats(s => {
+      const favorites = { words:{...((s.favorites||{}).words||{})}, phrases:{...((s.favorites||{}).phrases||{})} };
+      const key = wordKey(word);
+      if (favorites.words[key]) delete favorites.words[key];
+      else favorites.words[key] = { char:word.char, chapterId:word.chapterId, savedAt:new Date().toISOString() };
+      return { ...s, favorites };
+    });
+  };
+
+  const handleTogglePhraseFavorite = (set, phrase) => {
+    setStats(s => {
+      const favorites = { words:{...((s.favorites||{}).words||{})}, phrases:{...((s.favorites||{}).phrases||{})} };
+      const key = `${set.id}:${phrase.char}`;
+      if (favorites.phrases[key]) delete favorites.phrases[key];
+      else favorites.phrases[key] = { setId:set.id, char:phrase.char, meaning:phrase.meaning, savedAt:new Date().toISOString() };
+      return { ...s, favorites };
+    });
+  };
+
+  const handleAddUserWord = (word) => {
+    setStats(s => ({ ...s, userWords:[...(s.userWords || []), word] }));
+  };
+
+  const handleImport = (nextStats, nextTweaks) => {
+    setStats(hydrateStats(nextStats));
+    if (nextTweaks) setTweaks({...TWEAK_DEFAULTS, ...nextTweaks});
+    setScreen("home");
+  };
+  const saveSupabaseRuntimeConfig = (config) => {
+    setSupabaseConfig(config);
+    setSupabaseConfigState(config);
+    setSyncStatus(config.url && config.anonKey ? "Supabase 설정 저장됨" : "로컬 저장 사용 중");
+  };
+  const sendMagicLink = async (email) => {
+    if (!supabaseClient) {
+      setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
+      return;
+    }
+    if (!String(email || "").trim()) {
+      setSyncStatus("로그인할 이메일을 입력해 주세요.");
+      return;
+    }
+    const { error } = await supabaseClient.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.href }
+    });
+    setSyncStatus(error ? `로그인 메일 전송 실패: ${error.message}` : "매직링크를 이메일로 보냈어요.");
+  };
+  const pushNow = async () => {
+    if (!supabaseClient || !session?.user?.id) {
+      setSyncStatus("로그인 후 클라우드 저장을 사용할 수 있어요.");
+      return;
+    }
+    setSyncStatus("클라우드 저장 중...");
+    const { error } = await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
+    setSyncStatus(error ? `클라우드 저장 실패: ${error.message}` : "클라우드 저장 완료");
+  };
+  const pullNow = async () => {
+    if (!supabaseClient || !session?.user?.id) {
+      setSyncStatus("로그인 후 클라우드 불러오기를 사용할 수 있어요.");
+      return;
+    }
+    setSyncStatus("클라우드 데이터 확인 중...");
+    const { data, error } = await pullCloudSnapshot(supabaseClient, session.user.id);
+    if (error) {
+      setSyncStatus(`클라우드 불러오기 실패: ${error.message}`);
+      return;
+    }
+    if (!data?.data?.studyState) {
+      setSyncStatus("클라우드에 저장된 데이터가 없어요. 현재 로컬 데이터를 기준으로 시작합니다.");
+      return;
+    }
+    setStats(hydrateStats(data.data.studyState));
+    if (data.data.tweaks) setTweaks({...TWEAK_DEFAULTS, ...data.data.tweaks});
+    setSyncStatus("클라우드 데이터 불러오기 완료");
+  };
+  const signOutCloud = async () => {
+    if (!supabaseClient) return;
+    await supabaseClient.auth.signOut();
+    setSession(null);
+    bootstrappedUserRef.current = null;
+    setSyncStatus("로그아웃됨");
+  };
+  React.useEffect(() => {
+    if (!supabaseClient || !session?.user?.id) return;
+    const timer = setTimeout(async () => {
+      await pushCloudSnapshot(supabaseClient, session.user.id, stats, tweaks);
+      setSyncStatus("자동 동기화됨");
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [stats, tweaks, session?.user?.id, supabaseClient]);
+
+  const reviewCount = getDueReviewWords(stats).length;
+
+  // Mobile nav keeps sync reachable on phones; stats moves to the sidebar-first path.
+  const MOBILE_NAV = NAV.filter(n => !["chat","stats"].includes(n.id));
+
+  return (
+    <div className="app">
+      {/* Sidebar */}
+      <nav className="sidebar">
+        <div className="logo">
+          <div className="logo-badge">学</div>
+          <div style={{marginLeft:8}}>
+            <div className="logo-name">中文학습</div>
+            <div className="logo-sub">매일 조금씩</div>
+          </div>
+        </div>
+        {NAV.map(n => (
+          <div key={n.id} className={`nav-item${screen===n.id?" active":""}`}
+            onClick={()=>setScreen(n.id)}>
+            <span className="icon">{n.icon}</span>
+            <span>{n.label}</span>
+            {n.id==="review" && reviewCount>0 &&
+              <span className="nav-badge">{reviewCount}</span>}
+          </div>
+        ))}
+        <div style={{marginTop:"auto", paddingTop:16, borderTop:"1px solid var(--border)"}}>
+          <div className="nav-item" onClick={()=>setTweaksOpen(o=>!o)}>
+            <span className="icon">⚙️</span>
+            <span style={{fontSize:12}}>테마 설정</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <main className="main" key={screen}>
+        {screen==="home"   && (
+          <HomeScreen
+            stats={stats}
+            onStudyChapter={handleStudyChapter}
+            onReview={()=>setScreen("review")}
+            onAiAssist={()=>setScreen("chat")}
+            onCloudSync={()=>setScreen("backup")}
+            session={session}
+            syncStatus={syncStatus}
+          />
+        )}
+        {screen==="study"  && <StudyScreen chapter={activeChapter||getStudyChapters(stats)[0]} stats={stats} onResult={handleResult} onBack={()=>setScreen("home")}/>}
+        {screen==="vocab"  && <VocabScreen stats={stats} onStudyChapter={handleStudyChapter} onToggleWordFavorite={handleToggleWordFavorite} onAddUserWord={handleAddUserWord}/>}
+        {screen==="phrase" && <PhraseScreen stats={stats} onTogglePhraseFavorite={handleTogglePhraseFavorite}/>}
+        {screen==="review" && <ReviewScreen stats={stats} onResult={handleResult} onBack={()=>setScreen("home")}/>}
+        {screen==="chat"   && <ChatScreen/>}
+        {screen==="stats"  && <StatsScreen stats={stats}/>}
+        {screen==="backup" && (
+          <BackupScreen
+            stats={stats}
+            tweaks={tweaks}
+            onImport={handleImport}
+            supabaseConfig={supabaseConfig}
+            session={session}
+            syncStatus={syncStatus}
+            onSaveSupabaseConfig={saveSupabaseRuntimeConfig}
+            onSendMagicLink={sendMagicLink}
+            onSignOut={signOutCloud}
+            onPullCloud={pullNow}
+            onPushCloud={pushNow}
+          />
+        )}
+      </main>
+
+      {/* Bottom nav (mobile) */}
+      <nav className="bnav">
+        <div className="bnav-inner">
+          {MOBILE_NAV.map(n => (
+            <div key={n.id} className={`bnav-item${screen===n.id?" active":""}`}
+              onClick={()=>setScreen(n.id)}>
+              <span className="icon">{n.icon}</span>
+              <span>{n.label}</span>
+              {n.id==="review" && reviewCount>0 &&
+                <span className="bnav-badge">{reviewCount}</span>}
+            </div>
+          ))}
+        </div>
+      </nav>
+
+      {/* Tweaks panel */}
+      <div className={`tweaks${tweaksOpen?" open":""}`}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <div className="tw-title" style={{margin:0}}>테마 설정</div>
+          <button onClick={()=>setTweaksOpen(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"var(--sub)"}}>✕</button>
+        </div>
+
+        <div className="tw-label">포인트 색상</div>
+        <div className="tw-row">
+          {[["blue","코발트"],["indigo","인디고"],["sky","스카이"],["periwinkle","페리윙클"]].map(([k,l])=>(
+            <button key={k} className={`tw-chip${tweaks.accent===k?" on":""}`}
+              onClick={()=>applyTweak("accent",k)}>{l}</button>
+          ))}
+        </div>
+
+        <div className="tw-label">한자 폰트</div>
+        <div className="tw-row">
+          {[["serif","명조체"],["sans","고딕체"]].map(([k,l])=>(
+            <button key={k} className={`tw-chip${tweaks.zhFont===k?" on":""}`}
+              onClick={()=>applyTweak("zhFont",k)}>{l}</button>
+          ))}
+        </div>
+
+        <div className="tw-label">학습 데이터 초기화</div>
+        <div className="tw-row">
+          <button className="tw-chip" style={{color:"var(--coral)",borderColor:"var(--coral)55"}}
+            onClick={()=>{
+              if(!confirm("정말 초기화할까요?")) return;
+              const fresh = makeDefaultStats();
+              setStats(fresh); store.set("stats",fresh);
+              setTweaksOpen(false);
+            }}>데이터 초기화</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+</script>
+</body>
+</html>

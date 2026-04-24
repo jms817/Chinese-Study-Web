@@ -1,0 +1,25 @@
+{
+  "name": "中文 학습 - 매일 조금씩",
+  "short_name": "中文학습",
+  "description": "개인용 중국어 단어, 회화, SRS 복습 학습 앱",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F2F5FC",
+  "theme_color": "#7B8EE0",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
