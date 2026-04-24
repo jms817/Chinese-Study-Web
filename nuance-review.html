@@ -318,11 +318,22 @@ function buildUI() {
     </section>
 
     <div class="toolbar">
-      <button class="btn btn-primary" id="copyBtn">결과 복사</button>
+      <button class="btn btn-primary" id="submitBtn">제출하기</button>
+      <button class="btn btn-ghost" id="copyBtn">결과 복사</button>
       <button class="btn btn-ghost" id="nameChangeBtn">이름 변경</button>
     </div>
 
     <div class="grid" id="list"></div>
+
+    <div id="submitDone" style="display:none;margin-top:20px;padding:24px;background:var(--good-dim);border:1px solid rgba(79,157,116,.3);border-radius:20px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px">✅</div>
+      <div style="font-weight:800;font-size:15px;color:var(--good);margin-bottom:6px">검수 제출 완료!</div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:16px">결과가 저장됐어요. '결과 복사' 버튼으로 내용을 복사해 Teams에 보내주세요.</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="copyBtnDone">결과 복사</button>
+        <button class="btn btn-ghost" id="editBtn">수정하기</button>
+      </div>
+    </div>
 
     <div class="footer">입력할 때마다 자동으로 저장돼요. 페이지를 닫아도 이어서 할 수 있어요.</div>
   `;
@@ -407,10 +418,36 @@ function buildUI() {
     }
   });
 
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    const pending = REVIEW_ITEMS.filter(it => !answers[it.id]?.choice);
+    if (pending.length > 0) {
+      alert(`아직 선택하지 않은 항목이 ${pending.length}개 있어요.\n모두 선택한 후 제출해 주세요.`);
+      document.getElementById("card-" + pending[0].id)?.scrollIntoView({ behavior:"smooth", block:"center" });
+      return;
+    }
+    const btn = document.getElementById("submitBtn");
+    btn.textContent = "저장 중…";
+    btn.disabled = true;
+    await Promise.all(REVIEW_ITEMS.map(item => saveAnswer(item.id)));
+    btn.textContent = "제출하기";
+    btn.disabled = false;
+    document.getElementById("submitDone").style.display = "block";
+    document.getElementById("submitDone").scrollIntoView({ behavior:"smooth", block:"center" });
+  });
+
   document.getElementById("nameChangeBtn").addEventListener("click", () => {
     localStorage.removeItem(STORE_NAME);
     reviewerName = "";
     showNameInput();
+  });
+
+  document.getElementById("copyBtnDone").addEventListener("click", () => {
+    document.getElementById("copyBtn").click();
+  });
+
+  document.getElementById("editBtn").addEventListener("click", () => {
+    document.getElementById("submitDone").style.display = "none";
+    window.scrollTo({ top: 0, behavior:"smooth" });
   });
 }
 
