@@ -7,6 +7,7 @@ Vercel로 배포하고, Supabase 매직링크 로그인 + 스냅샷 동기화로
 - 단어 학습 / 오답 복습 / SRS 우선순위
 - 상황별 회화 카드
 - 초급 회화용 핵심 문법 카드
+- 실제 상황 문장 조립 미션
 - 사용자 단어 직접 추가
 - 즐겨찾기
 - Supabase 자동 동기화
@@ -34,6 +35,11 @@ python -m http.server 8787
 2. `supabase_setup.sql` 실행
 3. Authentication > URL Configuration 설정
 4. 앱의 동기화 화면에서 로그인
+
+## 표현 최종검수 페이지
+- `nuance-review.html`
+- 회화/문법 뉘앙스만 가볍게 체크받기 위한 미니 페이지입니다.
+- 선택형 응답 + 코멘트 + JSON 저장을 지원합니다.
 
 ## 친구와 같이 쓸 수 있나?
 가능합니다.  
