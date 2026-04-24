@@ -635,7 +635,7 @@ function makeDefaultStats() {
     sessions:0, studyDays:[], todayCount:0, chapterProgress:{},
     reviewQueue:[], reviewLedger:{}, learnedKeys:{}, favorites:{words:{}, phrases:{}},
     bookmarks:{words:{}, phrases:{}}, userWords:[], totalXP:0, maxCombo:0,
-    missionProgress:{},
+    missionProgress:{}, nuanceReview:{},
     lastStudiedAt:null,
   };
 }
@@ -653,6 +653,7 @@ function hydrateStats(raw={}) {
     phrases:{...((stats.bookmarks || {}).phrases || {})},
   };
   stats.missionProgress = { ...((stats.missionProgress || {})) };
+  stats.nuanceReview = { ...((stats.nuanceReview || {})) };
   return stats;
 }
 

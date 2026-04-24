@@ -1,6 +1,8 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/index.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/nuance-review", "destination": "/nuance-review.html" },
+    { "source": "/nuance-review.html", "destination": "/nuance-review.html" }
   ],
   "headers": [
     {
