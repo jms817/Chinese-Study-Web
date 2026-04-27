@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<meta name="theme-color" content="#F2F5FC"/>
+<meta name="theme-color" content="#e8eaff"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="中文학습"/>
@@ -20,72 +20,110 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script><style>
 :root {
-  --bg:          #F2F5FC;
-  --surface:     #E8EDF9;
-  --card:        #FFFFFF;
-  --card2:       #EDF0FA;
-  --border:      #D8DFF2;
-  --accent:      #5B7EE8;
-  --accent-bright:#7B96EE;
-  --accent-dim:  rgba(91,126,232,.10);
-  --gold:        #E09040;
-  --gold-dim:    rgba(224,144,64,.12);
-  --coral:       #D9604A;
-  --coral-dim:   rgba(217,96,74,.11);
-  --text:        #1E2348;
-  --sub:         #6B7AAC;
-  --sub2:        #A4AECE;
+  --bg:          #f0f2fe;
+  --surface:     rgba(255,255,255,0.28);
+  --card:        rgba(255,255,255,0.50);
+  --card2:       rgba(255,255,255,0.32);
+  --border:      rgba(76,84,182,0.14);
+  --accent:      #4c54b6;
+  --accent-bright:#8e97fd;
+  --accent-dim:  rgba(76,84,182,0.11);
+  --gold:        #b07020;
+  --gold-dim:    rgba(176,112,32,.12);
+  --coral:       #c0392b;
+  --coral-dim:   rgba(192,57,43,.11);
+  --text:        #191c1d;
+  --sub:         #454652;
+  --sub2:        #767683;
   --font-ui:     'DM Sans', sans-serif;
   --font-zh:     'Noto Serif SC', serif;
   --font-zh-sans:'Noto Sans SC', sans-serif;
 }
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
-#root { height:100%; }
+html {
+  height:100%;
+  background-color: #eceeff;
+  background-image:
+    radial-gradient(circle at 15% 10%, #c7ccff 0%, transparent 55%),
+    radial-gradient(circle at 85% 85%, #a8dfff 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, #f0f2ff 0%, #eceeff 100%);
+}
+body { height:100%; background:transparent; color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
+#root { height:100%; position:relative; z-index:1; }
 button { font-family:var(--font-ui); }
 input  { font-family:var(--font-ui); }
 textarea { font-family:var(--font-ui); }
 button, input, textarea { -webkit-tap-highlight-color:transparent; }
 ::-webkit-scrollbar { width:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+::-webkit-scrollbar-thumb { background:rgba(76,84,182,0.2); border-radius:2px; }
 ::selection { background:var(--accent-dim); }
 
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 @keyframes blink  { 0%,100%{opacity:.3} 50%{opacity:1} }
 
+/* ── AMBIENT BLOBS ─────────────────────────── */
+#ambient-blobs {
+  position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+}
+#ambient-blobs::before {
+  content:''; position:absolute; top:-10%; left:-5%;
+  width:60%; height:60%; border-radius:50%;
+  background:rgba(142,151,253,0.30); filter:blur(70px);
+}
+#ambient-blobs::after {
+  content:''; position:absolute; bottom:-10%; right:-5%;
+  width:50%; height:50%; border-radius:50%;
+  background:rgba(100,210,255,0.25); filter:blur(60px);
+}
+
 .app {
-  display:flex; height:100dvh; min-height:100vh; overflow:hidden;
+  display:flex; height:100dvh; min-height:100vh; overflow:hidden; position:relative; z-index:1;
+}
+
+/* ── GLASS CARD ─────────────────────────────── */
+.glass-card {
+  background:rgba(255,255,255,0.48);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.72);
+  border-top-color:rgba(255,255,255,0.88);
+  border-left-color:rgba(255,255,255,0.88);
+  box-shadow:0 4px 28px rgba(76,84,182,0.10);
 }
 
 /* ── SIDEBAR ─────────────────────────────── */
 .sidebar {
   width:210px; flex-shrink:0;
-  background:var(--card);
-  border-right:1px solid var(--border);
-  box-shadow:2px 0 16px rgba(91,126,232,.06);
+  background:rgba(255,255,255,0.40);
+  backdrop-filter:blur(40px);
+  -webkit-backdrop-filter:blur(40px);
+  border-right:1px solid rgba(255,255,255,0.65);
+  box-shadow:4px 0 48px rgba(76,84,182,0.08);
   display:flex; flex-direction:column;
   padding:24px 12px 20px;
 }
 .logo {
   display:flex; align-items:center; gap:10px;
-  padding:0 8px 22px; border-bottom:1px solid var(--border); margin-bottom:10px;
+  padding:0 8px 22px; border-bottom:1px solid rgba(76,84,182,0.12); margin-bottom:10px;
 }
 .logo-badge {
-  width:36px; height:36px; border-radius:10px;
-  background:var(--accent); display:grid; place-items:center;
-  font-family:var(--font-zh); color:#0F1512; font-size:18px; font-weight:700;
+  width:36px; height:36px; border-radius:12px;
+  background:linear-gradient(135deg,#4c54b6,#8e97fd);
+  display:grid; place-items:center;
+  font-family:var(--font-zh); color:#fff; font-size:18px; font-weight:700;
+  box-shadow:0 4px 14px rgba(76,84,182,0.38);
 }
 .logo-name  { font-size:14px; font-weight:700; line-height:1.2; color:var(--text); }
-.logo-sub   { font-size:11px; color:var(--sub); }
+.logo-sub   { font-size:11px; color:var(--sub2); }
 .nav-item {
   display:flex; align-items:center; gap:10px;
-  padding:10px 12px; border-radius:10px; margin-bottom:2px;
+  padding:10px 12px; border-radius:14px; margin-bottom:2px;
   font-size:13px; font-weight:500; color:var(--sub);
   cursor:pointer; transition:all .15s; user-select:none;
 }
-.nav-item:hover  { background:var(--card); color:var(--text); }
-.nav-item.active { background:var(--accent-dim); color:var(--accent); font-weight:600; }
+.nav-item:hover  { background:rgba(255,255,255,0.45); color:var(--text); }
+.nav-item.active { background:rgba(76,84,182,0.12); color:var(--accent); font-weight:600; }
 .nav-item .icon  { font-size:17px; width:22px; text-align:center; flex-shrink:0; }
 .nav-badge {
   margin-left:auto; font-size:10px; font-weight:700;
@@ -110,10 +148,15 @@ button, input, textarea { -webkit-tap-highlight-color:transparent; }
 /* ── BOTTOM NAV ───────────────────────────── */
 .bnav {
   display:none;
-  position:fixed; bottom:0; left:0; right:0;
-  background:var(--surface); border-top:1px solid var(--border);
-  padding:8px 0 max(10px, env(safe-area-inset-bottom));
+  position:fixed; bottom:8px; left:14px; right:14px;
+  background:rgba(255,255,255,0.65);
+  backdrop-filter:blur(32px);
+  -webkit-backdrop-filter:blur(32px);
+  border:1px solid rgba(255,255,255,0.78);
+  border-radius:28px;
+  padding:8px 0 max(10px, calc(env(safe-area-inset-bottom) - 4px));
   z-index:100;
+  box-shadow:0 8px 40px rgba(76,84,182,0.16), inset 0 1px 0 rgba(255,255,255,0.9);
 }
 .bnav-inner { display:flex; justify-content:space-around; max-width:680px; margin:0 auto; }
 .bnav-item {
@@ -135,7 +178,7 @@ button, input, textarea { -webkit-tap-highlight-color:transparent; }
 @media(max-width:680px){
   .sidebar { display:none; }
   .bnav    { display:block; }
-  .main    { padding:20px 16px calc(94px + env(safe-area-inset-bottom)); max-width:none; }
+  .main    { padding:20px 16px calc(112px + env(safe-area-inset-bottom)); max-width:none; }
 }
 @media(max-width:430px){
   .bnav-item { min-width:48px; font-size:9px; }
@@ -145,10 +188,13 @@ button, input, textarea { -webkit-tap-highlight-color:transparent; }
 /* ── TWEAKS ───────────────────────────────── */
 .tweaks {
   position:fixed; bottom:90px; right:16px;
-  background:var(--card); border:1px solid var(--border);
-  border-radius:18px; padding:18px 16px;
+  background:rgba(255,255,255,0.68);
+  backdrop-filter:blur(32px);
+  -webkit-backdrop-filter:blur(32px);
+  border:1px solid rgba(255,255,255,0.78);
+  border-radius:22px; padding:18px 16px;
   width:220px; z-index:200;
-  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  box-shadow:0 16px 48px rgba(76,84,182,0.18);
   display:none;
 }
 .tweaks.open { display:block; animation:fadeUp .2s ease; }
@@ -158,12 +204,13 @@ button, input, textarea { -webkit-tap-highlight-color:transparent; }
 .tw-row   { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
 .tw-chip  {
   padding:4px 10px; border-radius:99px; font-size:12px; font-weight:500;
-  border:1.5px solid var(--border); cursor:pointer; transition:all .12s;
-  color:var(--sub); background:transparent; font-family:var(--font-ui);
+  border:1.5px solid rgba(76,84,182,0.20); cursor:pointer; transition:all .12s;
+  color:var(--sub); background:rgba(255,255,255,0.5); font-family:var(--font-ui);
 }
-.tw-chip.on { background:var(--accent); border-color:var(--accent); color:#0F1512; }
+.tw-chip.on { background:var(--accent); border-color:var(--accent); color:#fff; }
 </style></head>
 <body>
+<div id="ambient-blobs"></div>
 <div id="root"></div>
 
 <!-- DATA -->
@@ -683,6 +730,7 @@ function createSupabaseBrowserClient(config) {
         persistSession:true,
         autoRefreshToken:true,
         detectSessionInUrl:true,
+        flowType:'implicit',
       },
     });
   } catch {
@@ -1306,15 +1354,15 @@ function Chip({ label, active, onClick, color }) {
 function Btn({ children, onClick, variant="primary", style={}, disabled=false }) {
   const base = {
     display:"inline-flex", alignItems:"center", justifyContent:"center", gap:8,
-    borderRadius:13, fontSize:15, fontWeight:600, cursor:disabled?"not-allowed":"pointer",
-    border:"none", fontFamily:"var(--font-ui)", transition:"all .15s",
+    borderRadius:99, fontSize:15, fontWeight:600, cursor:disabled?"not-allowed":"pointer",
+    border:"none", fontFamily:"var(--font-ui)", transition:"all .18s",
     opacity: disabled ? .5 : 1,
   };
   const variants = {
-    primary: { background:"var(--accent)", color:"#0F1512", padding:"13px 28px" },
-    ghost:   { background:"var(--card2)", color:"var(--text)", padding:"11px 22px" },
-    danger:  { background:"var(--coral-dim)", color:"var(--coral)", padding:"11px 22px", border:"1.5px solid var(--coral)33" },
-    success: { background:"var(--accent-dim)", color:"var(--accent)", padding:"11px 22px", border:"1.5px solid var(--accent)44" },
+    primary: { background:"linear-gradient(135deg,#4c54b6,#8e97fd)", color:"#fff", padding:"13px 28px", boxShadow:"0 4px 18px rgba(76,84,182,0.32)" },
+    ghost:   { background:"rgba(255,255,255,0.45)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.65)", color:"var(--text)", padding:"11px 22px" },
+    danger:  { background:"var(--coral-dim)", color:"var(--coral)", padding:"11px 22px", border:"1.5px solid rgba(192,57,43,0.20)" },
+    success: { background:"var(--accent-dim)", color:"var(--accent)", padding:"11px 22px", border:"1.5px solid rgba(76,84,182,0.22)" },
   };
   return (
     <button onClick={disabled ? undefined : onClick}
@@ -1345,9 +1393,8 @@ function SectionTitle({ children, sub }) {
 
 function Card({ children, style={}, onClick }) {
   return (
-    <div onClick={onClick} style={{
-      background:"var(--card)", border:"1px solid var(--border)",
-      borderRadius:16, padding:18, ...style,
+    <div className="glass-card" onClick={onClick} style={{
+      borderRadius:20, padding:18, ...style,
       cursor: onClick ? "pointer" : "default",
     }}>{children}</div>
   );
@@ -3913,7 +3960,7 @@ function App() {
     }
     const { error } = await supabaseClient.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: window.location.href }
+      options: { emailRedirectTo: window.location.origin + window.location.pathname }
     });
     setSyncStatus(error ? `로그인 메일 전송 실패: ${error.message}` : "매직링크를 이메일로 보냈어요.");
     setSyncState(error ? "error" : "ready");
