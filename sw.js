@@ -1,5 +1,5 @@
-const CACHE_NAME = "zh-study-v5";
-const STATIC_CACHE = "zh-static-v5";
+const CACHE_NAME = "zh-study-v6";
+const STATIC_CACHE = "zh-static-v6";
 
 const HTML_ROUTES = ["/", "/index.html", "/nuance-review", "/nuance-review.html"];
 const STATIC_ASSETS = ["/manifest.webmanifest", "/icon.svg"];
