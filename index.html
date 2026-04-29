@@ -2229,7 +2229,7 @@ function StudyScreen({ chapter, stats, onResult, onBack }) {
         <>
           <div style={{perspective:1200,width:"100%",maxWidth:400,margin:"0 auto",height:250,cursor:answered?"default":"pointer"}}
             onClick={()=>!answered&&setFlipped(f=>!f)}>
-            <div style={{
+            <div key={`card-${idx}`} style={{
               position:"relative",width:"100%",height:"100%",
               transformStyle:"preserve-3d",transition:"transform .5s cubic-bezier(.4,0,.2,1)",
               transform:flipped?"rotateY(180deg)":"rotateY(0)",
@@ -2633,6 +2633,47 @@ Object.assign(window, { VocabScreen, UserWordForm });
 <script type="text/babel">
 // PhraseScreen — situational conversation cards
 
+// Word-by-word breakdown for a phrase sentence
+function PhraseWordBreakdown({ sentence }) {
+  const allWords = getAllWords();
+  const tokens = window.tokenizeZh ? window.tokenizeZh(sentence, allWords) : [];
+  const meaningful = tokens.filter(t => !t.isPunct && t.meaning);
+  if (!meaningful.length) return null;
+
+  return (
+    <div style={{animation:"fadeUp .25s ease",
+      background:"var(--surface)",border:"1px solid var(--border)",
+      borderRadius:14,padding:"14px 16px",marginTop:10,
+      maxWidth:420,margin:"10px auto 0"}}>
+      <div style={{fontSize:11,fontWeight:800,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:10}}>
+        단어별 뜻 조립
+      </div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"flex-start"}}>
+        {tokens.filter(t => !t.isPunct).map((tok, i) => (
+          <div key={i} style={{
+            display:"flex",flexDirection:"column",alignItems:"center",
+            background: tok.meaning ? "var(--card)" : "transparent",
+            border: tok.meaning ? "1px solid var(--border)" : "none",
+            borderRadius:10,padding: tok.meaning ? "6px 10px" : "0",
+            minWidth:36,
+          }}>
+            <span style={{fontFamily:"var(--font-zh)",fontSize:17,color:"var(--text)",fontWeight:600,lineHeight:1.3}}>{tok.text}</span>
+            {tok.meaning && (
+              <span style={{fontSize:10,color:"var(--sub)",marginTop:3,textAlign:"center",lineHeight:1.3,maxWidth:64}}>
+                {tok.meaning.length > 8 ? tok.meaning.slice(0,7)+"…" : tok.meaning}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      <div style={{marginTop:10,paddingTop:8,borderTop:"1px solid var(--border)",
+        fontSize:12,color:"var(--sub2)",lineHeight:1.5}}>
+        → {meaningful.map(t=>t.meaning).join(" + ")}
+      </div>
+    </div>
+  );
+}
+
 function PhraseScreen({ stats, onTogglePhraseFavorite }) {
   const [activeSet, setActiveSet] = React.useState(PHRASE_SETS[0]);
   const [studyMode, setStudyMode] = React.useState(false);
@@ -2673,7 +2714,7 @@ function PhraseScreen({ stats, onTogglePhraseFavorite }) {
       {/* Phrase card */}
       <div style={{perspective:1200,width:"100%",maxWidth:420,margin:"0 auto",height:230,cursor:"pointer",marginBottom:16}}
         onClick={()=>setShowBack(b=>!b)}>
-        <div style={{
+        <div key={`phrase-${idx}`} style={{
           position:"relative",width:"100%",height:"100%",
           transformStyle:"preserve-3d",
           transition:"transform .45s cubic-bezier(.4,0,.2,1)",
@@ -2719,18 +2760,23 @@ function PhraseScreen({ stats, onTogglePhraseFavorite }) {
         </Btn>
       </div>
 
-      {/* Tip */}
+      {/* Tip + Word Breakdown */}
       {showBack && (
-        <div style={{animation:"fadeUp .2s ease",
-          background:"var(--card)",border:"1px solid var(--border)",
-          borderRadius:14,padding:"12px 16px",marginTop:14,
-          maxWidth:420,margin:"14px auto 0",
-          display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:18}}>💡</span>
-          <div style={{fontSize:13,color:"var(--sub)"}}>
-            <strong style={{color:"var(--text)"}}>사용 상황:</strong> {phrase.tip}
+        <>
+          <div style={{animation:"fadeUp .2s ease",
+            background:"var(--card)",border:"1px solid var(--border)",
+            borderRadius:14,padding:"12px 16px",marginTop:14,
+            maxWidth:420,margin:"14px auto 0",
+            display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:18}}>💡</span>
+            <div style={{fontSize:13,color:"var(--sub)"}}>
+              <strong style={{color:"var(--text)"}}>사용 상황:</strong> {phrase.tip}
+            </div>
           </div>
-        </div>
+
+          {/* Word-by-word breakdown */}
+          <PhraseWordBreakdown sentence={phrase.char}/>
+        </>
       )}
     </div>
   );
@@ -3066,6 +3112,111 @@ Object.assign(window, { MissionScreen });
 <script type="text/babel">
 // GrammarScreen — compact grammar notes for practical conversation
 
+// Grammar key map: which characters to highlight for each grammar note
+const GRAMMAR_KEY_MAP = {
+  "affirmative-basic": [],
+  "negation-bu":       ["不"],
+  "negation-mei":      ["没"],
+  "questions-ma":      ["吗"],
+  "progressive-zai":   ["在","正在"],
+  "completed-le":      ["了"],
+  "experience-guo":    ["过"],
+  "future-yao-hui":    ["要","会"],
+  "compare-bijiao":    ["比较","更"],
+  "request-qing-keyi": ["请","可以"],
+  "ba-structure":      ["把"],
+  "bei-passive":       ["被"],
+  "shi-de":            ["是","的"],
+  "yue-lai-yue":       ["越来越"],
+  "yi-jiu":            ["一","就"],
+};
+
+// Greedy longest-match tokenizer against ALL_WORDS
+function tokenizeZh(text, wordList) {
+  const sorted = [...wordList].sort((a,b) => b.char.length - a.char.length);
+  const result = [];
+  let i = 0;
+  while (i < text.length) {
+    // Skip punctuation
+    if (/[，。！？、：；""''《》【】（）\s]/.test(text[i])) {
+      result.push({ text: text[i], meaning: null, isPunct: true });
+      i++; continue;
+    }
+    let matched = false;
+    for (const w of sorted) {
+      if (w.char.length > 1 && text.startsWith(w.char, i)) {
+        result.push({ text: w.char, meaning: w.meaning, isPunct: false });
+        i += w.char.length; matched = true; break;
+      }
+    }
+    if (!matched) {
+      // single char — try to find in word list
+      const single = sorted.find(w => w.char === text[i]);
+      result.push({ text: text[i], meaning: single?.meaning || null, isPunct: false });
+      i++;
+    }
+  }
+  return result;
+}
+
+// Render Chinese text with grammar keys highlighted + word tooltip
+function GrammarExampleAnnotated({ zh, py, ko, noteId }) {
+  const allWords = getAllWords();
+  const grammarKeys = GRAMMAR_KEY_MAP[noteId] || [];
+  const tokens = tokenizeZh(zh, allWords);
+  const [showWords, setShowWords] = React.useState(false);
+
+  // Check if token contains a grammar key
+  const isGrammarKey = (text) => grammarKeys.some(k => text === k || text.includes(k));
+
+  return (
+    <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:14}}>
+      {/* Chinese sentence with highlights */}
+      <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start",marginBottom:6}}>
+        <div style={{fontFamily:"var(--font-zh)",fontSize:18,lineHeight:1.6,color:"var(--text)",flexWrap:"wrap",display:"flex",alignItems:"baseline",gap:1}}>
+          {tokens.map((tok, i) => tok.isPunct ? (
+            <span key={i} style={{color:"var(--sub2)"}}>{tok.text}</span>
+          ) : isGrammarKey(tok.text) ? (
+            <span key={i} style={{
+              background:"var(--accent)",color:"#fff",borderRadius:5,
+              padding:"1px 4px",fontWeight:700,fontSize:19,margin:"0 1px",
+            }}>{tok.text}</span>
+          ) : (
+            <span key={i}>{tok.text}</span>
+          ))}
+        </div>
+        <TTSBtn text={zh}/>
+      </div>
+      <div style={{fontSize:12,color:"var(--accent)",marginBottom:4}}>{py}</div>
+      <div style={{fontSize:13,color:"var(--sub)",marginBottom:8,lineHeight:1.5}}>{ko}</div>
+
+      {/* Word breakdown toggle */}
+      <button onClick={()=>setShowWords(v=>!v)} style={{
+        fontSize:11,fontWeight:700,color:"var(--sub)",background:"var(--card2)",
+        border:"1px solid var(--border)",borderRadius:8,padding:"3px 9px",cursor:"pointer",
+        fontFamily:"var(--font-ui)",
+      }}>{showWords ? "▲ 단어 접기" : "▼ 단어 뜻 보기"}</button>
+
+      {showWords && (
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+          {tokens.filter(t=>!t.isPunct && t.meaning).map((tok,i)=>(
+            <span key={i} style={{
+              display:"inline-flex",flexDirection:"column",alignItems:"center",
+              background: isGrammarKey(tok.text) ? "var(--accent-dim)" : "var(--card)",
+              border: isGrammarKey(tok.text) ? "1.5px solid var(--accent)55" : "1px solid var(--border)",
+              borderRadius:8,padding:"4px 8px",
+            }}>
+              <span style={{fontFamily:"var(--font-zh)",fontSize:15,color: isGrammarKey(tok.text)?"var(--accent)":"var(--text)",fontWeight:isGrammarKey(tok.text)?700:400}}>{tok.text}</span>
+              <span style={{fontSize:10,color:"var(--sub)",marginTop:1}}>{tok.meaning}</span>
+              {isGrammarKey(tok.text) && <span style={{fontSize:9,color:"var(--accent)",fontWeight:700}}>★ 문법</span>}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GrammarScreen() {
   const groups = [...new Set(GRAMMAR_NOTES.map(note => note.group))];
   const [activeGroup, setActiveGroup] = React.useState(groups[0]);
@@ -3084,7 +3235,7 @@ function GrammarScreen() {
       <Card style={{marginBottom:14,border:"1.5px solid var(--accent)22"}}>
         <div style={{fontSize:14,fontWeight:800,color:"var(--text)",marginBottom:6}}>이 문법 화면은 이렇게 보면 편해요</div>
         <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.6}}>
-          길게 외우기보다 `패턴 한 줄 + 예문 두 개`만 먼저 익히세요. 바로 말해볼 수 있는 문장 위주로 구성했습니다.
+          예문의 <span style={{background:"var(--accent)",color:"#fff",borderRadius:4,padding:"1px 5px",fontWeight:700,fontFamily:"var(--font-zh)"}}>파란 배경</span>이 핵심 문법 단어예요. ▼ 단어 뜻 보기로 각 단어의 의미도 확인하세요.
         </div>
       </Card>
 
@@ -3116,23 +3267,18 @@ function GrammarScreen() {
                 <div style={{fontSize:12,fontWeight:800,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:4}}>{active.group}</div>
                 <div style={{fontSize:22,fontWeight:800,color:"var(--text)",lineHeight:1.25}}>{active.title}</div>
               </div>
-              <div style={{fontSize:12,fontWeight:800,color:"var(--accent)",background:"var(--accent-dim)",padding:"5px 9px",borderRadius:8}}>
+              <div style={{fontSize:12,fontWeight:800,color:"var(--accent)",background:"var(--accent-dim)",padding:"5px 9px",borderRadius:8,maxWidth:160,textAlign:"center",lineHeight:1.4}}>
                 {active.pattern}
               </div>
             </div>
 
             <div style={{fontSize:14,color:"var(--text)",lineHeight:1.7,marginBottom:14}}>{active.summary}</div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+            {/* Examples with annotation */}
+            <div style={{fontSize:12,fontWeight:800,color:"var(--sub)",letterSpacing:".06em",textTransform:"uppercase",marginBottom:8}}>예문</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
               {active.examples.map((example, index) => (
-                <div key={index} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:14}}>
-                  <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start"}}>
-                    <div style={{fontFamily:"var(--font-zh)",fontSize:18,lineHeight:1.5,color:"var(--text)"}}>{example.zh}</div>
-                    <TTSBtn text={example.zh}/>
-                  </div>
-                  <div style={{fontSize:12,color:"var(--accent)",marginTop:5}}>{example.py}</div>
-                  <div style={{fontSize:13,color:"var(--sub)",marginTop:4,lineHeight:1.5}}>{example.ko}</div>
-                </div>
+                <GrammarExampleAnnotated key={`${active.id}-${index}`} zh={example.zh} py={example.py} ko={example.ko} noteId={active.id}/>
               ))}
             </div>
 
@@ -3158,7 +3304,225 @@ function GrammarScreen() {
   );
 }
 
-Object.assign(window, { GrammarScreen });
+Object.assign(window, { GrammarScreen, tokenizeZh });
+
+</script>
+
+<script type="text/babel">
+// CommuteScreen — 퇴근길 핸즈프리 듣기 모드
+
+function CommuteScreen({ stats }) {
+  const allWords = React.useMemo(() => getAllWords(stats), []);
+  const allPhrases = React.useMemo(() =>
+    PHRASE_SETS.flatMap(s => s.phrases.map(p => ({
+      type:"phrase", char:p.char, pinyin:p.pinyin, meaning:p.meaning, hint:p.tip, setTitle:s.title, setEmoji:s.emoji,
+    }))), []);
+  const allWordItems = React.useMemo(() =>
+    allWords.map(w => ({
+      type:"word", char:w.char, pinyin:w.pinyin, meaning:w.meaning, hint:w.chapterTitle, setTitle:w.chapterTitle, setEmoji:w.chapterEmoji||"📖",
+    })), [allWords]);
+
+  const [filterType, setFilterType] = React.useState("all"); // all | word | phrase
+  const [speed, setSpeed] = React.useState(1.0);
+  const [playing, setPlaying] = React.useState(false);
+  const [idx, setIdx] = React.useState(0);
+  const [phase, setPhase] = React.useState("idle"); // idle | zh | pause | done
+  const timerRef = React.useRef(null);
+  const synthRef = React.useRef(window.speechSynthesis);
+
+  const playlist = React.useMemo(() => {
+    let pool = filterType === "word" ? allWordItems
+             : filterType === "phrase" ? allPhrases
+             : shuffleArray([...allWordItems, ...allPhrases]);
+    return filterType === "all" ? pool : shuffleArray(pool);
+  }, [filterType, allWordItems, allPhrases]);
+
+  const current = playlist[idx] || null;
+
+  const clearTimer = () => { if (timerRef.current) clearTimeout(timerRef.current); };
+
+  const pauseAfterZh  = () => ({ 0.7: 2800, 1.0: 2200, 1.5: 1400 })[speed] || 2200;
+  const pauseAfterKo  = () => ({ 0.7: 3200, 1.0: 2600, 1.5: 1600 })[speed] || 2600;
+
+  const speakItem = React.useCallback((item) => {
+    if (!item || !synthRef.current) return;
+    synthRef.current.cancel();
+    clearTimer();
+
+    setPhase("zh");
+    const uZh = new SpeechSynthesisUtterance(item.char);
+    uZh.lang = "zh-CN";
+    uZh.rate = speed;
+    uZh.onend = () => {
+      setPhase("pause");
+      timerRef.current = setTimeout(() => {
+        setPhase("done");
+        timerRef.current = setTimeout(() => {
+          setIdx(i => (i + 1) % playlist.length);
+        }, pauseAfterKo());
+      }, pauseAfterZh());
+    };
+    synthRef.current.speak(uZh);
+  }, [speed, playlist.length]);
+
+  // Start/stop playback
+  React.useEffect(() => {
+    if (playing && current) {
+      speakItem(current);
+    } else if (!playing) {
+      synthRef.current.cancel();
+      clearTimer();
+      setPhase("idle");
+    }
+    return clearTimer;
+  }, [idx, playing]);
+
+  // Cleanup on unmount
+  React.useEffect(() => () => { synthRef.current.cancel(); clearTimer(); }, []);
+
+  const handlePlayPause = () => setPlaying(p => !p);
+  const handleNext = () => { clearTimer(); synthRef.current.cancel(); setIdx(i=>(i+1)%playlist.length); };
+  const handlePrev = () => { clearTimer(); synthRef.current.cancel(); setIdx(i=>(i-1+playlist.length)%playlist.length); };
+
+  const phaseLabel = { idle:"재생 버튼을 눌러 시작하세요", zh:"🔊 중국어 듣는 중…", pause:"⏸ 뜻 확인", done:"✓ 다음으로 이동 중…" };
+  const progress = playlist.length > 0 ? ((idx / playlist.length) * 100).toFixed(1) : 0;
+
+  const speedOptions = [
+    { v:0.7, label:"느리게" },
+    { v:1.0, label:"보통" },
+    { v:1.5, label:"빠르게" },
+  ];
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="화면 안 봐도 OK — 중국어 → 뜻 순서로 자동 재생돼요">🎧 퇴근길 듣기</SectionTitle>
+
+      {/* Filter + Speed */}
+      <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
+        <div style={{display:"flex",gap:6,background:"var(--card2)",padding:4,borderRadius:12}}>
+          {[["all","🔀 섞기"],["word","📖 단어"],["phrase","💬 회화"]].map(([v,l])=>(
+            <button key={v} onClick={()=>{setFilterType(v);setIdx(0);setPlaying(false);}} style={{
+              padding:"7px 12px",borderRadius:9,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
+              background:filterType===v?"var(--card)":"transparent",
+              color:filterType===v?"var(--accent)":"var(--sub)",fontFamily:"var(--font-ui)",
+              boxShadow:filterType===v?"0 1px 6px rgba(0,0,0,.06)":"none",transition:"all .15s",
+            }}>{l}</button>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:6,background:"var(--card2)",padding:4,borderRadius:12,marginLeft:"auto"}}>
+          {speedOptions.map(s=>(
+            <button key={s.v} onClick={()=>setSpeed(s.v)} style={{
+              padding:"7px 10px",borderRadius:9,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",
+              background:speed===s.v?"var(--card)":"transparent",
+              color:speed===s.v?"var(--accent)":"var(--sub)",fontFamily:"var(--font-ui)",
+              boxShadow:speed===s.v?"0 1px 6px rgba(0,0,0,.06)":"none",transition:"all .15s",
+            }}>{s.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{height:4,background:"var(--border)",borderRadius:99,marginBottom:18,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${progress}%`,background:"var(--accent)",borderRadius:99,transition:"width .4s"}}/>
+      </div>
+
+      {/* Main card */}
+      {current && (
+        <div style={{
+          background:"var(--card)",border:"1.5px solid var(--border-glass)",
+          borderRadius:32,padding:"32px 28px",textAlign:"center",
+          boxShadow:"var(--shadow-lift)",marginBottom:20,
+          minHeight:240,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,
+          position:"relative",
+        }}>
+          {/* Type badge */}
+          <div style={{position:"absolute",top:14,left:16,
+            fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,
+            background: current.type==="phrase" ? "var(--gold-dim)" : "var(--accent-dim)",
+            color: current.type==="phrase" ? "var(--gold)" : "var(--accent)",
+          }}>{current.type==="phrase"?"💬 회화":"📖 단어"} · {current.setTitle || ""}</div>
+
+          {/* Phase indicator */}
+          <div style={{
+            fontSize:12,fontWeight:700,letterSpacing:".04em",
+            color: phase==="zh"?"var(--accent)":phase==="done"?"#72B882":"var(--sub)",
+            minHeight:18,transition:"color .2s",
+          }}>{phaseLabel[phase]}</div>
+
+          {/* Chinese */}
+          <div style={{
+            fontFamily:"var(--font-zh)",
+            fontSize: current.char.length <= 4 ? 72 : current.char.length <= 8 ? 48 : 32,
+            color:"var(--text)",lineHeight:1.2,fontWeight:600,
+            textShadow: phase==="zh"?"0 0 32px rgba(79,85,174,0.25)":"none",
+            transition:"text-shadow .3s",
+          }}>{current.char}</div>
+
+          {/* Pinyin */}
+          <div style={{fontSize:16,color:"var(--accent)",fontWeight:500,letterSpacing:".02em"}}>{current.pinyin}</div>
+
+          {/* Meaning — revealed after zh phase */}
+          <div style={{
+            fontSize:20,fontWeight:700,color:"var(--text)",
+            opacity: phase==="done"||phase==="idle" ? 1 : 0.15,
+            transition:"opacity .5s",
+            padding:"8px 16px",borderRadius:12,
+            background: phase==="done" ? "var(--accent-dim)" : "transparent",
+          }}>{current.meaning}</div>
+
+          {/* Hint */}
+          {current.hint && (
+            <div style={{fontSize:12,color:"var(--sub2)",fontStyle:"italic"}}>{current.hint}</div>
+          )}
+
+          {/* Index */}
+          <div style={{position:"absolute",bottom:14,right:16,fontSize:11,color:"var(--sub2)"}}>
+            {idx+1} / {playlist.length}
+          </div>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div style={{display:"flex",gap:12,justifyContent:"center",alignItems:"center",marginBottom:20}}>
+        <button onClick={handlePrev} style={{
+          width:48,height:48,borderRadius:"50%",border:"1.5px solid var(--border)",
+          background:"var(--card)",cursor:"pointer",fontSize:18,color:"var(--sub)",
+          display:"grid",placeItems:"center",fontFamily:"var(--font-ui)",
+        }}>⏮</button>
+        <button onClick={handlePlayPause} style={{
+          width:72,height:72,borderRadius:"50%",border:"none",cursor:"pointer",
+          background: playing ? "var(--accent)" : "var(--accent-dim)",
+          color: playing ? "#fff" : "var(--accent)",
+          fontSize:28,display:"grid",placeItems:"center",
+          boxShadow: playing ? "0 4px 24px rgba(79,85,174,0.35)" : "none",
+          transition:"all .2s",
+        }}>{playing ? "⏸" : "▶"}</button>
+        <button onClick={handleNext} style={{
+          width:48,height:48,borderRadius:"50%",border:"1.5px solid var(--border)",
+          background:"var(--card)",cursor:"pointer",fontSize:18,color:"var(--sub)",
+          display:"grid",placeItems:"center",fontFamily:"var(--font-ui)",
+        }}>⏭</button>
+      </div>
+
+      {/* Guide */}
+      <Card style={{background:"var(--card2)",border:"none"}}>
+        <div style={{fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:8}}>이렇게 사용하세요 👟</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {[
+            "▶ 누르면 자동 재생 — 화면 안 봐도 됩니다",
+            "중국어 → 잠시 멈춤 → 뜻 공개 → 다음 순서로 진행돼요",
+            "속도·종류(단어/회화/섞기)는 위에서 언제든 바꿀 수 있어요",
+            "이어폰 꽂고 잠금 화면 상태에서도 재생됩니다",
+          ].map((t,i)=>(
+            <div key={i} style={{fontSize:12,color:"var(--sub)",lineHeight:1.6}}>• {t}</div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+Object.assign(window, { CommuteScreen });
 
 </script>
 
@@ -4189,17 +4553,18 @@ const ACCENT_OPTIONS = {
 };
 
 const NAV = [
-  { id:"home",   label:"홈",    icon:"🏠" },
-  { id:"study",  label:"학습",  icon:"🎯" },
-  { id:"mission", label:"미션", icon:"🧭" },
-  { id:"vocab",  label:"단어장", icon:"📖" },
-  { id:"phrase", label:"회화",  icon:"💬" },
-  { id:"grammar", label:"문법", icon:"🧩" },
-  { id:"review", label:"복습",  icon:"🔄" },
+  { id:"home",    label:"홈",     icon:"🏠" },
+  { id:"study",   label:"학습",   icon:"🎯" },
+  { id:"mission", label:"미션",   icon:"🧭" },
+  { id:"vocab",   label:"단어장", icon:"📖" },
+  { id:"phrase",  label:"회화",   icon:"💬" },
+  { id:"grammar", label:"문법",   icon:"🧩" },
+  { id:"commute", label:"퇴근길", icon:"🎧" },
+  { id:"review",  label:"복습",   icon:"🔄" },
   { id:"chat",    label:"AI도움", icon:"🤖" },
-  { id:"stats",   label:"통계",  icon:"📊" },
+  { id:"stats",   label:"통계",   icon:"📊" },
   { id:"backup",  label:"동기화", icon:"💾" },
-  { id:"inspect", label:"검수",  icon:"🔍" },
+  { id:"inspect", label:"검수",   icon:"🔍" },
 ];
 
 function applyAccent(key) {
@@ -4537,6 +4902,7 @@ function App() {
         {screen==="vocab"  && <VocabScreen stats={stats} onStudyChapter={handleStudyChapter} onToggleWordFavorite={handleToggleWordFavorite} onAddUserWord={handleAddUserWord}/>}
         {screen==="phrase" && <PhraseScreen stats={stats} onTogglePhraseFavorite={handleTogglePhraseFavorite}/>}
         {screen==="grammar" && <GrammarScreen/>}
+        {screen==="commute" && <CommuteScreen stats={stats}/>}
         {screen==="review" && <ReviewScreen stats={stats} onResult={handleResult} onBack={()=>setScreen("home")}/>}
         {screen==="chat"   && <ChatScreen/>}
         {screen==="stats"  && <StatsScreen stats={stats}/>}
