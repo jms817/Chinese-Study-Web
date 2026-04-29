@@ -1990,10 +1990,9 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
   const topBrand = (
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,marginBottom:mode==="desktop"?18:20}}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{fontSize:18,fontFamily:"var(--font-zh)",fontWeight:700}}>靜</div>
-        <div>
-          <div style={{fontSize:mode==="mobile"?17:20,fontWeight:800,letterSpacing:"0.04em",fontFamily:"var(--font-zh)"}}>靜習</div>
-          {mode!=="mobile" && <div style={{fontSize:10,color:"var(--sub2)",letterSpacing:"0.16em",fontFamily:"var(--font-ui)",marginTop:2}}>CHINESE STUDY</div>}
+        <div style={{display:"flex",flexDirection:"column",justifyContent:"center",lineHeight:1}}>
+          <div style={{fontSize:mode==="mobile"?18:22,fontWeight:800,letterSpacing:"0.03em",fontFamily:"var(--font-zh)",lineHeight:1}}>靜習</div>
+          {mode!=="mobile" && <div style={{fontSize:10,color:"var(--sub2)",letterSpacing:"0.16em",fontFamily:"var(--font-ui)",marginTop:6,lineHeight:1}}>CHINESE STUDY</div>}
         </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
