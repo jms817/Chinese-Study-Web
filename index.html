@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#fdf9f6"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="THE FLOW & FOCUS"/>
+<meta name="apple-mobile-web-app-title" content="靜習"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<title>THE FLOW & FOCUS</title>
+<title>靜習 - 중국어 수련장</title>
 <link rel="manifest" href="./manifest.webmanifest"/>
 <link rel="icon" type="image/svg+xml" href="./icon.svg"/>
 <link rel="apple-touch-icon" href="./icon.svg"/>
@@ -289,8 +289,8 @@ input:focus, textarea:focus, select:focus {
   transition:all .16s ease;
 }
 .hub-tool:hover { transform:translateY(-1px); box-shadow:inset 1px 1px 0 rgba(255,255,255,0.5), 0 10px 24px rgba(0,0,0,0.05); }
-.hub-tool .icon { font-size:18px; }
-.hub-tool .label { font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; font-family:var(--font-ui); }
+.hub-tool .icon { font-size:22px; font-family:var(--font-zh); line-height:1; }
+.hub-tool .label { font-size:13px; font-weight:800; letter-spacing:0; text-transform:none; font-family:var(--font-body); }
 .hub-tool .desc { font-size:11px; color:var(--sub2); line-height:1.35; text-transform:none; text-align:center; }
 @media(max-width:760px){
   .hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -1901,9 +1901,12 @@ function EmptyState({ icon, title, sub }) {
 
 function SectionTitle({ children, sub }) {
   return (
-    <div style={{marginBottom:16}}>
-      <div style={{fontSize:19, fontWeight:700, color:"var(--text)"}}>{children}</div>
-      {sub && <div style={{fontSize:13, color:"var(--sub)", marginTop:3}}>{sub}</div>}
+    <div style={{marginBottom:18}}>
+      <div style={{fontSize:10, fontWeight:800, color:"rgba(166,93,80,0.72)", letterSpacing:"0.22em", fontFamily:"var(--font-ui)", marginBottom:6}}>
+        靜習
+      </div>
+      <div style={{fontSize:24, fontWeight:800, color:"var(--text)", letterSpacing:"0", lineHeight:1.2}}>{children}</div>
+      {sub && <div style={{fontSize:13, color:"var(--sub)", marginTop:6, lineHeight:1.6, maxWidth:680}}>{sub}</div>}
     </div>
   );
 }
@@ -1946,31 +1949,52 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
   }, []);
 
   const mode = viewport < 760 ? "mobile" : viewport < 1280 ? "tablet" : "desktop";
-  const focusPool = [
-    { char:"静", word:"静", pinyin:"Jìng", meaning:"고요", english:"Stillness", seal:"静", chips:["QUIET","CENTER"], note:"고요한 속에서 언어는 더 깊게 남습니다." },
-    { char:"流", word:"流", pinyin:"Liú", meaning:"흐름", english:"Flow", seal:"印", chips:["WATER","MOTION"], note:"흐름을 타듯 학습하면, 온전한 몰입이 시작됩니다." },
-    { char:"永", word:"永", pinyin:"Yǒng", meaning:"영원", english:"Eternity", seal:"和", chips:["BREATH","PACE"], note:"짧은 반복도 오래 남는 리듬이 됩니다." },
-  ];
-  const focus = focusPool[new Date().getDate() % focusPool.length];
+  const nextChapterProgress = nextChapter ? ((stats.chapterProgress || {})[nextChapter.id] || 0) : 0;
+  const nextRemaining = nextChapter ? Math.max(nextChapter.words.length - nextChapterProgress, 0) : 0;
+  const nextWord = nextChapter?.words?.[nextChapterProgress] || nextChapter?.words?.[0];
+  const focusWord = reviewWords[0] || nextWord || allWords[new Date().getDate() % Math.max(allWords.length, 1)] || {
+    char:"学", pinyin:"Xué", meaning:"배우다", example:"我学习中文。", exMeaning:"나는 중국어를 공부해요.", tags:["기본"]
+  };
+  const focusTags = (focusWord.tags || []).slice(0, 2);
+  const focus = {
+    char: focusWord.char,
+    word: focusWord.char,
+    pinyin: focusWord.pinyin || "",
+    meaning: focusWord.meaning || "오늘의 단어",
+    english: reviewCount ? "Review" : "Learn",
+    seal: focusWord.char?.[0] || "学",
+    chips: focusTags.length ? focusTags : [reviewCount ? "복습" : "학습", nextChapter?.title || "중국어"],
+    note: reviewCount
+      ? `기억이 흐려지기 전에 ${reviewCount}개를 다시 붙잡아 둘 시간이에요.`
+      : `${nextChapter?.title || "기본"}에서 이어 배울 차례예요. 한 단어씩 천천히 쌓아가요.`,
+    example: focusWord.example || "",
+    exMeaning: focusWord.exMeaning || "",
+  };
   const syncLabel = session ? (syncState==="syncing" ? "SYNCING" : syncState==="error" ? "CHECK" : "SYNCED") : "LOCAL";
-  const studyClock = `${String((stats.todayCount || 24)).padStart(2,"0")}:${String((stats.sessions || 15)).padStart(2,"0")}`;
+  const studyClock = `${stats.todayCount || 0}문항 · ${xp}XP`;
+  const primaryAction = reviewCount
+    ? { label:`복습 ${reviewCount}개 시작`, run:onReview }
+    : { label:"오늘 학습 시작", run:()=>onStudyChapter(nextChapter) };
   const orbitCards = [
-    { title:"사전", sub:`${reviewCount}개 복습`, helper:"어문 첫 번째를 탐구하기" },
-    { title:"캔버스", sub:`${nextMission.title}`, helper:"새로운 문장 떠올리기" },
-    { title:"기록들", sub:`${pct}%`, helper:"지금의 몰입을 저장" },
+    { title:"복습", sub:reviewCount ? `${reviewCount}개 대기` : "맑음", helper:"잊기 전에 다시 보기" },
+    { title:"미션", sub:`${nextMission.title}`, helper:"문장으로 써먹기" },
+    { title:"기록", sub:`${pct}%`, helper:`${learned}/${totalWords} 단어 저장` },
   ];
   const tabletAgenda = [
-    { time:"09:00 - 10:30", title:"고요한 필사", desc:`${nextChapter.title} 중심 학습` },
-    { time:"13:00 - 14:00", title:"흐름 복습", desc:`오답 ${reviewCount}개 다시 보기` },
-    { time:"16:00 - 17:00", title:"마음 챙김", desc:`${nextMission.title} 조립하기` },
+    { time:"1", title:"오늘의 단어", desc:`${focus.char} · ${focus.meaning}` },
+    { time:"2", title:"복습", desc:reviewCount ? `${reviewCount}개가 기다리고 있어요` : "지금은 밀린 복습이 없어요" },
+    { time:"3", title:"미션", desc:`${nextMission.title}로 문장 감각 만들기` },
   ];
   const zenImage = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 500'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop stop-color='%23454444'/%3E%3Cstop offset='1' stop-color='%23191919'/%3E%3C/linearGradient%3E%3CradialGradient id='m' cx='50%25' cy='18%25' r='18%25'%3E%3Cstop stop-color='%23f8f6f1' stop-opacity='0.95'/%3E%3Cstop offset='1' stop-color='%23f8f6f1' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='800' height='500' fill='url(%23g)'/%3E%3Crect width='800' height='500' fill='url(%23m)'/%3E%3Cg stroke='%23878787' stroke-opacity='0.24' fill='none'%3E%3Cpath d='M0 390 C120 250 220 250 320 390'/%3E%3Cpath d='M90 390 C190 260 290 260 390 390'/%3E%3Cpath d='M410 390 C510 260 610 260 710 390'/%3E%3Cpath d='M500 390 C600 250 700 250 800 390'/%3E%3C/g%3E%3Cg stroke='%23d6d3ce' stroke-opacity='0.32'%3E%3Cline x1='120' y1='40' x2='120' y2='340'/%3E%3Cline x1='680' y1='40' x2='680' y2='340'/%3E%3C/g%3E%3Cg fill='%23252525'%3E%3Crect x='335' y='200' width='130' height='12' rx='6'/%3E%3Crect x='320' y='240' width='160' height='12' rx='6'/%3E%3Crect x='300' y='280' width='200' height='12' rx='6'/%3E%3Crect x='275' y='325' width='250' height='14' rx='7'/%3E%3C/g%3E%3Cg fill='%23bfb9b0' fill-opacity='0.15'%3E%3Cellipse cx='400' cy='370' rx='220' ry='50'/%3E%3C/g%3E%3C/svg%3E\")";
 
   const topBrand = (
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,marginBottom:mode==="desktop"?18:20}}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{fontSize:16}}>📖</div>
-        <div style={{fontSize:mode==="mobile"?15:18,fontWeight:800,letterSpacing:"0.08em",fontFamily:"var(--font-ui)"}}>THE FLOW & FOCUS</div>
+        <div style={{fontSize:18,fontFamily:"var(--font-zh)",fontWeight:700}}>靜</div>
+        <div>
+          <div style={{fontSize:mode==="mobile"?17:20,fontWeight:800,letterSpacing:"0.04em",fontFamily:"var(--font-zh)"}}>靜習</div>
+          {mode!=="mobile" && <div style={{fontSize:10,color:"var(--sub2)",letterSpacing:"0.16em",fontFamily:"var(--font-ui)",marginTop:2}}>CHINESE STUDY</div>}
+        </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
         {mode!=="mobile" && (
@@ -2001,32 +2025,32 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
           <div style={{position:"absolute",top:40,left:170,right:170,bottom:80,opacity:.16,background:
             "radial-gradient(circle at 12% 18%, rgba(60,60,60,0.18) 0 2px, transparent 2px), linear-gradient(115deg, transparent 0 18%, rgba(70,70,70,0.16) 20%, transparent 34%), linear-gradient(65deg, transparent 0 28%, rgba(80,80,80,0.12) 34%, transparent 46%), linear-gradient(120deg, transparent 0 55%, rgba(90,90,90,0.10) 60%, transparent 70%)", backgroundSize:"22px 22px, 100% 100%, 100% 100%, 100% 100%", filter:"blur(1px)"}}/>
 
-          <div style={{position:"absolute",left:86,top:126,width:154,height:154,borderRadius:"50%",background:"rgba(255,255,255,0.30)",border:"1px solid rgba(255,255,255,0.56)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",backdropFilter:"blur(22px)"}}>
+          <div onClick={onReview} style={{position:"absolute",left:86,top:126,width:154,height:154,borderRadius:"50%",background:"rgba(255,255,255,0.30)",border:"1px solid rgba(255,255,255,0.56)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",backdropFilter:"blur(22px)",cursor:"pointer"}}>
             <div style={{fontSize:16,marginBottom:8}}>📖</div>
             <div style={{fontSize:28,fontFamily:"var(--font-zh)",lineHeight:1,color:"rgba(28,27,26,0.22)",marginBottom:8}}>文</div>
-            <div style={{fontSize:18,fontWeight:700}}>사전</div>
+            <div style={{fontSize:18,fontWeight:700}}>{orbitCards[0].title}</div>
             <div style={{fontSize:12,color:"var(--sub)",marginTop:6}}>{orbitCards[0].sub}</div>
             <div style={{fontSize:11,color:"var(--sub2)",marginTop:4}}>{orbitCards[0].helper}</div>
           </div>
 
-          <div style={{position:"absolute",right:180,top:128,width:164,height:164,borderRadius:"50%",background:"rgba(255,255,255,0.30)",border:"1px solid rgba(255,255,255,0.56)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",backdropFilter:"blur(22px)"}}>
+          <div onClick={onMission} style={{position:"absolute",right:180,top:128,width:164,height:164,borderRadius:"50%",background:"rgba(255,255,255,0.30)",border:"1px solid rgba(255,255,255,0.56)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",backdropFilter:"blur(22px)",cursor:"pointer"}}>
             <div style={{fontSize:16,marginBottom:8}}>✎</div>
             <div style={{fontSize:28,fontFamily:"var(--font-zh)",lineHeight:1,color:"rgba(28,27,26,0.22)",marginBottom:8}}>人</div>
-            <div style={{fontSize:18,fontWeight:700}}>캔버스</div>
+            <div style={{fontSize:18,fontWeight:700}}>{orbitCards[1].title}</div>
             <div style={{fontSize:12,color:"var(--sub)",marginTop:6}}>{orbitCards[1].sub}</div>
             <div style={{fontSize:11,color:"var(--sub2)",marginTop:4}}>{orbitCards[1].helper}</div>
           </div>
 
-          <div style={{position:"absolute",left:162,bottom:170,width:148,height:148,borderRadius:"50%",background:"rgba(255,255,255,0.28)",border:"1px solid rgba(255,255,255,0.54)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",backdropFilter:"blur(22px)"}}>
+          <div onClick={onCloudSync} style={{position:"absolute",left:162,bottom:170,width:148,height:148,borderRadius:"50%",background:"rgba(255,255,255,0.28)",border:"1px solid rgba(255,255,255,0.54)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",backdropFilter:"blur(22px)",cursor:"pointer"}}>
             <div style={{fontSize:16,marginBottom:8}}>🗂</div>
-            <div style={{fontSize:18,fontWeight:700}}>기록들</div>
+            <div style={{fontSize:18,fontWeight:700}}>{orbitCards[2].title}</div>
             <div style={{fontSize:36,fontWeight:800,lineHeight:1,marginTop:6}}>{pct}%</div>
             <div style={{fontSize:11,color:"var(--sub2)",marginTop:6}}>{orbitCards[2].helper}</div>
           </div>
 
           <div style={{position:"absolute",right:90,top:142,bottom:170,width:60,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:18}}>
             <div style={{width:1,height:170,background:"linear-gradient(180deg, transparent, rgba(28,27,26,0.42), transparent)"}}/>
-            <div style={{writingMode:"vertical-rl",fontSize:13,color:"var(--sub2)",letterSpacing:"0.1em"}}>단계 04 / 12</div>
+            <div style={{writingMode:"vertical-rl",fontSize:13,color:"var(--sub2)",letterSpacing:"0.1em"}}>단계 {nextChapter?.num || 1} / {chapters.length}</div>
           </div>
 
           <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-48%)",textAlign:"center"}}>
@@ -2035,6 +2059,21 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
             <div style={{fontSize:22,color:"var(--sub)",marginTop:12}}>{focus.pinyin}</div>
             <div style={{fontSize:48,fontWeight:800,letterSpacing:"-0.03em",marginTop:4}}>{focus.meaning}</div>
             <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginTop:18,width:60,height:60,borderRadius:18,background:"rgba(106,21,18,0.96)",color:"#fff",fontFamily:"var(--font-zh)",fontSize:32,boxShadow:"0 18px 40px rgba(106,21,18,0.18)"}}>{focus.seal}</div>
+            {focus.example && (
+              <div style={{margin:"18px auto 0",maxWidth:420,fontSize:14,lineHeight:1.7,color:"var(--sub)"}}>
+                <span style={{fontFamily:"var(--font-zh)",color:"var(--text)"}}>{focus.example}</span>
+                <span style={{display:"block",fontSize:12,color:"var(--sub2)",marginTop:2}}>{focus.exMeaning}</span>
+              </div>
+            )}
+            <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,marginTop:22,flexWrap:"wrap"}}>
+              <button onClick={primaryAction.run} style={{padding:"14px 22px",borderRadius:999,border:"none",background:"var(--accent)",color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"var(--font-ui)"}}>
+                {primaryAction.label}
+              </button>
+              <button onClick={onMission} style={{padding:"13px 18px",borderRadius:999,border:"1px solid rgba(28,27,26,0.08)",background:"rgba(255,255,255,0.58)",color:"var(--text)",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"var(--font-ui)"}}>
+                미션 열기
+              </button>
+              <TTSBtn text={focus.word}/>
+            </div>
           </div>
 
           <div style={{position:"absolute",left:24,bottom:30,padding:"9px 14px",borderRadius:999,background:"rgba(255,255,255,0.46)",border:"1px solid rgba(255,255,255,0.58)",fontSize:12,color:"var(--sub)"}}>
@@ -2061,8 +2100,8 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
                 </div>
               ))}
             </div>
-            <Btn variant="primary" onClick={()=>onStudyChapter(nextChapter)} style={{marginTop:"auto",width:"100%",background:"var(--accent)",boxShadow:"none",borderRadius:999}}>
-              ↳ 새로운 기록 시작
+            <Btn variant="primary" onClick={primaryAction.run} style={{marginTop:"auto",width:"100%",background:"var(--accent)",boxShadow:"none",borderRadius:999}}>
+              {primaryAction.label}
             </Btn>
           </Card>
 
@@ -2074,7 +2113,7 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
               textAlign:"center",position:"relative",overflow:"hidden"
             }}>
               <div style={{position:"absolute",inset:0,opacity:.10,background:"linear-gradient(115deg, transparent 8%, rgba(60,60,60,0.20) 24%, transparent 42%), linear-gradient(65deg, transparent 10%, rgba(70,70,70,0.12) 34%, transparent 50%)"}}/>
-              <div style={{fontSize:14,color:"rgba(166,93,80,0.72)",letterSpacing:"0.28em",marginTop:14}}>오늘의 인획</div>
+              <div style={{fontSize:14,color:"rgba(166,93,80,0.72)",letterSpacing:"0.28em",marginTop:14}}>오늘의 단어</div>
               <div style={{fontFamily:"var(--font-zh)",fontSize:150,lineHeight:1,marginTop:70}}>{focus.char}</div>
               <div style={{fontSize:18,fontWeight:700,marginTop:18}}>{focus.meaning} ({focus.pinyin})</div>
               <div style={{fontSize:13,color:"var(--sub)",fontStyle:"italic",marginTop:6}}>{focus.note}</div>
@@ -2084,6 +2123,18 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
                 ))}
               </div>
               <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginTop:26,width:74,height:74,borderRadius:22,background:"rgba(106,21,18,0.96)",color:"#fff",fontFamily:"var(--font-zh)",fontSize:30}}>{focus.seal}</div>
+              {focus.example && (
+                <div style={{margin:"22px auto 0",maxWidth:420,fontSize:13,lineHeight:1.7,color:"var(--sub)"}}>
+                  <span style={{fontFamily:"var(--font-zh)",fontSize:16,color:"var(--text)"}}>{focus.example}</span>
+                  <span style={{display:"block",fontSize:12,color:"var(--sub2)",marginTop:2}}>{focus.exMeaning}</span>
+                </div>
+              )}
+              <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,marginTop:22,flexWrap:"wrap"}}>
+                <button onClick={primaryAction.run} style={{padding:"13px 20px",borderRadius:999,border:"none",background:"var(--accent)",color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"var(--font-ui)"}}>
+                  {primaryAction.label}
+                </button>
+                <TTSBtn text={focus.word}/>
+              </div>
             </div>
           </div>
 
@@ -2098,11 +2149,11 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:16}}>
                 <div style={{padding:"14px 12px",borderRadius:22,background:"rgba(255,255,255,0.56)",textAlign:"center"}}>
                   <div style={{fontSize:11,color:"var(--sub2)"}}>수련 횟수</div>
-                  <div style={{fontSize:28,fontWeight:800,marginTop:4}}>{stats.totalAnswered || 124}</div>
+                  <div style={{fontSize:28,fontWeight:800,marginTop:4}}>{stats.totalAnswered || 0}</div>
                 </div>
                 <div style={{padding:"14px 12px",borderRadius:22,background:"rgba(255,255,255,0.56)",textAlign:"center"}}>
                   <div style={{fontSize:11,color:"var(--sub2)"}}>총 몰입</div>
-                  <div style={{fontSize:28,fontWeight:800,marginTop:4}}>{stats.sessions || 42}h</div>
+                  <div style={{fontSize:28,fontWeight:800,marginTop:4}}>{stats.sessions || 0}회</div>
                 </div>
               </div>
             </Card>
@@ -2140,15 +2191,24 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
         <div style={{fontFamily:"var(--font-zh)",fontSize:116,lineHeight:1,color:"var(--text)"}}>{focus.char}</div>
         <div style={{fontSize:14,letterSpacing:"0.2em",color:"var(--sub2)",marginTop:20}}>{focus.meaning}</div>
         <div style={{fontSize:18,fontWeight:700,letterSpacing:"0.14em",marginTop:6}}>{focus.english.toUpperCase()}</div>
+        <div style={{display:"flex",justifyContent:"center",marginTop:14}}>
+          <TTSBtn text={focus.word}/>
+        </div>
       </div>
 
       <Card style={{marginBottom:14,padding:"18px 18px 20px"}}>
-        <div style={{fontSize:12,color:"var(--sub2)",fontWeight:700,marginBottom:10}}>오늘의 여정</div>
+        <div style={{fontSize:12,color:"var(--sub2)",fontWeight:700,marginBottom:10}}>오늘 바로 할 일</div>
         <div style={{fontSize:15,color:"var(--text)",lineHeight:1.7,marginBottom:16}}>
           {focus.note}
         </div>
-        <button onClick={()=>onStudyChapter(nextChapter)} style={{width:"100%",padding:"16px 18px",borderRadius:999,border:"none",background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>
-          수련 시작
+        {focus.example && (
+          <div style={{padding:"12px 14px",borderRadius:18,background:"rgba(255,255,255,0.54)",border:"1px solid rgba(28,27,26,0.06)",marginBottom:14}}>
+            <div style={{fontFamily:"var(--font-zh)",fontSize:16,lineHeight:1.5}}>{focus.example}</div>
+            <div style={{fontSize:12,color:"var(--sub2)",marginTop:4}}>{focus.exMeaning}</div>
+          </div>
+        )}
+        <button onClick={primaryAction.run} style={{width:"100%",padding:"16px 18px",borderRadius:999,border:"none",background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>
+          {primaryAction.label}
         </button>
       </Card>
 
@@ -2160,7 +2220,7 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
         <ProgressBar value={pct} max={100} color="var(--accent)" height={5}/>
         <div style={{display:"flex",justifyContent:"space-between",marginTop:10,fontSize:12,color:"var(--sub)"}}>
           <span>제 {nextChapter?.num || 1}장: {nextChapter?.title || "학습"}</span>
-          <span>{(nextChapter?.words || []).length}단계 남음</span>
+          <span>{nextRemaining}단계 남음</span>
         </div>
       </Card>
 
@@ -4689,22 +4749,22 @@ const ACCENT_OPTIONS = {
 };
 
 const NAV = [
-  { id:"home",    label:"HOME",    sub:"몰입", icon:"🏠" },
-  { id:"study",   label:"LEARN",   sub:"한자", icon:"🎯" },
-  { id:"mission", label:"MISSION", sub:"조립", icon:"🧭" },
-  { id:"archive", label:"ARCHIVE", sub:"도구", icon:"◫" },
-  { id:"backup",  label:"SYNC",    sub:"연결", icon:"⟲" },
+  { id:"home",    label:"오늘",   sub:"入口", icon:"⌂" },
+  { id:"study",   label:"학습",   sub:"字", icon:"◎" },
+  { id:"mission", label:"미션",   sub:"句", icon:"⌁" },
+  { id:"archive", label:"서재",   sub:"冊", icon:"◫" },
+  { id:"backup",  label:"동기화", sub:"雲", icon:"⟲" },
 ];
 
 const ARCHIVE_TOOLS = [
-  { id:"vocab",   label:"DICTIONARY", desc:"단어장", icon:"📖" },
-  { id:"phrase",  label:"DIALOGUE",   desc:"회화", icon:"💬" },
-  { id:"grammar", label:"GRAMMAR",    desc:"문법", icon:"🧩" },
-  { id:"review",  label:"REVIEW",     desc:"복습", icon:"🔄" },
-  { id:"commute", label:"COMMUTE",    desc:"퇴근길", icon:"🎧" },
-  { id:"stats",   label:"RECORDS",    desc:"통계", icon:"📊" },
-  { id:"chat",    label:"ASSIST",     desc:"AI 도움", icon:"🤖" },
-  { id:"inspect", label:"REVIEWER",   desc:"검수", icon:"🔍" },
+  { id:"vocab",   label:"단어장", desc:"한자와 뜻", icon:"文" },
+  { id:"phrase",  label:"회화",   desc:"장면별 표현", icon:"話" },
+  { id:"grammar", label:"문법",   desc:"말의 뼈대", icon:"法" },
+  { id:"review",  label:"복습",   desc:"잊기 전에", icon:"回" },
+  { id:"commute", label:"듣기",   desc:"퇴근길 재생", icon:"聽" },
+  { id:"stats",   label:"기록",   desc:"학습 흐름", icon:"記" },
+  { id:"chat",    label:"도움",   desc:"AI 튜터", icon:"助" },
+  { id:"inspect", label:"검수",   desc:"표현 점검", icon:"校" },
 ];
 
 function applyAccent(key) {
@@ -5006,10 +5066,10 @@ function App() {
       {/* Sidebar */}
       <nav className="sidebar">
         <div className="logo">
-          <div className="logo-badge">学</div>
+          <div className="logo-badge">靜</div>
           <div style={{marginLeft:8}}>
-            <div className="logo-name">中文학습</div>
-            <div className="logo-sub">매일 조금씩</div>
+            <div className="logo-name">靜習</div>
+            <div className="logo-sub">중국어 수련장</div>
           </div>
         </div>
         <div style={{flex:1, overflowY:"auto", marginRight:-4, paddingRight:4}}>
