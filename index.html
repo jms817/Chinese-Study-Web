@@ -13,7 +13,7 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg"/>
 <link rel="apple-touch-icon" href="./icon.svg"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=Epilogue:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=Epilogue:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
@@ -43,6 +43,7 @@
   --font-body:   'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
   --font-zh:     'Noto Serif SC', serif;
   --font-zh-sans:'Noto Sans SC', sans-serif;
+  --font-brush:  'Ma Shan Zheng', 'Noto Serif SC', serif;
   --radius-pill: 9999px;
   --radius-card: 32px;
   --radius-md:   18px;
@@ -61,10 +62,10 @@ html {
   height:100%;
   background-color: var(--bg);
   background-image:
-    radial-gradient(circle, rgba(142,151,253,0.18) 1px, transparent 1.2px),
-    radial-gradient(ellipse at 14% 16%, rgba(166,93,80,0.06) 0%, transparent 38%),
-    radial-gradient(ellipse at 88% 82%, rgba(125,140,122,0.08) 0%, transparent 42%),
-    radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.04) 0%, transparent 54%),
+    radial-gradient(circle, rgba(28,27,26,0.08) 1px, transparent 1.1px),
+    linear-gradient(112deg, transparent 0 22%, rgba(28,27,26,0.025) 28%, transparent 43%),
+    linear-gradient(72deg, transparent 0 50%, rgba(125,140,122,0.045) 58%, transparent 72%),
+    radial-gradient(ellipse at 48% 0%, rgba(28,27,26,0.035) 0%, transparent 52%),
     linear-gradient(180deg, #fffcfa 0%, #fdf9f6 100%);
   background-size: 18px 18px, auto, auto, auto, auto;
   background-position: 0 0, center, center, center, center;
@@ -101,31 +102,30 @@ input:focus, textarea:focus, select:focus {
   box-shadow: inset 1px 2px 6px rgba(79,85,174,0.07), 0 0 0 3px rgba(79,85,174,0.10) !important;
 }
 
-/* ── AMBIENT BLOBS ─────────────────────────── */
+/* ── INK WASH ATMOSPHERE ───────────────────── */
 #ambient-blobs {
   position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
 }
 #ambient-blobs::before {
-  content:''; position:absolute; top:-20%; left:-10%;
-  width:75%; height:75%; border-radius:50%;
-  background:radial-gradient(circle, rgba(166,93,80,0.10) 0%, rgba(166,93,80,0.04) 46%, transparent 72%);
-  filter:blur(80px);
-  animation: blobDrift1 18s ease-in-out infinite alternate;
+  content:''; position:absolute; top:2%; left:8%;
+  width:76%; height:54%;
+  background:
+    linear-gradient(118deg, transparent 0 20%, rgba(28,27,26,0.045) 28%, transparent 40%),
+    linear-gradient(108deg, transparent 0 38%, rgba(28,27,26,0.035) 44%, transparent 55%),
+    radial-gradient(ellipse at 36% 40%, rgba(28,27,26,0.045), transparent 58%);
+  filter:blur(28px);
+  opacity:.55;
+  transform:rotate(-7deg);
 }
 #ambient-blobs::after {
-  content:''; position:absolute; bottom:-20%; right:-10%;
-  width:70%; height:70%; border-radius:50%;
-  background:radial-gradient(circle, rgba(125,140,122,0.12) 0%, rgba(125,140,122,0.04) 46%, transparent 72%);
-  filter:blur(70px);
-  animation: blobDrift2 22s ease-in-out infinite alternate;
-}
-@keyframes blobDrift1 {
-  from { transform: translate(0,0) scale(1); }
-  to   { transform: translate(4%,6%) scale(1.08); }
-}
-@keyframes blobDrift2 {
-  from { transform: translate(0,0) scale(1); }
-  to   { transform: translate(-5%,-4%) scale(1.10); }
+  content:''; position:absolute; right:7%; bottom:6%;
+  width:38%; height:64%;
+  background-image:url("data:image/svg+xml,%3Csvg width='420' height='680' viewBox='0 0 420 680' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%231c1b1a' stroke-opacity='.18' stroke-linecap='round'%3E%3Cpath d='M238 652 C218 538 221 432 248 318 C264 248 282 183 304 54' stroke-width='3.2'/%3E%3Cpath d='M244 386 C196 340 145 313 73 302' stroke-width='2.2'/%3E%3Cpath d='M251 330 C191 258 143 195 84 91' stroke-width='2.1'/%3E%3Cpath d='M258 287 C304 229 338 161 360 78' stroke-width='2.3'/%3E%3Cpath d='M231 465 C178 432 126 419 52 432' stroke-width='1.9'/%3E%3Cpath d='M225 520 C280 496 329 459 374 404' stroke-width='1.9'/%3E%3C/g%3E%3Cg fill='%231c1b1a' fill-opacity='.08'%3E%3Cpath d='M77 294 C104 282 124 292 135 317 C106 326 86 320 77 294Z'/%3E%3Cpath d='M81 86 C111 90 128 111 131 144 C100 137 82 118 81 86Z'/%3E%3Cpath d='M349 68 C375 83 380 110 363 136 C340 116 335 93 349 68Z'/%3E%3Cpath d='M52 426 C82 410 107 418 123 445 C91 456 67 450 52 426Z'/%3E%3Cpath d='M357 397 C384 403 400 424 398 452 C369 446 355 428 357 397Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  opacity:.42;
+  filter:blur(.2px);
 }
 
 .app {
@@ -143,6 +143,39 @@ input:focus, textarea:focus, select:focus {
     radial-gradient(ellipse at 82% 78%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.28) 30%, transparent 64%),
     linear-gradient(180deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.08) 100%);
   box-shadow:0 18px 48px rgba(26,26,26,0.04), inset 0 1px 0 rgba(255,255,255,0.55);
+}
+.app::before {
+  content:'';
+  position:absolute;
+  inset:8% 8% 12% 9%;
+  pointer-events:none;
+  z-index:0;
+  background:
+    linear-gradient(104deg, transparent 0 18%, rgba(28,27,26,0.055) 22%, transparent 34%),
+    linear-gradient(72deg, transparent 0 54%, rgba(28,27,26,0.035) 59%, transparent 69%),
+    radial-gradient(ellipse at 50% 52%, rgba(28,27,26,0.025), transparent 62%);
+  filter:blur(18px);
+  opacity:.66;
+  transform:rotate(-4deg);
+}
+.app::after {
+  content:'';
+  position:absolute;
+  right:4.5%;
+  top:11%;
+  width:min(260px, 24vw);
+  height:min(430px, 52vh);
+  pointer-events:none;
+  z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='260' height='430' viewBox='0 0 260 430' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%231c1b1a' stroke-opacity='.18' stroke-linecap='round'%3E%3Cpath d='M129 410 C122 333 129 260 150 178 C163 128 178 78 196 20' stroke-width='2.4'/%3E%3Cpath d='M139 221 C98 188 65 178 20 181' stroke-width='1.7'/%3E%3Cpath d='M150 173 C111 118 78 75 42 18' stroke-width='1.5'/%3E%3Cpath d='M157 149 C188 112 210 70 224 19' stroke-width='1.6'/%3E%3Cpath d='M128 282 C91 260 56 256 18 269' stroke-width='1.4'/%3E%3Cpath d='M121 337 C160 317 196 290 231 250' stroke-width='1.4'/%3E%3C/g%3E%3Cg fill='%231c1b1a' fill-opacity='.075'%3E%3Cpath d='M20 176 C42 166 59 173 68 194 C43 202 27 197 20 176Z'/%3E%3Cpath d='M42 16 C65 21 77 38 77 62 C54 55 42 40 42 16Z'/%3E%3Cpath d='M218 17 C239 29 242 48 229 67 C211 53 207 36 218 17Z'/%3E%3Cpath d='M18 266 C43 253 62 258 74 279 C48 288 28 284 18 266Z'/%3E%3Cpath d='M225 247 C246 250 258 267 256 288 C234 284 223 270 225 247Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-size:contain;
+  background-position:center;
+  opacity:.55;
+}
+@media(max-width:760px){
+  .app::before { inset:9% -10% 16% 2%; opacity:.42; }
+  .app::after { right:-72px; top:74px; width:220px; height:370px; opacity:.22; }
 }
 
 /* ── GLASS CARD ─────────────────────────────── */
@@ -165,6 +198,8 @@ input:focus, textarea:focus, select:focus {
 /* ── MAIN ─────────────────────────────────── */
 .main {
   flex:1; overflow-y:auto;
+  position:relative;
+  z-index:1;
   padding:28px 20px calc(108px + env(safe-area-inset-bottom));
   max-width:1320px;
   width:100%;
@@ -292,8 +327,39 @@ input:focus, textarea:focus, select:focus {
 .hub-tool .icon { font-size:22px; font-family:var(--font-zh); line-height:1; }
 .hub-tool .label { font-size:13px; font-weight:800; letter-spacing:0; text-transform:none; font-family:var(--font-body); }
 .hub-tool .desc { font-size:11px; color:var(--sub2); line-height:1.35; text-transform:none; text-align:center; }
+.wordmark {
+  font-family:var(--font-brush);
+  font-size:clamp(22px, 2.4vw, 32px);
+  font-weight:400;
+  letter-spacing:.02em;
+  line-height:.95;
+  color:var(--text);
+  text-shadow:0 10px 24px rgba(28,27,26,0.08);
+}
+.wordmark-sub {
+  font-family:var(--font-ui);
+  font-size:10px;
+  color:var(--sub2);
+  letter-spacing:.18em;
+  margin-top:7px;
+  line-height:1;
+}
+.focus-hanzi {
+  font-family:var(--font-brush);
+  font-weight:400;
+  letter-spacing:0;
+  text-shadow:0 22px 48px rgba(28,27,26,0.10);
+}
+.ink-seal {
+  background:rgba(106,21,18,0.96);
+  color:#fff;
+  font-family:var(--font-zh);
+  box-shadow:0 18px 40px rgba(106,21,18,0.18);
+}
 @media(max-width:760px){
   .hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .wordmark { font-size:23px; }
+  .wordmark-sub { display:none; }
 }
 
 /* ── TWEAKS ───────────────────────────────── */
@@ -1991,8 +2057,8 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,marginBottom:mode==="desktop"?18:20}}>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
         <div style={{display:"flex",flexDirection:"column",justifyContent:"center",lineHeight:1}}>
-          <div style={{fontSize:mode==="mobile"?18:22,fontWeight:800,letterSpacing:"0.03em",fontFamily:"var(--font-zh)",lineHeight:1}}>靜習</div>
-          {mode!=="mobile" && <div style={{fontSize:10,color:"var(--sub2)",letterSpacing:"0.16em",fontFamily:"var(--font-ui)",marginTop:6,lineHeight:1}}>CHINESE STUDY</div>}
+          <div className="wordmark">靜習</div>
+          {mode!=="mobile" && <div className="wordmark-sub">CHINESE STUDY</div>}
         </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2054,10 +2120,10 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
 
           <div style={{position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-48%)",textAlign:"center"}}>
             <div style={{fontSize:15,color:"rgba(166,93,80,0.72)",letterSpacing:"0.34em",marginBottom:18}}>오늘의 몰입</div>
-            <div style={{fontFamily:"var(--font-zh)",fontSize:170,lineHeight:.92,color:"var(--text)"}}>{focus.char}</div>
+            <div className="focus-hanzi" style={{fontSize:170,lineHeight:.92,color:"var(--text)"}}>{focus.char}</div>
             <div style={{fontSize:22,color:"var(--sub)",marginTop:12}}>{focus.pinyin}</div>
             <div style={{fontSize:48,fontWeight:800,letterSpacing:"-0.03em",marginTop:4}}>{focus.meaning}</div>
-            <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginTop:18,width:60,height:60,borderRadius:18,background:"rgba(106,21,18,0.96)",color:"#fff",fontFamily:"var(--font-zh)",fontSize:32,boxShadow:"0 18px 40px rgba(106,21,18,0.18)"}}>{focus.seal}</div>
+            <div className="ink-seal" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginTop:18,width:60,height:60,borderRadius:18,fontSize:32}}>{focus.seal}</div>
             {focus.example && (
               <div style={{margin:"18px auto 0",maxWidth:420,fontSize:14,lineHeight:1.7,color:"var(--sub)"}}>
                 <span style={{fontFamily:"var(--font-zh)",color:"var(--text)"}}>{focus.example}</span>
@@ -2113,7 +2179,7 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
             }}>
               <div style={{position:"absolute",inset:0,opacity:.10,background:"linear-gradient(115deg, transparent 8%, rgba(60,60,60,0.20) 24%, transparent 42%), linear-gradient(65deg, transparent 10%, rgba(70,70,70,0.12) 34%, transparent 50%)"}}/>
               <div style={{fontSize:14,color:"rgba(166,93,80,0.72)",letterSpacing:"0.28em",marginTop:14}}>오늘의 단어</div>
-              <div style={{fontFamily:"var(--font-zh)",fontSize:150,lineHeight:1,marginTop:70}}>{focus.char}</div>
+              <div className="focus-hanzi" style={{fontSize:150,lineHeight:1,marginTop:70}}>{focus.char}</div>
               <div style={{fontSize:18,fontWeight:700,marginTop:18}}>{focus.meaning} ({focus.pinyin})</div>
               <div style={{fontSize:13,color:"var(--sub)",fontStyle:"italic",marginTop:6}}>{focus.note}</div>
               <div style={{display:"flex",justifyContent:"center",gap:10,marginTop:26}}>
@@ -2121,7 +2187,7 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
                   <span key={chip} style={{padding:"8px 14px",borderRadius:999,background:"rgba(255,255,255,0.74)",border:"1px solid rgba(28,27,26,0.06)",fontSize:12,fontWeight:700,color:"var(--sub)"}}>{chip}</span>
                 ))}
               </div>
-              <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginTop:26,width:74,height:74,borderRadius:22,background:"rgba(106,21,18,0.96)",color:"#fff",fontFamily:"var(--font-zh)",fontSize:30}}>{focus.seal}</div>
+              <div className="ink-seal" style={{display:"inline-flex",alignItems:"center",justifyContent:"center",marginTop:26,width:74,height:74,borderRadius:22,fontSize:30}}>{focus.seal}</div>
               {focus.example && (
                 <div style={{margin:"22px auto 0",maxWidth:420,fontSize:13,lineHeight:1.7,color:"var(--sub)"}}>
                   <span style={{fontFamily:"var(--font-zh)",fontSize:16,color:"var(--text)"}}>{focus.example}</span>
@@ -2187,7 +2253,7 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
     <div style={{animation:"fadeUp .3s ease both"}}>
       {topBrand}
       <div style={{textAlign:"center",padding:"32px 0 20px"}}>
-        <div style={{fontFamily:"var(--font-zh)",fontSize:116,lineHeight:1,color:"var(--text)"}}>{focus.char}</div>
+        <div className="focus-hanzi" style={{fontSize:116,lineHeight:1,color:"var(--text)"}}>{focus.char}</div>
         <div style={{fontSize:14,letterSpacing:"0.2em",color:"var(--sub2)",marginTop:20}}>{focus.meaning}</div>
         <div style={{fontSize:18,fontWeight:700,letterSpacing:"0.14em",marginTop:6}}>{focus.english.toUpperCase()}</div>
         <div style={{display:"flex",justifyContent:"center",marginTop:14}}>
