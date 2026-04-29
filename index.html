@@ -199,32 +199,34 @@ input:focus, textarea:focus, select:focus {
   border-top-color:rgba(255,255,255,0.90);
   border-left-color:rgba(255,255,255,0.90);
   border-radius:var(--radius-pill);
-  padding:6px 8px;
+  padding:8px 10px;
   z-index:100;
   box-shadow:
     inset 1px 1px 0 rgba(255,255,255,0.55),
     0 20px 50px rgba(26,26,26,0.06);
 }
-.bnav-inner { display:flex; align-items:center; gap:2px; }
+.bnav-inner { display:flex; align-items:center; gap:4px; }
 .bnav-item {
-  display:flex; flex-direction:column; align-items:center; gap:2px;
-  min-width:56px; min-height:52px; justify-content:center;
-  padding:6px 10px; cursor:pointer; color:var(--sub);
-  font-size:10px; font-weight:600;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  min-width:58px; min-height:54px; justify-content:center;
+  padding:8px 11px; cursor:pointer; color:var(--sub);
+  font-size:10px; font-weight:700;
   font-family:var(--font-ui);
-  letter-spacing:0.02em;
+  letter-spacing:0.08em;
   border-radius:var(--radius-pill);
   transition:all .18s ease;
   position:relative;
   user-select:none;
+  text-transform:uppercase;
 }
-.bnav-item:hover { background:rgba(79,85,174,0.06); color:var(--text); }
+.bnav-item:hover { background:rgba(28,27,26,0.05); color:var(--text); }
 .bnav-item.active {
   background:var(--accent);
   color:#fff;
   box-shadow:0 10px 24px rgba(26,26,26,0.18);
 }
-.bnav-item .icon { font-size:20px; line-height:1; }
+.bnav-item .icon { font-size:18px; line-height:1; }
+.bnav-item .sub { font-size:9px; letter-spacing:0.04em; text-transform:none; opacity:.72; }
 .bnav-badge {
   position:absolute; top:4px; right:6px;
   background:var(--coral); color:white;
@@ -232,8 +234,66 @@ input:focus, textarea:focus, select:focus {
   border-radius:99px; display:grid; place-items:center;
 }
 @media(max-width:430px){
-  .bnav-item { min-width:46px; padding:5px 7px; font-size:9px; }
-  .bnav-item .icon { font-size:18px; }
+  .bnav-item { min-width:50px; padding:6px 7px; font-size:9px; }
+  .bnav-item .icon { font-size:17px; }
+  .bnav-item .sub { display:none; }
+}
+
+.hub-sheet {
+  position:fixed;
+  left:50%;
+  bottom:calc(max(14px, env(safe-area-inset-bottom)) + 78px);
+  transform:translateX(-50%);
+  width:min(560px, calc(100vw - 28px));
+  background:rgba(255,255,255,0.74);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,0.72);
+  border-radius:28px;
+  box-shadow:0 30px 60px rgba(0,0,0,0.08);
+  padding:16px;
+  z-index:101;
+  animation:fadeUp .18s ease;
+}
+.hub-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.hub-title {
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--sub);
+}
+.hub-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.hub-tool {
+  border:none;
+  background:rgba(255,255,255,0.62);
+  border-radius:20px;
+  padding:14px 10px 13px;
+  cursor:pointer;
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,0.5);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  color:var(--text);
+  transition:all .16s ease;
+}
+.hub-tool:hover { transform:translateY(-1px); box-shadow:inset 1px 1px 0 rgba(255,255,255,0.5), 0 10px 24px rgba(0,0,0,0.05); }
+.hub-tool .icon { font-size:18px; }
+.hub-tool .label { font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; font-family:var(--font-ui); }
+.hub-tool .desc { font-size:11px; color:var(--sub2); line-height:1.35; text-transform:none; text-align:center; }
+@media(max-width:760px){
+  .hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
 /* ── TWEAKS ───────────────────────────────── */
@@ -2198,6 +2258,12 @@ function StudyScreen({ chapter, stats, onResult, onBack }) {
 
   const word = queue[idx];
   const total = queue.length;
+  const progressPct = total ? Math.round(((idx+1) / total) * 100) : 0;
+  const modeMeta = {
+    card:{ label:"LEARN", sub:"한자를 보고 뜻과 예문까지 천천히 익혀요." },
+    listen:{ label:"LISTEN", sub:"소리를 먼저 듣고 떠올리는 감각을 키워요." },
+    fill:{ label:"BUILD", sub:"문맥 속에서 단어를 끼워 넣으며 조립해요." },
+  };
 
   const handleAnswer = (ok) => {
     const earned = ok ? (combo >= 2 ? 30 : combo >= 1 ? 20 : 10) : 0;
@@ -2239,6 +2305,24 @@ function StudyScreen({ chapter, stats, onResult, onBack }) {
 
   return (
     <div style={{animation:"fadeUp .3s ease both",position:"relative"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:18,flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:800,color:"var(--sub)",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}}>learn</div>
+          <div style={{fontSize:26,fontWeight:800,color:"var(--text)",lineHeight:1.2}}>{selectedChapter.title}</div>
+          <div style={{fontSize:13,color:"var(--sub)",marginTop:6,lineHeight:1.6,maxWidth:420}}>
+            {modeMeta[mode].sub}
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{padding:"10px 14px",borderRadius:999,background:"rgba(255,255,255,0.5)",border:"1px solid rgba(255,255,255,0.62)",fontSize:12,fontWeight:800,color:"var(--sub)"}}>
+            학습 흐름 {progressPct}%
+          </div>
+          <div style={{padding:"10px 14px",borderRadius:16,background:"rgba(166,93,80,0.92)",color:"#fff",fontSize:11,fontWeight:800,letterSpacing:"0.08em"}}>
+            {modeMeta[mode].label}
+          </div>
+        </div>
+      </div>
+
       {/* XP Pop animation */}
       {xpPop && <XpPopup key={xpPop.key} xp={xpPop.xp} combo={xpPop.combo} onDone={()=>setXpPop(null)}/>}
 
@@ -2251,28 +2335,30 @@ function StudyScreen({ chapter, stats, onResult, onBack }) {
       </div>
 
       {/* Mode tabs */}
-      <div style={{display:"flex",gap:6,marginBottom:18,background:"var(--card2)",padding:4,borderRadius:12}}>
-        {[["card","🃏 플래시카드"],["listen","🎧 듣기 퀴즈"],["fill","✏️ 빈칸 채우기"]].map(([m,l])=>(
+      <div style={{display:"flex",gap:8,marginBottom:24,background:"rgba(255,255,255,0.35)",padding:6,borderRadius:999,border:"1px solid rgba(255,255,255,0.58)",width:"fit-content",maxWidth:"100%",overflowX:"auto"}}>
+        {[["card","학습"],["listen","듣기"],["fill","조립"]].map(([m,l])=>(
           <button key={m} onClick={()=>setMode(m)} style={{
-            flex:1,padding:"8px 4px",borderRadius:9,fontSize:12,fontWeight:600,
-            background:mode===m?"var(--card)":"transparent",
-            color:mode===m?"var(--accent)":"var(--sub)",
+            flex:1,padding:"10px 16px",borderRadius:999,fontSize:12,fontWeight:800,letterSpacing:"0.08em",
+            background:mode===m?"var(--accent)":"transparent",
+            color:mode===m?"#fff":"var(--sub)",
             border:"none",cursor:"pointer",fontFamily:"var(--font-ui)",
-            boxShadow:mode===m?"0 1px 6px rgba(0,0,0,.06)":"none",
+            boxShadow:mode===m?"0 10px 24px rgba(26,26,26,0.14)":"none",
             transition:"all .15s",
+            textTransform:"uppercase",
+            minWidth:84,
           }}>{l}</button>
         ))}
       </div>
 
       {/* Progress row */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-        <span style={{fontSize:12,color:"var(--sub)"}}>{selectedChapter.title} · {idx+1}/{total}</span>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:12,color:"var(--sub)"}}>{selectedChapter.titleZh} · {idx+1}/{total}</span>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {combo >= 2 && <span style={{fontSize:12,fontWeight:700,color:"var(--gold)"}}>🔥 {combo}연속!</span>}
           <span style={{fontSize:12,fontWeight:700,color:"var(--accent)"}}>✓ {correct}</span>
         </div>
       </div>
-      <div style={{height:5,marginBottom:18}}><ProgressBar value={idx} max={total}/></div>
+      <div style={{height:4,marginBottom:26}}><ProgressBar value={idx+1} max={total || 1} color="var(--accent)"/></div>
 
       {/* ── CARD MODE ── */}
       {mode==="card" && (
@@ -4603,18 +4689,22 @@ const ACCENT_OPTIONS = {
 };
 
 const NAV = [
-  { id:"home",    label:"홈",     icon:"🏠" },
-  { id:"study",   label:"학습",   icon:"🎯" },
-  { id:"mission", label:"미션",   icon:"🧭" },
-  { id:"vocab",   label:"단어장", icon:"📖" },
-  { id:"phrase",  label:"회화",   icon:"💬" },
-  { id:"grammar", label:"문법",   icon:"🧩" },
-  { id:"commute", label:"퇴근길", icon:"🎧" },
-  { id:"review",  label:"복습",   icon:"🔄" },
-  { id:"chat",    label:"AI도움", icon:"🤖" },
-  { id:"stats",   label:"통계",   icon:"📊" },
-  { id:"backup",  label:"동기화", icon:"💾" },
-  { id:"inspect", label:"검수",   icon:"🔍" },
+  { id:"home",    label:"HOME",    sub:"몰입", icon:"🏠" },
+  { id:"study",   label:"LEARN",   sub:"한자", icon:"🎯" },
+  { id:"mission", label:"MISSION", sub:"조립", icon:"🧭" },
+  { id:"archive", label:"ARCHIVE", sub:"도구", icon:"◫" },
+  { id:"backup",  label:"SYNC",    sub:"연결", icon:"⟲" },
+];
+
+const ARCHIVE_TOOLS = [
+  { id:"vocab",   label:"DICTIONARY", desc:"단어장", icon:"📖" },
+  { id:"phrase",  label:"DIALOGUE",   desc:"회화", icon:"💬" },
+  { id:"grammar", label:"GRAMMAR",    desc:"문법", icon:"🧩" },
+  { id:"review",  label:"REVIEW",     desc:"복습", icon:"🔄" },
+  { id:"commute", label:"COMMUTE",    desc:"퇴근길", icon:"🎧" },
+  { id:"stats",   label:"RECORDS",    desc:"통계", icon:"📊" },
+  { id:"chat",    label:"ASSIST",     desc:"AI 도움", icon:"🤖" },
+  { id:"inspect", label:"REVIEWER",   desc:"검수", icon:"🔍" },
 ];
 
 function applyAccent(key) {
@@ -4629,6 +4719,7 @@ function App() {
   const autoSyncTimerRef = React.useRef(null);
   const suppressNextAutoSyncRef = React.useRef(false);
   const [screen, setScreen] = React.useState(() => store.get("screen","home"));
+  const [hubOpen, setHubOpen] = React.useState(false);
   const [activeChapter, setActiveChapter] = React.useState(null);
   const [tweaksOpen, setTweaksOpen] = React.useState(false);
   const [tweaks, setTweaks] = React.useState(() => ({...TWEAK_DEFAULTS, ...store.get("tweaks", {})}));
@@ -4898,9 +4989,17 @@ function App() {
   }, [stats, tweaks, session?.user?.id, supabaseClient]);
 
   const reviewCount = getDueReviewWords(stats).length;
-
-  // Mobile nav keeps sync reachable on phones; stats moves to the sidebar-first path.
-  const MOBILE_NAV = NAV.filter(n => !["chat","stats","inspect"].includes(n.id));
+  const archiveScreens = ARCHIVE_TOOLS.map(item => item.id);
+  const activeNav = archiveScreens.includes(screen) ? "archive" : screen;
+  const goNav = (id) => {
+    if (id === "archive") {
+      setHubOpen(v => !v);
+      if (!hubOpen && !archiveScreens.includes(screen)) setScreen("vocab");
+      return;
+    }
+    setHubOpen(false);
+    setScreen(id);
+  };
 
   return (
     <div className="app">
@@ -4915,11 +5014,11 @@ function App() {
         </div>
         <div style={{flex:1, overflowY:"auto", marginRight:-4, paddingRight:4}}>
           {NAV.map(n => (
-            <div key={n.id} className={`nav-item${screen===n.id?" active":""}`}
-              onClick={()=>setScreen(n.id)}>
+            <div key={n.id} className={`nav-item${activeNav===n.id?" active":""}`}
+              onClick={()=>goNav(n.id)}>
               <span className="icon">{n.icon}</span>
               <span>{n.label}</span>
-              {n.id==="review" && reviewCount>0 &&
+              {n.id==="archive" && reviewCount>0 &&
                 <span className="nav-badge">{reviewCount}</span>}
             </div>
           ))}
@@ -4983,15 +5082,34 @@ function App() {
         )}
       </main>
 
-      {/* Bottom nav (mobile) */}
+      {hubOpen && (
+        <div className="hub-sheet">
+          <div className="hub-head">
+            <div className="hub-title">Archive Tools</div>
+            <button onClick={()=>setHubOpen(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"var(--sub)"}}>✕</button>
+          </div>
+          <div className="hub-grid">
+            {ARCHIVE_TOOLS.map(tool => (
+              <button key={tool.id} className="hub-tool" onClick={()=>{ setScreen(tool.id); setHubOpen(false); }}>
+                <span className="icon">{tool.icon}</span>
+                <span className="label">{tool.label}</span>
+                <span className="desc">{tool.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom nav (zen hub) */}
       <nav className="bnav">
         <div className="bnav-inner">
-          {MOBILE_NAV.map(n => (
-            <div key={n.id} className={`bnav-item${screen===n.id?" active":""}`}
-              onClick={()=>setScreen(n.id)}>
+          {NAV.map(n => (
+            <div key={n.id} className={`bnav-item${activeNav===n.id?" active":""}`}
+              onClick={()=>goNav(n.id)}>
               <span className="icon">{n.icon}</span>
               <span>{n.label}</span>
-              {n.id==="review" && reviewCount>0 &&
+              <span className="sub">{n.sub}</span>
+              {n.id==="archive" && reviewCount>0 &&
                 <span className="bnav-badge">{reviewCount}</span>}
             </div>
           ))}
