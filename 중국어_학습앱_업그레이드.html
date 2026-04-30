@@ -1279,9 +1279,9 @@ async function derivePinPassword(email, pin) {
     const bytes = new TextEncoder().encode(seed);
     const hash = await window.crypto.subtle.digest("SHA-256", bytes);
     const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
-    return `Jingshi-${hex}!`;
+    return `Js-${hex}!`;
   }
-  return `Jingshi-${btoa(unescape(encodeURIComponent(seed))).replace(/[^a-zA-Z0-9]/g, "").slice(0, 48)}!`;
+  return `Js-${btoa(unescape(encodeURIComponent(seed))).replace(/[^a-zA-Z0-9]/g, "").slice(0, 48)}!`;
 }
 
 Object.assign(window, {
