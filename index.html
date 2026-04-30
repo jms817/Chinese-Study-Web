@@ -118,7 +118,16 @@ input:focus, textarea:focus, select:focus {
   transform:rotate(-7deg);
 }
 #ambient-blobs::after {
-  display:none;
+  content:''; position:absolute; left:5%; bottom:8%;
+  width:min(420px, 52vw); height:min(260px, 36vh);
+  background:
+    radial-gradient(ellipse at 32% 58%, rgba(28,27,26,0.075) 0%, rgba(28,27,26,0.035) 24%, transparent 60%),
+    radial-gradient(ellipse at 56% 64%, rgba(28,27,26,0.045) 0%, rgba(28,27,26,0.018) 22%, transparent 58%),
+    radial-gradient(circle at 20% 68%, rgba(28,27,26,0.10) 0 2px, transparent 4px),
+    radial-gradient(circle at 76% 54%, rgba(28,27,26,0.07) 0 1.5px, transparent 4px);
+  filter:blur(8px);
+  opacity:.55;
+  transform:rotate(-5deg);
 }
 
 .app {
@@ -156,19 +165,22 @@ input:focus, textarea:focus, select:focus {
   position:absolute;
   left:42px;
   bottom:96px;
-  width:min(360px, 32vw);
-  height:min(240px, 30vh);
+  width:min(340px, 31vw);
+  height:min(190px, 24vh);
   pointer-events:none;
   z-index:0;
-  background-image:url("data:image/svg+xml,%3Csvg width='360' height='240' viewBox='0 0 360 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='soft' x='-10%25' y='-10%25' width='120%25' height='120%25'%3E%3CfeGaussianBlur stdDeviation='.35'/%3E%3C/filter%3E%3C/defs%3E%3Cg fill='none' stroke='%231c1b1a' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M132 206 C95 160 62 124 18 112' stroke-opacity='.50' stroke-width='4.2'/%3E%3Cpath d='M136 204 C110 143 96 75 108 19' stroke-opacity='.46' stroke-width='3.2'/%3E%3Cpath d='M140 205 C151 134 191 70 254 27' stroke-opacity='.50' stroke-width='3.6'/%3E%3Cpath d='M137 204 C178 159 236 132 337 127' stroke-opacity='.44' stroke-width='2.8'/%3E%3Cpath d='M131 207 C96 181 57 172 24 181' stroke-opacity='.36' stroke-width='2.2'/%3E%3Cpath d='M146 207 C189 188 242 187 302 205' stroke-opacity='.32' stroke-width='2.1'/%3E%3Cpath d='M126 209 C102 198 74 197 48 207' stroke-opacity='.25' stroke-width='1.6'/%3E%3C/g%3E%3Cg fill='%231c1b1a' fill-opacity='.18' filter='url(%23soft)'%3E%3Cellipse cx='132' cy='209' rx='29' ry='10' transform='rotate(-7 132 209)'/%3E%3Cellipse cx='101' cy='217' rx='10' ry='4'/%3E%3Cellipse cx='72' cy='213' rx='5' ry='3'/%3E%3Cellipse cx='170' cy='215' rx='8' ry='3'/%3E%3C/g%3E%3Cg fill='none' stroke='%231c1b1a' stroke-linecap='round'%3E%3Cpath d='M204 70 C215 64 224 66 232 76' stroke-opacity='.30' stroke-width='1.4'/%3E%3Cpath d='M226 76 C239 68 250 73 256 85' stroke-opacity='.28' stroke-width='1.3'/%3E%3Cpath d='M236 91 C247 88 255 93 258 104' stroke-opacity='.24' stroke-width='1.1'/%3E%3C/g%3E%3Cg fill='%236f6a9f' fill-opacity='.45'%3E%3Cellipse cx='231' cy='76' rx='5' ry='8' transform='rotate(-35 231 76)'/%3E%3Cellipse cx='241' cy='79' rx='4' ry='7' transform='rotate(28 241 79)'/%3E%3Cellipse cx='252' cy='91' rx='4' ry='6' transform='rotate(20 252 91)'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat:no-repeat;
-  background-size:contain;
-  background-position:left bottom;
-  opacity:.30;
+  background:
+    radial-gradient(ellipse at 28% 58%, rgba(28,27,26,0.09) 0%, rgba(28,27,26,0.04) 25%, transparent 63%),
+    radial-gradient(ellipse at 58% 54%, rgba(28,27,26,0.05) 0%, rgba(28,27,26,0.02) 24%, transparent 62%),
+    radial-gradient(circle at 20% 70%, rgba(28,27,26,0.13) 0 2px, transparent 4px),
+    radial-gradient(circle at 74% 44%, rgba(28,27,26,0.08) 0 1.5px, transparent 4px);
+  filter:blur(9px);
+  opacity:.42;
+  transform:rotate(-4deg);
 }
 @media(max-width:760px){
   .app::before { inset:9% -10% 16% 2%; opacity:.42; }
-  .app::after { left:-34px; bottom:150px; width:230px; height:160px; opacity:.18; }
+  .app::after { left:-34px; bottom:150px; width:220px; height:140px; opacity:.22; }
 }
 
 /* ── GLASS CARD ─────────────────────────────── */
@@ -3615,9 +3627,7 @@ function CommuteScreen({ stats }) {
   const pauseAfterKo  = () => ({ 0.7: 1500, 1.0: 1100, 1.5: 780 })[speed] || 1100;
   const koRate = () => ({ 0.7: 0.86, 1.0: 0.96, 1.5: 1.12 })[speed] || 0.96;
   const narrationText = (item) => {
-    const pinyin = item.pinyin ? `발음은 ${item.pinyin}. ` : "";
-    const meaning = item.meaning ? `뜻은 ${item.meaning}.` : "";
-    return `${pinyin}${meaning}`.trim();
+    return item.meaning ? String(item.meaning).trim() : "";
   };
 
   const speakItem = React.useCallback((item) => {
@@ -3679,7 +3689,7 @@ function CommuteScreen({ stats }) {
   const handleNext = () => { clearTimer(); synthRef.current.cancel(); setIdx(i=>(i+1)%playlist.length); };
   const handlePrev = () => { clearTimer(); synthRef.current.cancel(); setIdx(i=>(i-1+playlist.length)%playlist.length); };
 
-  const phaseLabel = { idle:"재생 버튼을 눌러 시작하세요", zh:"중국어 듣는 중", ko:"병음과 뜻 듣는 중", done:"다음으로 이동 중" };
+  const phaseLabel = { idle:"재생 버튼을 눌러 시작하세요", zh:"중국어 듣는 중", ko:"한국어 뜻 듣는 중", done:"다음으로 이동 중" };
   const progress = playlist.length > 0 ? ((idx / playlist.length) * 100).toFixed(1) : 0;
 
   const speedOptions = [
@@ -3690,7 +3700,7 @@ function CommuteScreen({ stats }) {
 
   return (
     <div style={{animation:"fadeUp .3s ease both"}}>
-      <SectionTitle sub="화면 안 봐도 OK. 중국어를 먼저 듣고, 이어서 병음과 한국어 뜻을 자동으로 들려줘요.">퇴근길 듣기</SectionTitle>
+      <SectionTitle sub="화면 안 봐도 OK. 중국어를 먼저 듣고, 바로 한국어 뜻만 이어서 들려줘요.">퇴근길 듣기</SectionTitle>
 
       {/* Filter + Speed */}
       <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
@@ -3717,7 +3727,7 @@ function CommuteScreen({ stats }) {
       </div>
       <div style={{display:"flex",gap:6,background:"var(--card2)",padding:4,borderRadius:12,marginBottom:16,width:"fit-content",maxWidth:"100%",overflowX:"auto"}}>
         {[
-          ["full","중국어 + 병음/뜻"],
+          ["full","중국어 + 한국어 뜻"],
           ["zh","중국어만"],
         ].map(([v,l])=>(
           <button key={v} onClick={()=>{setNarrationMode(v);setPlaying(false);}} style={{
