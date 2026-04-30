@@ -3585,9 +3585,10 @@ function CommuteScreen({ stats }) {
 
   const [filterType, setFilterType] = React.useState("all"); // all | word | phrase
   const [speed, setSpeed] = React.useState(1.0);
+  const [narrationMode, setNarrationMode] = React.useState("full"); // full | zh
   const [playing, setPlaying] = React.useState(false);
   const [idx, setIdx] = React.useState(0);
-  const [phase, setPhase] = React.useState("idle"); // idle | zh | pause | done
+  const [phase, setPhase] = React.useState("idle"); // idle | zh | ko | done
   const timerRef = React.useRef(null);
   const synthRef = React.useRef(window.speechSynthesis);
 
@@ -3602,8 +3603,14 @@ function CommuteScreen({ stats }) {
 
   const clearTimer = () => { if (timerRef.current) clearTimeout(timerRef.current); };
 
-  const pauseAfterZh  = () => ({ 0.7: 2800, 1.0: 2200, 1.5: 1400 })[speed] || 2200;
-  const pauseAfterKo  = () => ({ 0.7: 3200, 1.0: 2600, 1.5: 1600 })[speed] || 2600;
+  const pauseAfterZh  = () => ({ 0.7: 900, 1.0: 650, 1.5: 420 })[speed] || 650;
+  const pauseAfterKo  = () => ({ 0.7: 1500, 1.0: 1100, 1.5: 780 })[speed] || 1100;
+  const koRate = () => ({ 0.7: 0.86, 1.0: 0.96, 1.5: 1.12 })[speed] || 0.96;
+  const narrationText = (item) => {
+    const pinyin = item.pinyin ? `발음은 ${item.pinyin}. ` : "";
+    const meaning = item.meaning ? `뜻은 ${item.meaning}.` : "";
+    return `${pinyin}${meaning}`.trim();
+  };
 
   const speakItem = React.useCallback((item) => {
     if (!item || !synthRef.current) return;
@@ -3615,16 +3622,35 @@ function CommuteScreen({ stats }) {
     uZh.lang = "zh-CN";
     uZh.rate = speed;
     uZh.onend = () => {
-      setPhase("pause");
-      timerRef.current = setTimeout(() => {
+      if (narrationMode === "zh") {
         setPhase("done");
         timerRef.current = setTimeout(() => {
           setIdx(i => (i + 1) % playlist.length);
         }, pauseAfterKo());
+        return;
+      }
+      timerRef.current = setTimeout(() => {
+        const koText = narrationText(item);
+        if (!koText) {
+          setPhase("done");
+          setIdx(i => (i + 1) % playlist.length);
+          return;
+        }
+        setPhase("ko");
+        const uKo = new SpeechSynthesisUtterance(koText);
+        uKo.lang = "ko-KR";
+        uKo.rate = koRate();
+        uKo.onend = () => {
+          setPhase("done");
+          timerRef.current = setTimeout(() => {
+            setIdx(i => (i + 1) % playlist.length);
+          }, pauseAfterKo());
+        };
+        synthRef.current.speak(uKo);
       }, pauseAfterZh());
     };
     synthRef.current.speak(uZh);
-  }, [speed, playlist.length]);
+  }, [speed, narrationMode, playlist.length]);
 
   // Start/stop playback
   React.useEffect(() => {
@@ -3645,7 +3671,7 @@ function CommuteScreen({ stats }) {
   const handleNext = () => { clearTimer(); synthRef.current.cancel(); setIdx(i=>(i+1)%playlist.length); };
   const handlePrev = () => { clearTimer(); synthRef.current.cancel(); setIdx(i=>(i-1+playlist.length)%playlist.length); };
 
-  const phaseLabel = { idle:"재생 버튼을 눌러 시작하세요", zh:"🔊 중국어 듣는 중…", pause:"⏸ 뜻 확인", done:"✓ 다음으로 이동 중…" };
+  const phaseLabel = { idle:"재생 버튼을 눌러 시작하세요", zh:"중국어 듣는 중", ko:"병음과 뜻 듣는 중", done:"다음으로 이동 중" };
   const progress = playlist.length > 0 ? ((idx / playlist.length) * 100).toFixed(1) : 0;
 
   const speedOptions = [
@@ -3656,7 +3682,7 @@ function CommuteScreen({ stats }) {
 
   return (
     <div style={{animation:"fadeUp .3s ease both"}}>
-      <SectionTitle sub="화면 안 봐도 OK — 중국어 → 뜻 순서로 자동 재생돼요">🎧 퇴근길 듣기</SectionTitle>
+      <SectionTitle sub="화면 안 봐도 OK. 중국어를 먼저 듣고, 이어서 병음과 한국어 뜻을 자동으로 들려줘요.">퇴근길 듣기</SectionTitle>
 
       {/* Filter + Speed */}
       <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
@@ -3680,6 +3706,19 @@ function CommuteScreen({ stats }) {
             }}>{s.label}</button>
           ))}
         </div>
+      </div>
+      <div style={{display:"flex",gap:6,background:"var(--card2)",padding:4,borderRadius:12,marginBottom:16,width:"fit-content",maxWidth:"100%",overflowX:"auto"}}>
+        {[
+          ["full","중국어 + 병음/뜻"],
+          ["zh","중국어만"],
+        ].map(([v,l])=>(
+          <button key={v} onClick={()=>{setNarrationMode(v);setPlaying(false);}} style={{
+            padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:800,border:"none",cursor:"pointer",
+            background:narrationMode===v?"var(--card)":"transparent",
+            color:narrationMode===v?"var(--accent)":"var(--sub)",fontFamily:"var(--font-ui)",
+            boxShadow:narrationMode===v?"0 1px 6px rgba(0,0,0,.06)":"none",transition:"all .15s",
+          }}>{l}</button>
+        ))}
       </div>
 
       {/* Progress bar */}
@@ -3706,7 +3745,7 @@ function CommuteScreen({ stats }) {
           {/* Phase indicator */}
           <div style={{
             fontSize:12,fontWeight:700,letterSpacing:".04em",
-            color: phase==="zh"?"var(--accent)":phase==="done"?"#72B882":"var(--sub)",
+            color: phase==="zh"?"var(--accent)":phase==="ko"?"var(--coral)":phase==="done"?"#72B882":"var(--sub)",
             minHeight:18,transition:"color .2s",
           }}>{phaseLabel[phase]}</div>
 
@@ -3725,10 +3764,10 @@ function CommuteScreen({ stats }) {
           {/* Meaning — revealed after zh phase */}
           <div style={{
             fontSize:20,fontWeight:700,color:"var(--text)",
-            opacity: phase==="done"||phase==="idle" ? 1 : 0.15,
+            opacity: phase==="ko"||phase==="done"||phase==="idle" ? 1 : 0.15,
             transition:"opacity .5s",
             padding:"8px 16px",borderRadius:12,
-            background: phase==="done" ? "var(--accent-dim)" : "transparent",
+            background: phase==="ko"||phase==="done" ? "var(--accent-dim)" : "transparent",
           }}>{current.meaning}</div>
 
           {/* Hint */}
@@ -4263,14 +4302,16 @@ Object.assign(window, { ChatScreen });
 function BackupScreen({
   stats, tweaks, onImport,
   supabaseConfig, session, syncStatus, syncState, lastSyncedAt, lastRemoteUpdatedAt, hasSyncConflict,
-  onSaveSupabaseConfig, onSendMagicLink, onSignOut, onPullCloud, onPushCloud
+  onSaveSupabaseConfig, onSendMagicLink, onPasswordLogin, onPasswordSignUp, onSignOut, onPullCloud, onPushCloud
 }) {
   const [status, setStatus] = React.useState("");
   const [showConfig, setShowConfig] = React.useState(false);
+  const [authMode, setAuthMode] = React.useState("password");
   const [cloudForm, setCloudForm] = React.useState(() => ({
     url:supabaseConfig?.url || "",
     anonKey:supabaseConfig?.anonKey || "",
     email:"",
+    password:"",
   }));
   const fileRef = React.useRef(null);
   React.useEffect(() => {
@@ -4369,7 +4410,7 @@ create policy "anon update nuance reviews"
           <div>
             <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>Supabase 동기화</div>
             <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.55}}>
-              매직링크 로그인 후 현재 학습 상태를 `study_snapshots` 테이블의 `jsonb` 한 행으로 저장합니다.
+              비밀번호 또는 매직링크로 로그인하면 현재 학습 상태를 `study_snapshots` 테이블의 `jsonb` 한 행으로 저장합니다.
             </div>
           </div>
           <div style={{
@@ -4400,13 +4441,40 @@ create policy "anon update nuance reviews"
 
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
           {!session && (
-            <>
-              <input value={cloudForm.email} onChange={e=>setCloudForm(f=>({...f,email:e.target.value}))} placeholder="매직링크 받을 이메일"
-                style={{flex:"1 1 220px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-              <Btn variant="primary" onClick={()=>onSendMagicLink(cloudForm.email)} style={{padding:"9px 14px",fontSize:13}}>
-                매직링크 로그인
-              </Btn>
-            </>
+            <div style={{width:"100%",display:"flex",flexDirection:"column",gap:10}}>
+              <div style={{display:"flex",gap:6,background:"var(--card2)",padding:4,borderRadius:12,width:"fit-content",maxWidth:"100%",overflowX:"auto"}}>
+                {[["password","비밀번호"],["magic","매직링크"]].map(([v,l])=>(
+                  <button key={v} onClick={()=>setAuthMode(v)} style={{
+                    padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:800,border:"none",cursor:"pointer",
+                    background:authMode===v?"var(--card)":"transparent",
+                    color:authMode===v?"var(--accent)":"var(--sub)",fontFamily:"var(--font-ui)",
+                    boxShadow:authMode===v?"0 1px 6px rgba(0,0,0,.06)":"none",transition:"all .15s",
+                  }}>{l}</button>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <input value={cloudForm.email} onChange={e=>setCloudForm(f=>({...f,email:e.target.value}))} placeholder="이메일"
+                  style={{flex:"1 1 220px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
+                {authMode==="password" && (
+                  <input type="password" value={cloudForm.password} onChange={e=>setCloudForm(f=>({...f,password:e.target.value}))} placeholder="비밀번호"
+                    style={{flex:"1 1 180px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
+                )}
+                {authMode==="password" ? (
+                  <>
+                    <Btn variant="primary" onClick={()=>onPasswordLogin(cloudForm.email, cloudForm.password)} style={{padding:"9px 14px",fontSize:13}}>
+                      로그인
+                    </Btn>
+                    <Btn variant="ghost" onClick={()=>onPasswordSignUp(cloudForm.email, cloudForm.password)} style={{padding:"9px 14px",fontSize:13}}>
+                      계정 만들기
+                    </Btn>
+                  </>
+                ) : (
+                  <Btn variant="primary" onClick={()=>onSendMagicLink(cloudForm.email)} style={{padding:"9px 14px",fontSize:13}}>
+                    매직링크 보내기
+                  </Btn>
+                )}
+              </div>
+            </div>
           )}
           <Btn variant="ghost" onClick={()=>setShowConfig(v=>!v)} style={{padding:"9px 14px",fontSize:13}}>
             {showConfig ? "설정 접기" : "설정 보기"}
@@ -4425,15 +4493,6 @@ create policy "anon update nuance reviews"
               <Btn variant="ghost" onClick={()=>onSaveSupabaseConfig({ url:cloudForm.url, anonKey:cloudForm.anonKey })} style={{padding:"9px 14px",fontSize:13}}>
                 설정 저장
               </Btn>
-              {!session && (
-                <>
-                  <input value={cloudForm.email} onChange={e=>setCloudForm(f=>({...f,email:e.target.value}))} placeholder="매직링크 받을 이메일"
-                    style={{flex:"1 1 220px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-                  <Btn variant="primary" onClick={()=>onSendMagicLink(cloudForm.email)} style={{padding:"9px 14px",fontSize:13}}>
-                    매직링크 로그인
-                  </Btn>
-                </>
-              )}
             </div>
           </>
         )}
@@ -5044,6 +5103,52 @@ function App() {
     setSyncStatus(error ? `로그인 메일 전송 실패: ${error.message}` : "매직링크를 이메일로 보냈어요.");
     setSyncState(error ? "error" : "ready");
   };
+  const loginWithPassword = async (email, password) => {
+    if (!supabaseClient) {
+      setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
+      setSyncState("error");
+      return;
+    }
+    if (!String(email || "").trim() || !String(password || "").trim()) {
+      setSyncStatus("이메일과 비밀번호를 입력해 주세요.");
+      setSyncState("error");
+      return;
+    }
+    setSyncStatus("비밀번호 로그인 중...");
+    setSyncState("syncing");
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setSyncStatus(error ? `비밀번호 로그인 실패: ${error.message}` : "비밀번호 로그인 완료");
+    setSyncState(error ? "error" : "synced");
+  };
+  const signUpWithPassword = async (email, password) => {
+    if (!supabaseClient) {
+      setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
+      setSyncState("error");
+      return;
+    }
+    if (!String(email || "").trim() || String(password || "").length < 6) {
+      setSyncStatus("이메일과 6자 이상의 비밀번호를 입력해 주세요.");
+      setSyncState("error");
+      return;
+    }
+    setSyncStatus("계정 생성 중...");
+    setSyncState("syncing");
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { emailRedirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) {
+      setSyncStatus(`계정 생성 실패: ${error.message}`);
+      setSyncState("error");
+      return;
+    }
+    setSyncStatus(data.session ? "계정 생성 및 로그인 완료" : "계정을 만들었어요. Supabase 설정에 따라 확인 메일이 한 번 필요할 수 있어요.");
+    setSyncState(data.session ? "synced" : "ready");
+  };
   const pushNow = async () => {
     if (!supabaseClient || !session?.user?.id) {
       setSyncStatus("로그인 후 클라우드 저장을 사용할 수 있어요.");
@@ -5200,6 +5305,8 @@ function App() {
             hasSyncConflict={hasSyncConflict}
             onSaveSupabaseConfig={saveSupabaseRuntimeConfig}
             onSendMagicLink={sendMagicLink}
+            onPasswordLogin={loginWithPassword}
+            onPasswordSignUp={signUpWithPassword}
             onSignOut={signOutCloud}
             onPullCloud={pullNow}
             onPushCloud={pushNow}
