@@ -725,6 +725,7 @@ const STORE_KEYS = {
   screen: "zhapp.v3.screen",
   stats: "zhapp.v3.studyState",
   tweaks: "zhapp.v3.tweaks",
+  accountEmail: "zhapp.v3.accountEmail",
 };
 const SUPABASE_CONFIG_KEY = "zhapp.v3.supabaseConfig";
 const SUPABASE_DEFAULT_CONFIG = {
@@ -1257,13 +1258,27 @@ const speak = (text) => {
   window.speechSynthesis.speak(u);
 };
 
+const isFourDigitPin = (pin) => /^\d{4}$/.test(String(pin || ""));
+
+async function derivePinPassword(email, pin) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const seed = `jingshi-pin-v1:${normalizedEmail}:${pin}:quiet-study`;
+  if (window.crypto?.subtle) {
+    const bytes = new TextEncoder().encode(seed);
+    const hash = await window.crypto.subtle.digest("SHA-256", bytes);
+    const hex = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+    return `Jingshi-${hex}!`;
+  }
+  return `Jingshi-${btoa(unescape(encodeURIComponent(seed))).replace(/[^a-zA-Z0-9]/g, "").slice(0, 48)}!`;
+}
+
 Object.assign(window, {
   HSK_CHAPTERS, BUILT_IN_CHAPTERS, THEME_CHAPTERS, ALL_WORDS, HSK_LEVELS,
   APP_SCHEMA_VERSION, STORE_KEYS, StorageService, store, speak,
   getStudyChapters, getAllWords, getDueReviewKeys, getDueReviewWords,
   makeDefaultStats, hydrateStats, recordAnswer, recordMissionCompletion, shuffleArray, wordKey, todayKey,
   getSupabaseConfig, setSupabaseConfig, createSupabaseBrowserClient,
-  pullCloudSnapshot, pushCloudSnapshot, formatDateTime
+  pullCloudSnapshot, pushCloudSnapshot, formatDateTime, derivePinPassword, isFourDigitPin
 });
 
 </script>
@@ -4295,16 +4310,16 @@ Object.assign(window, { ChatScreen });
 function BackupScreen({
   stats, tweaks, onImport,
   supabaseConfig, session, syncStatus, syncState, lastSyncedAt, lastRemoteUpdatedAt, hasSyncConflict,
-  onSaveSupabaseConfig, onSendMagicLink, onPasswordLogin, onPasswordSignUp, onSignOut, onPullCloud, onPushCloud
+  onSaveSupabaseConfig, onPinLogin, onPinSignUp, onSignOut, onPullCloud, onPushCloud
 }) {
   const [status, setStatus] = React.useState("");
   const [showConfig, setShowConfig] = React.useState(false);
-  const [authMode, setAuthMode] = React.useState("password");
+  const savedAccountEmail = store.get("accountEmail", "");
   const [cloudForm, setCloudForm] = React.useState(() => ({
     url:supabaseConfig?.url || "",
     anonKey:supabaseConfig?.anonKey || "",
-    email:"",
-    password:"",
+    email:store.get("accountEmail", ""),
+    pin:"",
   }));
   const fileRef = React.useRef(null);
   React.useEffect(() => {
@@ -4313,6 +4328,11 @@ function BackupScreen({
   React.useEffect(() => {
     if (!session) setShowConfig(true);
   }, [session]);
+  const rememberEmail = (email) => {
+    const clean = String(email || "").trim();
+    setCloudForm(f => ({...f, email:clean}));
+    if (clean) store.set("accountEmail", clean);
+  };
   const exportData = () => {
     const payload = StorageService.exportPayload(stats, tweaks);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
@@ -4396,14 +4416,14 @@ create policy "anon update nuance reviews"
 
   return (
     <div style={{animation:"fadeUp .3s ease both"}}>
-      <SectionTitle sub="혼자 쓰는 최적 조합: Supabase 로그인 동기화 + localStorage 캐시 + JSON 백업">동기화 / 백업</SectionTitle>
+      <SectionTitle sub="내 계정에 들어오면 학습 기록이 Supabase에 자동 저장돼요. 평소에는 이메일과 4자리 PIN만 쓰면 됩니다.">내 계정</SectionTitle>
 
       <Card style={{marginBottom:14,border:"1.5px solid var(--accent)44"}}>
         <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"flex-start",marginBottom:12}}>
           <div>
-            <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>Supabase 동기화</div>
+            <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>계정 로그인</div>
             <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.55}}>
-              비밀번호 또는 매직링크로 로그인하면 현재 학습 상태를 `study_snapshots` 테이블의 `jsonb` 한 행으로 저장합니다.
+              앱에서는 4자리 PIN만 입력하고, 실제 Supabase 인증값은 앱이 긴 값으로 변환해서 사용합니다.
             </div>
           </div>
           <div style={{
@@ -4411,7 +4431,7 @@ create policy "anon update nuance reviews"
             background:syncState==="error"?"var(--coral-dim)":syncState==="syncing"?"var(--gold-dim)":session?"var(--accent-dim)":"var(--card2)",
             color:syncState==="error"?"var(--coral)":syncState==="syncing"?"var(--gold)":session?"var(--accent)":"var(--sub)"
           }}>
-            {syncState==="syncing"?"저장 중":syncState==="error"?"확인 필요":session ? "로그인됨" : "설정 필요"}
+            {syncState==="syncing"?"확인 중":syncState==="error"?"확인 필요":session ? "내 계정" : "PIN 로그인"}
           </div>
         </div>
 
@@ -4435,38 +4455,32 @@ create policy "anon update nuance reviews"
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
           {!session && (
             <div style={{width:"100%",display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{display:"flex",gap:6,background:"var(--card2)",padding:4,borderRadius:12,width:"fit-content",maxWidth:"100%",overflowX:"auto"}}>
-                {[["password","비밀번호"],["magic","매직링크"]].map(([v,l])=>(
-                  <button key={v} onClick={()=>setAuthMode(v)} style={{
-                    padding:"8px 12px",borderRadius:9,fontSize:12,fontWeight:800,border:"none",cursor:"pointer",
-                    background:authMode===v?"var(--card)":"transparent",
-                    color:authMode===v?"var(--accent)":"var(--sub)",fontFamily:"var(--font-ui)",
-                    boxShadow:authMode===v?"0 1px 6px rgba(0,0,0,.06)":"none",transition:"all .15s",
-                  }}>{l}</button>
-                ))}
+              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                <div style={{fontFamily:"var(--font-brush)",fontSize:34,lineHeight:1,color:"var(--text)"}}>印</div>
+                <div>
+                  <div style={{fontSize:17,fontWeight:900,color:"var(--text)",lineHeight:1.3}}>내 계정으로 들어가기</div>
+                  <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.55}}>
+                    이 기기에 이메일을 저장해두면 다음부터는 4자리 PIN만 확인하면 됩니다.
+                  </div>
+                </div>
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                <input value={cloudForm.email} onChange={e=>setCloudForm(f=>({...f,email:e.target.value}))} placeholder="이메일"
+                <input value={cloudForm.email} onChange={e=>rememberEmail(e.target.value)} placeholder="내 계정 이메일"
                   style={{flex:"1 1 220px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-                {authMode==="password" && (
-                  <input type="password" value={cloudForm.password} onChange={e=>setCloudForm(f=>({...f,password:e.target.value}))} placeholder="비밀번호"
-                    style={{flex:"1 1 180px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-                )}
-                {authMode==="password" ? (
-                  <>
-                    <Btn variant="primary" onClick={()=>onPasswordLogin(cloudForm.email, cloudForm.password)} style={{padding:"9px 14px",fontSize:13}}>
-                      로그인
-                    </Btn>
-                    <Btn variant="ghost" onClick={()=>onPasswordSignUp(cloudForm.email, cloudForm.password)} style={{padding:"9px 14px",fontSize:13}}>
-                      계정 만들기
-                    </Btn>
-                  </>
-                ) : (
-                  <Btn variant="primary" onClick={()=>onSendMagicLink(cloudForm.email)} style={{padding:"9px 14px",fontSize:13}}>
-                    매직링크 보내기
-                  </Btn>
-                )}
+                <input inputMode="numeric" maxLength="4" value={cloudForm.pin} onChange={e=>setCloudForm(f=>({...f,pin:e.target.value.replace(/\D/g,"").slice(0,4)}))} placeholder="4자리 PIN"
+                  style={{flex:"0 1 150px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)",letterSpacing:".28em",fontWeight:900,textAlign:"center"}}/>
+                <Btn variant="primary" onClick={()=>onPinLogin(cloudForm.email, cloudForm.pin)} style={{padding:"9px 14px",fontSize:13}}>
+                  내 계정
+                </Btn>
+                <Btn variant="ghost" onClick={()=>onPinSignUp(cloudForm.email, cloudForm.pin)} style={{padding:"9px 14px",fontSize:13}}>
+                  처음 만들기
+                </Btn>
               </div>
+              {savedAccountEmail && (
+                <div style={{fontSize:11,color:"var(--sub2)",lineHeight:1.5}}>
+                  저장된 계정: {savedAccountEmail}
+                </div>
+              )}
             </div>
           )}
           <Btn variant="ghost" onClick={()=>setShowConfig(v=>!v)} style={{padding:"9px 14px",fontSize:13}}>
@@ -4502,7 +4516,7 @@ create policy "anon update nuance reviews"
           로그인 상태에서는 변경사항이 자동으로 저장됩니다. `지금 바로 저장`은 기다리지 않고 즉시 올리고 싶을 때만 누르면 됩니다.
         </div>
         <div style={{fontSize:11,color:"var(--sub)",marginTop:6,lineHeight:1.5}}>
-          Supabase 대시보드의 Authentication 설정에서 Site URL과 Redirect URL에 이 앱 주소를 등록해야 매직링크 로그인이 정상적으로 돌아옵니다.
+          처음 만드는 계정은 Supabase 설정에 따라 이메일 확인이 한 번 필요할 수 있어요. 이후에는 이 화면에서 4자리 PIN으로 바로 들어오면 됩니다.
         </div>
       </Card>
 
@@ -4870,7 +4884,7 @@ const NAV = [
   { id:"study",   label:"학습",   sub:"字", icon:"◎" },
   { id:"mission", label:"미션",   sub:"句", icon:"⌁" },
   { id:"archive", label:"서재",   sub:"冊", icon:"◫" },
-  { id:"backup",  label:"동기화", sub:"雲", icon:"⟲" },
+  { id:"backup",  label:"내 계정", sub:"印", icon:"印" },
 ];
 
 const ARCHIVE_TOOLS = [
@@ -5078,59 +5092,47 @@ function App() {
     setSyncState("synced");
     return { ok:true };
   };
-  const sendMagicLink = async (email) => {
+  const loginWithPin = async (email, pin) => {
     if (!supabaseClient) {
       setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
       setSyncState("error");
       return;
     }
-    if (!String(email || "").trim()) {
-      setSyncStatus("로그인할 이메일을 입력해 주세요.");
+    if (!String(email || "").trim() || !isFourDigitPin(pin)) {
+      setSyncStatus("이메일과 4자리 PIN을 입력해 주세요.");
       setSyncState("error");
       return;
     }
-    const { error } = await supabaseClient.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: window.location.origin + window.location.pathname }
-    });
-    setSyncStatus(error ? `로그인 메일 전송 실패: ${error.message}` : "매직링크를 이메일로 보냈어요.");
-    setSyncState(error ? "error" : "ready");
-  };
-  const loginWithPassword = async (email, password) => {
-    if (!supabaseClient) {
-      setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
-      setSyncState("error");
-      return;
-    }
-    if (!String(email || "").trim() || !String(password || "").trim()) {
-      setSyncStatus("이메일과 비밀번호를 입력해 주세요.");
-      setSyncState("error");
-      return;
-    }
-    setSyncStatus("비밀번호 로그인 중...");
+    const cleanEmail = email.trim();
+    store.set("accountEmail", cleanEmail);
+    setSyncStatus("내 계정 확인 중...");
     setSyncState("syncing");
+    const password = await derivePinPassword(cleanEmail, pin);
     const { error } = await supabaseClient.auth.signInWithPassword({
-      email: email.trim(),
+      email: cleanEmail,
       password,
     });
-    setSyncStatus(error ? `비밀번호 로그인 실패: ${error.message}` : "비밀번호 로그인 완료");
+    setSyncStatus(error ? `내 계정 로그인 실패: ${error.message}` : "내 계정 로그인 완료");
     setSyncState(error ? "error" : "synced");
   };
-  const signUpWithPassword = async (email, password) => {
+  const signUpWithPin = async (email, pin) => {
     if (!supabaseClient) {
       setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
       setSyncState("error");
       return;
     }
-    if (!String(email || "").trim() || String(password || "").length < 6) {
-      setSyncStatus("이메일과 6자 이상의 비밀번호를 입력해 주세요.");
+    if (!String(email || "").trim() || !isFourDigitPin(pin)) {
+      setSyncStatus("이메일과 4자리 PIN을 입력해 주세요.");
       setSyncState("error");
       return;
     }
-    setSyncStatus("계정 생성 중...");
+    const cleanEmail = email.trim();
+    store.set("accountEmail", cleanEmail);
+    setSyncStatus("내 계정 생성 중...");
     setSyncState("syncing");
+    const password = await derivePinPassword(cleanEmail, pin);
     const { data, error } = await supabaseClient.auth.signUp({
-      email: email.trim(),
+      email: cleanEmail,
       password,
       options: { emailRedirectTo: window.location.origin + window.location.pathname }
     });
@@ -5139,7 +5141,7 @@ function App() {
       setSyncState("error");
       return;
     }
-    setSyncStatus(data.session ? "계정 생성 및 로그인 완료" : "계정을 만들었어요. Supabase 설정에 따라 확인 메일이 한 번 필요할 수 있어요.");
+    setSyncStatus(data.session ? "내 계정 생성 및 로그인 완료" : "내 계정을 만들었어요. Supabase 설정에 따라 확인 메일이 한 번 필요할 수 있어요.");
     setSyncState(data.session ? "synced" : "ready");
   };
   const pushNow = async () => {
@@ -5297,9 +5299,8 @@ function App() {
             lastRemoteUpdatedAt={lastRemoteUpdatedAt}
             hasSyncConflict={hasSyncConflict}
             onSaveSupabaseConfig={saveSupabaseRuntimeConfig}
-            onSendMagicLink={sendMagicLink}
-            onPasswordLogin={loginWithPassword}
-            onPasswordSignUp={signUpWithPassword}
+            onPinLogin={loginWithPin}
+            onPinSignUp={signUpWithPin}
             onSignOut={signOutCloud}
             onPullCloud={pullNow}
             onPushCloud={pushNow}
