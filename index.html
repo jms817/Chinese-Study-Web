@@ -2272,59 +2272,79 @@ function HomeScreen({ stats, onStudyChapter, onReview, onAiAssist, onCloudSync, 
   return (
     <div style={{animation:"fadeUp .3s ease both"}}>
       {topBrand}
-      <div style={{textAlign:"center",padding:"32px 0 20px"}}>
-        <div className="focus-hanzi" style={{fontSize:116,lineHeight:1,color:"var(--text)"}}>{focus.char}</div>
-        <div style={{fontSize:14,letterSpacing:"0.2em",color:"var(--sub2)",marginTop:20}}>{focus.meaning}</div>
-        <div style={{fontSize:18,fontWeight:700,letterSpacing:"0.14em",marginTop:6}}>{focus.english.toUpperCase()}</div>
-        <div style={{display:"flex",justifyContent:"center",marginTop:14}}>
+
+      {/* 오늘의 한자 + 주요 액션 */}
+      <Card style={{marginBottom:12,padding:"22px 20px 22px",textAlign:"center"}}>
+        <div style={{fontSize:11,letterSpacing:"0.2em",color:"var(--sub2)",textTransform:"uppercase",marginBottom:12}}>오늘의 몰입</div>
+        <div className="focus-hanzi" style={{fontSize:108,lineHeight:1,color:"var(--text)"}}>{focus.char}</div>
+        <div style={{fontSize:13,letterSpacing:"0.12em",color:"var(--sub2)",marginTop:14}}>{focus.pinyin}</div>
+        <div style={{fontSize:18,fontWeight:800,marginTop:4}}>{focus.meaning}</div>
+        <div style={{display:"flex",justifyContent:"center",marginTop:12}}>
           <TTSBtn text={focus.word}/>
         </div>
-      </div>
-
-      <Card style={{marginBottom:14,padding:"18px 18px 20px"}}>
-        <div style={{fontSize:12,color:"var(--sub2)",fontWeight:700,marginBottom:10}}>오늘 바로 할 일</div>
-        <div style={{fontSize:15,color:"var(--text)",lineHeight:1.7,marginBottom:16}}>
-          {focus.note}
-        </div>
         {focus.example && (
-          <div style={{padding:"12px 14px",borderRadius:18,background:"rgba(255,255,255,0.54)",border:"1px solid rgba(28,27,26,0.06)",marginBottom:14}}>
-            <div style={{fontFamily:"var(--font-zh)",fontSize:16,lineHeight:1.5}}>{focus.example}</div>
-            <div style={{fontSize:12,color:"var(--sub2)",marginTop:4}}>{focus.exMeaning}</div>
+          <div style={{margin:"14px auto 0",maxWidth:320,padding:"10px 14px",borderRadius:16,
+            background:"rgba(255,255,255,0.54)",border:"1px solid rgba(28,27,26,0.06)",textAlign:"left"}}>
+            <div style={{fontFamily:"var(--font-zh)",fontSize:15,lineHeight:1.5,color:"var(--text)"}}>{focus.example}</div>
+            <div style={{fontSize:12,color:"var(--sub2)",marginTop:3}}>{focus.exMeaning}</div>
           </div>
         )}
-        <button onClick={primaryAction.run} style={{width:"100%",padding:"16px 18px",borderRadius:999,border:"none",background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"}}>
+        <button onClick={primaryAction.run} style={{
+          width:"100%",marginTop:18,padding:"15px",borderRadius:999,
+          border:"none",background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer"
+        }}>
           {primaryAction.label}
         </button>
       </Card>
 
-      <Card style={{marginBottom:14,padding:"18px 18px 20px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <div style={{fontSize:13,fontWeight:800}}>진도</div>
-          <div style={{fontSize:13,color:"var(--sub)"}}>{pct}%</div>
-        </div>
-        <ProgressBar value={pct} max={100} color="var(--accent)" height={5}/>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:10,fontSize:12,color:"var(--sub)"}}>
-          <span>제 {nextChapter?.num || 1}장: {nextChapter?.title || "학습"}</span>
-          <span>{nextRemaining}단계 남음</span>
-        </div>
-      </Card>
+      {/* 진도 + 오늘 통계 — 2열 그리드 */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        <Card style={{padding:"16px 16px 18px"}}>
+          <div style={{fontSize:11,color:"var(--sub2)",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>진도</div>
+          <div style={{fontSize:28,fontWeight:800,lineHeight:1,marginBottom:8}}>{pct}<span style={{fontSize:16,fontWeight:600}}>%</span></div>
+          <ProgressBar value={pct} max={100} color="var(--accent)" height={4}/>
+          <div style={{fontSize:11,color:"var(--sub)",marginTop:8,lineHeight:1.5}}>
+            {learned}/{totalWords} 단어<br/>
+            <span style={{color:"var(--sub2)"}}>{nextChapter?.title || "기본"}</span>
+          </div>
+        </Card>
+        <Card style={{padding:"16px 16px 18px"}}>
+          <div style={{fontSize:11,color:"var(--sub2)",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>오늘</div>
+          <div style={{fontSize:28,fontWeight:800,lineHeight:1,marginBottom:4}}>{stats.todayCount||0}<span style={{fontSize:14,fontWeight:600,marginLeft:2}}>문항</span></div>
+          <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",marginBottom:8}}>{xp} XP</div>
+          <div style={{fontSize:11,color:"var(--sub)",lineHeight:1.5}}>
+            복습 대기<br/>
+            <span style={{fontSize:16,fontWeight:800,color:reviewCount>0?"var(--coral)":"var(--text)"}}>{reviewCount}개</span>
+          </div>
+        </Card>
+      </div>
 
-      <Card style={{marginBottom:14,padding:"18px 18px 20px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <div style={{fontSize:13,fontWeight:800}}>단어장</div>
-          <div style={{fontSize:16}}>📖</div>
-        </div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-          {[focus.meaning, nextMission.title, nextChapter?.title || "복습", `즐겨찾기 ${favCount}개`].map(chip => (
-            <span key={chip} style={{padding:"8px 12px",borderRadius:999,background:"rgba(255,255,255,0.72)",border:"1px solid rgba(28,27,26,0.06)",fontSize:12,color:"var(--sub)"}}>
-              {chip}
-            </span>
-          ))}
-        </div>
-      </Card>
+      {/* 빠른 이동 — 미션 + 복습 */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        <button onClick={onMission} style={{
+          padding:"16px 14px",borderRadius:24,border:"1px solid rgba(255,255,255,0.64)",
+          background:"rgba(255,255,255,0.44)",backdropFilter:"blur(20px)",
+          textAlign:"left",cursor:"pointer",display:"flex",flexDirection:"column",gap:6
+        }}>
+          <span style={{fontSize:18}}>⌁</span>
+          <span style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>미션</span>
+          <span style={{fontSize:11,color:"var(--sub)",lineHeight:1.4}}>{nextMission.title}</span>
+        </button>
+        <button onClick={onReview} style={{
+          padding:"16px 14px",borderRadius:24,border:"1px solid rgba(255,255,255,0.64)",
+          background:"rgba(255,255,255,0.44)",backdropFilter:"blur(20px)",
+          textAlign:"left",cursor:"pointer",display:"flex",flexDirection:"column",gap:6
+        }}>
+          <span style={{fontSize:18}}>📖</span>
+          <span style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>복습</span>
+          <span style={{fontSize:11,color:reviewCount>0?"var(--coral)":"var(--sub)",lineHeight:1.4,fontWeight:reviewCount>0?700:400}}>
+            {reviewCount>0?`${reviewCount}개 대기 중`:"모두 완료"}
+          </span>
+        </button>
+      </div>
 
       <div style={{
-        marginBottom:18,height:172,borderRadius:24,overflow:"hidden",border:"1px solid rgba(255,255,255,0.58)",
+        height:148,borderRadius:22,overflow:"hidden",border:"1px solid rgba(255,255,255,0.58)",
         backgroundImage:`linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)), ${zenImage}`,
         backgroundSize:"cover",backgroundPosition:"center",boxShadow:"0 20px 50px rgba(26,26,26,0.08)"
       }}/>
@@ -4319,30 +4339,20 @@ Object.assign(window, { ChatScreen });
 
 function BackupScreen({
   stats, tweaks, onImport,
-  supabaseConfig, session, syncStatus, syncState, lastSyncedAt, lastRemoteUpdatedAt, hasSyncConflict,
-  onSaveSupabaseConfig, onPinLogin, onPinSignUp, onSignOut, onPullCloud, onPushCloud
+  supabaseConfig, localUser, session, syncStatus, syncState, lastSyncedAt, lastRemoteUpdatedAt, hasSyncConflict,
+  onSaveSupabaseConfig, onPinLogin, onPinSignUp, onSignOut, onLocalSignOut, onPullCloud, onPushCloud
 }) {
   const [status, setStatus] = React.useState("");
   const [showConfig, setShowConfig] = React.useState(false);
-  const savedAccountEmail = store.get("accountEmail", "");
+  const [cloudPin, setCloudPin] = React.useState("");
   const [cloudForm, setCloudForm] = React.useState(() => ({
     url:supabaseConfig?.url || "",
     anonKey:supabaseConfig?.anonKey || "",
-    email:store.get("accountEmail", ""),
-    pin:"",
   }));
   const fileRef = React.useRef(null);
   React.useEffect(() => {
     setCloudForm(f => ({ ...f, url:supabaseConfig?.url || "", anonKey:supabaseConfig?.anonKey || "" }));
   }, [supabaseConfig?.url, supabaseConfig?.anonKey]);
-  React.useEffect(() => {
-    if (!session) setShowConfig(true);
-  }, [session]);
-  const rememberEmail = (email) => {
-    const clean = String(email || "").trim();
-    setCloudForm(f => ({...f, email:clean}));
-    if (clean) store.set("accountEmail", clean);
-  };
   const exportData = () => {
     const payload = StorageService.exportPayload(stats, tweaks);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
@@ -4426,107 +4436,91 @@ create policy "anon update nuance reviews"
 
   return (
     <div style={{animation:"fadeUp .3s ease both"}}>
-      <SectionTitle sub="내 계정에 들어오면 학습 기록이 Supabase에 자동 저장돼요. 평소에는 이메일과 4자리 PIN만 쓰면 됩니다.">내 계정</SectionTitle>
+      <SectionTitle sub="사용자 이름과 PIN으로 들어오면 학습 기록이 이 기기에 저장돼요. Supabase를 연결하면 클라우드에도 자동 백업됩니다.">내 계정</SectionTitle>
 
+      {/* ── 현재 사용자 카드 ── */}
       <Card style={{marginBottom:14,border:"1.5px solid var(--accent)44"}}>
-        <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"flex-start",marginBottom:12}}>
-          <div>
-            <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>계정 로그인</div>
-            <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.55}}>
-              앱에서는 4자리 PIN만 입력하고, 실제 Supabase 인증값은 앱이 긴 값으로 변환해서 사용합니다.
+        <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{width:44,height:44,borderRadius:14,background:"var(--accent-dim)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontFamily:"var(--font-brush)",color:"var(--accent)"}}>
+              {(localUser?.username?.[0] || "?").toUpperCase()}
+            </div>
+            <div>
+              <div style={{fontSize:16,fontWeight:800,color:"var(--text)"}}>{localUser?.username || "사용자"}</div>
+              <div style={{fontSize:12,color:"var(--sub)",marginTop:2}}>로컬 계정 활성</div>
             </div>
           </div>
-          <div style={{
-            fontSize:12,fontWeight:800,padding:"6px 9px",borderRadius:9,
-            background:syncState==="error"?"var(--coral-dim)":syncState==="syncing"?"var(--gold-dim)":session?"var(--accent-dim)":"var(--card2)",
-            color:syncState==="error"?"var(--coral)":syncState==="syncing"?"var(--gold)":session?"var(--accent)":"var(--sub)"
-          }}>
-            {syncState==="syncing"?"확인 중":syncState==="error"?"확인 필요":session ? "내 계정" : "PIN 로그인"}
-          </div>
+          <Btn variant="ghost" onClick={onLocalSignOut} style={{padding:"7px 12px",fontSize:12}}>로그아웃</Btn>
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10,marginBottom:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:14}}>
           <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
-            <div style={{fontSize:11,color:"var(--sub)",fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",marginBottom:4}}>현재 상태</div>
-            <div style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>
-              {hasSyncConflict ? "충돌 가능성 있음" : syncState==="syncing" ? "저장 중" : syncState==="error" ? "저장 확인 필요" : syncState==="dirty" ? "저장 대기 중" : session ? "자동 저장 연결됨" : "로컬 저장만 사용"}
+            <div style={{fontSize:11,color:"var(--sub)",fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",marginBottom:4}}>클라우드</div>
+            <div style={{fontSize:13,fontWeight:800,color:session?"var(--accent)":"var(--sub)"}}>
+              {session ? "연결됨" : "연결 안 됨"}
+            </div>
+          </div>
+          <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
+            <div style={{fontSize:11,color:"var(--sub)",fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",marginBottom:4}}>저장 상태</div>
+            <div style={{fontSize:13,fontWeight:800,color:hasSyncConflict?"var(--coral)":syncState==="syncing"?"var(--gold)":"var(--text)"}}>
+              {hasSyncConflict?"충돌":syncState==="syncing"?"저장 중":syncState==="error"?"확인 필요":syncState==="dirty"?"대기 중":session?"자동 저장":"로컬만"}
             </div>
           </div>
           <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
             <div style={{fontSize:11,color:"var(--sub)",fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",marginBottom:4}}>최근 저장</div>
-            <div style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>{formatDateTime(lastSyncedAt)}</div>
-          </div>
-          <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
-            <div style={{fontSize:11,color:"var(--sub)",fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",marginBottom:4}}>클라우드 최신</div>
-            <div style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>{formatDateTime(lastRemoteUpdatedAt)}</div>
+            <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>{formatDateTime(lastSyncedAt)}</div>
           </div>
         </div>
 
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-          {!session && (
-            <div style={{width:"100%",display:"flex",flexDirection:"column",gap:10}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                <div style={{fontFamily:"var(--font-brush)",fontSize:34,lineHeight:1,color:"var(--text)"}}>印</div>
-                <div>
-                  <div style={{fontSize:17,fontWeight:900,color:"var(--text)",lineHeight:1.3}}>내 계정으로 들어가기</div>
-                  <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.55}}>
-                    이 기기에 이메일을 저장해두면 다음부터는 4자리 PIN만 확인하면 됩니다.
-                  </div>
-                </div>
-              </div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                <input value={cloudForm.email} onChange={e=>rememberEmail(e.target.value)} placeholder="내 계정 이메일"
-                  style={{flex:"1 1 220px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-                <input inputMode="numeric" maxLength="4" value={cloudForm.pin} onChange={e=>setCloudForm(f=>({...f,pin:e.target.value.replace(/\D/g,"").slice(0,4)}))} placeholder="4자리 PIN"
-                  style={{flex:"0 1 150px",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)",letterSpacing:".28em",fontWeight:900,textAlign:"center"}}/>
-                <Btn variant="primary" onClick={()=>onPinLogin(cloudForm.email, cloudForm.pin)} style={{padding:"9px 14px",fontSize:13}}>
-                  내 계정
-                </Btn>
-                <Btn variant="ghost" onClick={()=>onPinSignUp(cloudForm.email, cloudForm.pin)} style={{padding:"9px 14px",fontSize:13}}>
-                  처음 만들기
-                </Btn>
-              </div>
-              {savedAccountEmail && (
-                <div style={{fontSize:11,color:"var(--sub2)",lineHeight:1.5}}>
-                  저장된 계정: {savedAccountEmail}
-                </div>
-              )}
-            </div>
-          )}
-          <Btn variant="ghost" onClick={()=>setShowConfig(v=>!v)} style={{padding:"9px 14px",fontSize:13}}>
-            {showConfig ? "설정 접기" : "설정 보기"}
-          </Btn>
-        </div>
+        {/* ── 클라우드 연결 (Supabase) ── */}
+        <div style={{borderTop:"1px solid var(--border)",paddingTop:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <div style={{fontSize:13,fontWeight:800}}>클라우드 동기화</div>
+            <Btn variant="ghost" onClick={()=>setShowConfig(v=>!v)} style={{padding:"6px 10px",fontSize:12}}>
+              {showConfig?"설정 접기":"Supabase 설정"}
+            </Btn>
+          </div>
 
-        {showConfig && (
-          <>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10,marginBottom:10}}>
-              <input value={cloudForm.url} onChange={e=>setCloudForm(f=>({...f,url:e.target.value}))} placeholder="Supabase Project URL"
-                style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-              <input value={cloudForm.anonKey} onChange={e=>setCloudForm(f=>({...f,anonKey:e.target.value}))} placeholder="Supabase anon public key"
-                style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-            </div>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
-              <Btn variant="ghost" onClick={()=>onSaveSupabaseConfig({ url:cloudForm.url, anonKey:cloudForm.anonKey })} style={{padding:"9px 14px",fontSize:13}}>
-                설정 저장
+          {showConfig && (
+            <div style={{marginBottom:12}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8,marginBottom:8}}>
+                <input value={cloudForm.url} onChange={e=>setCloudForm(f=>({...f,url:e.target.value}))} placeholder="Supabase Project URL"
+                  style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
+                <input value={cloudForm.anonKey} onChange={e=>setCloudForm(f=>({...f,anonKey:e.target.value}))} placeholder="Supabase anon key"
+                  style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
+              </div>
+              <Btn variant="ghost" onClick={()=>onSaveSupabaseConfig({url:cloudForm.url,anonKey:cloudForm.anonKey})} style={{padding:"8px 13px",fontSize:12}}>
+                URL / Key 저장
               </Btn>
             </div>
-          </>
-        )}
+          )}
 
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-          <Btn variant="success" onClick={onPullCloud} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>클라우드에서 불러오기</Btn>
-          <Btn variant="primary" onClick={onPushCloud} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>지금 바로 저장</Btn>
-          <Btn variant="ghost" onClick={onSignOut} disabled={!session} style={{padding:"9px 14px",fontSize:13}}>로그아웃</Btn>
-          <span style={{fontSize:12,color:hasSyncConflict?"var(--coral)":"var(--sub)",fontWeight:hasSyncConflict?700:500}}>
-            {syncStatus || (session ? `로그인 사용자: ${session.user?.email || session.user?.id}` : "Supabase 설정 후 로그인 가능")}
-          </span>
-        </div>
-        <div style={{fontSize:11,color:"var(--sub)",marginTop:10,lineHeight:1.5}}>
-          로그인 상태에서는 변경사항이 자동으로 저장됩니다. `지금 바로 저장`은 기다리지 않고 즉시 올리고 싶을 때만 누르면 됩니다.
-        </div>
-        <div style={{fontSize:11,color:"var(--sub)",marginTop:6,lineHeight:1.5}}>
-          처음 만드는 계정은 Supabase 설정에 따라 이메일 확인이 한 번 필요할 수 있어요. 이후에는 이 화면에서 4자리 PIN으로 바로 들어오면 됩니다.
+          {!session ? (
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+              <input inputMode="numeric" maxLength="4" value={cloudPin}
+                onChange={e=>setCloudPin(e.target.value.replace(/\D/g,"").slice(0,4))}
+                placeholder="4자리 PIN"
+                style={{flex:"0 1 130px",padding:"9px 12px",borderRadius:10,border:"1.5px solid var(--border)",
+                  background:"var(--card)",fontFamily:"var(--font-ui)",letterSpacing:".28em",fontWeight:900,textAlign:"center"}}/>
+              <Btn variant="primary" onClick={()=>onPinLogin(cloudPin)} style={{padding:"9px 13px",fontSize:13}}>
+                클라우드 연결
+              </Btn>
+              <Btn variant="ghost" onClick={()=>onPinSignUp(cloudPin)} style={{padding:"9px 13px",fontSize:13}}>
+                클라우드 계정 생성
+              </Btn>
+            </div>
+          ) : (
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+              <Btn variant="success" onClick={onPullCloud} style={{padding:"9px 13px",fontSize:13}}>클라우드에서 불러오기</Btn>
+              <Btn variant="primary" onClick={onPushCloud} style={{padding:"9px 13px",fontSize:13}}>지금 저장</Btn>
+              <Btn variant="ghost" onClick={onSignOut} style={{padding:"9px 13px",fontSize:13}}>클라우드 연결 해제</Btn>
+            </div>
+          )}
+          {syncStatus && (
+            <div style={{marginTop:8,fontSize:12,color:hasSyncConflict?"var(--coral)":"var(--sub)",fontWeight:hasSyncConflict?700:400}}>
+              {syncStatus}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -4908,6 +4902,129 @@ const ARCHIVE_TOOLS = [
   { id:"inspect", label:"검수",   desc:"표현 점검", icon:"校" },
 ];
 
+/* ─── Local account helpers ─── */
+function getLocalAccounts() { return store.get("accounts", {}); }
+function setLocalAccounts(a) { store.set("accounts", a); }
+function usernameToFakeEmail(u) { return `${u.toLowerCase().replace(/[^a-z0-9_]/g,"")}@jingxi.app`; }
+
+function LoginScreen({ onLogin }) {
+  const [mode, setMode] = React.useState("login");
+  const [username, setUsername] = React.useState("");
+  const [pin, setPin] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const submittingRef = React.useRef(false);
+
+  const addDigit = (d) => setPin(p => p.length < 4 ? p + d : p);
+  const delDigit = () => setPin(p => p.slice(0, -1));
+
+  const handleSubmit = React.useCallback(async (currentPin) => {
+    if (submittingRef.current) return;
+    const thePin = currentPin !== undefined ? currentPin : pin;
+    const uname = username.trim().toLowerCase().replace(/\s+/g,"");
+    if (!uname) { setError("사용자 이름을 입력해 주세요."); return; }
+    if (!isFourDigitPin(thePin)) { setError("4자리 PIN을 모두 입력해 주세요."); return; }
+    submittingRef.current = true;
+    setLoading(true); setError("");
+    const accounts = getLocalAccounts();
+    const fakeEmail = usernameToFakeEmail(uname);
+    const hash = await derivePinPassword(fakeEmail, thePin);
+    if (mode === "signup") {
+      if (accounts[uname]) { setError("이미 사용 중인 이름이에요."); setPin(""); setLoading(false); submittingRef.current=false; return; }
+      setLocalAccounts({ ...accounts, [uname]: { hash } });
+      store.set("localUser", { username: uname, fakeEmail });
+      onLogin({ username: uname, fakeEmail });
+    } else {
+      if (!accounts[uname]) { setError("등록된 계정이 없어요. '계정 만들기'를 눌러 주세요."); setPin(""); setLoading(false); submittingRef.current=false; return; }
+      if (accounts[uname].hash !== hash) { setError("PIN이 틀렸어요. 다시 확인해 주세요."); setPin(""); setLoading(false); submittingRef.current=false; return; }
+      store.set("localUser", { username: uname, fakeEmail });
+      onLogin({ username: uname, fakeEmail });
+    }
+    setLoading(false); submittingRef.current=false;
+  }, [username, pin, mode, onLogin]);
+
+  React.useEffect(() => {
+    if (pin.length === 4) handleSubmit(pin);
+  }, [pin]);
+
+  const keypad = [1,2,3,4,5,6,7,8,9,null,0,"⌫"];
+
+  return (
+    <div style={{
+      position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center",
+      background:"var(--bg)", zIndex:9999, padding:"20px",
+      backgroundImage:"radial-gradient(circle, rgba(28,27,26,0.07) 1px, transparent 1.1px), linear-gradient(180deg,#fffcfa 0%,#fdf9f6 100%)",
+      backgroundSize:"18px 18px, auto"
+    }}>
+      <div className="glass-card" style={{
+        width:"100%", maxWidth:360, padding:"34px 28px 30px", textAlign:"center",
+        animation:"fadeUp .3s ease both"
+      }}>
+        <div style={{fontFamily:"var(--font-brush)", fontSize:46, lineHeight:1, color:"var(--text)", marginBottom:2}}>靜習</div>
+        <div style={{fontSize:11, letterSpacing:"0.22em", color:"var(--sub2)", marginBottom:28, textTransform:"uppercase"}}>Chinese Study</div>
+
+        <div style={{display:"flex", borderRadius:999, background:"rgba(28,27,26,0.06)", padding:3, marginBottom:22, gap:3}}>
+          {[["login","로그인"],["signup","계정 만들기"]].map(([m,l]) => (
+            <button key={m} onClick={()=>{ setMode(m); setError(""); setPin(""); }}
+              style={{flex:1, padding:"9px 10px", borderRadius:999, border:"none", cursor:"pointer",
+                fontFamily:"var(--font-ui)", fontSize:13, fontWeight:700, transition:"all .18s",
+                background:mode===m?"var(--accent)":"transparent", color:mode===m?"#fff":"var(--sub)"}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        <input value={username} onChange={e=>setUsername(e.target.value)}
+          placeholder="사용자 이름" autoComplete="username"
+          onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
+          style={{width:"100%", padding:"12px 16px", marginBottom:18, fontSize:15, borderRadius:14,
+            textAlign:"center", letterSpacing:"0.06em"}}/>
+
+        <div style={{display:"flex", justifyContent:"center", gap:14, marginBottom:18}}>
+          {[0,1,2,3].map(i=>(
+            <div key={i} style={{
+              width:14, height:14, borderRadius:"50%", transition:"background .15s",
+              background:i<pin.length?"var(--accent)":"rgba(28,27,26,0.13)"
+            }}/>
+          ))}
+        </div>
+
+        <div style={{display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, maxWidth:234, margin:"0 auto 16px"}}>
+          {keypad.map((d,i)=>(
+            <button key={i}
+              onClick={()=>{ if(d===null||loading)return; d==="⌫"?delDigit():addDigit(String(d)); }}
+              style={{
+                padding:"15px 10px", borderRadius:16, fontWeight:700, fontFamily:"var(--font-ui)",
+                fontSize:d==="⌫"?17:18, cursor:d===null?"default":"pointer", transition:"all .12s",
+                border:"1px solid rgba(255,255,255,0.6)",
+                background:d===null?"transparent":"rgba(255,255,255,0.56)",
+                color:"var(--text)", opacity:d===null?0:1,
+                boxShadow:d===null?"none":"0 2px 8px rgba(0,0,0,0.04)",
+                backdropFilter:d===null?"none":"blur(12px)"
+              }}>
+              {d}
+            </button>
+          ))}
+        </div>
+
+        {error && (
+          <div style={{marginBottom:12, padding:"10px 14px", borderRadius:12,
+            background:"var(--coral-dim)", color:"var(--coral)", fontSize:13, fontWeight:700}}>
+            {error}
+          </div>
+        )}
+
+        <button onClick={()=>handleSubmit()} disabled={loading}
+          style={{width:"100%", padding:"14px", borderRadius:999, border:"none",
+            background:"var(--accent)", color:"#fff", fontSize:15, fontWeight:800,
+            cursor:loading?"not-allowed":"pointer", fontFamily:"var(--font-ui)", opacity:loading?0.72:1}}>
+          {loading?"확인 중...":mode==="login"?"들어가기":"만들고 들어가기"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function applyAccent(key) {
   const c = ACCENT_OPTIONS[key] || ACCENT_OPTIONS.periwinkle;
   document.documentElement.style.setProperty("--accent", c.accent);
@@ -4919,6 +5036,7 @@ function App() {
   const bootstrappedUserRef = React.useRef(null);
   const autoSyncTimerRef = React.useRef(null);
   const suppressNextAutoSyncRef = React.useRef(false);
+  const [localUser, setLocalUser] = React.useState(() => store.get("localUser", null));
   const [screen, setScreen] = React.useState(() => store.get("screen","home"));
   const [hubOpen, setHubOpen] = React.useState(false);
   const [activeChapter, setActiveChapter] = React.useState(null);
@@ -5102,56 +5220,52 @@ function App() {
     setSyncState("synced");
     return { ok:true };
   };
-  const loginWithPin = async (email, pin) => {
+  const loginWithPin = async (pin) => {
     if (!supabaseClient) {
       setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
       setSyncState("error");
       return;
     }
-    if (!String(email || "").trim() || !isFourDigitPin(pin)) {
-      setSyncStatus("이메일과 4자리 PIN을 입력해 주세요.");
+    if (!localUser?.fakeEmail || !isFourDigitPin(pin)) {
+      setSyncStatus("4자리 PIN을 입력해 주세요.");
       setSyncState("error");
       return;
     }
-    const cleanEmail = email.trim();
-    store.set("accountEmail", cleanEmail);
-    setSyncStatus("내 계정 확인 중...");
+    setSyncStatus("클라우드 계정 확인 중...");
     setSyncState("syncing");
-    const password = await derivePinPassword(cleanEmail, pin);
+    const password = await derivePinPassword(localUser.fakeEmail, pin);
     const { error } = await supabaseClient.auth.signInWithPassword({
-      email: cleanEmail,
+      email: localUser.fakeEmail,
       password,
     });
-    setSyncStatus(error ? `내 계정 로그인 실패: ${error.message}` : "내 계정 로그인 완료");
+    setSyncStatus(error ? `클라우드 연결 실패: ${error.message}` : "클라우드 연결 완료");
     setSyncState(error ? "error" : "synced");
   };
-  const signUpWithPin = async (email, pin) => {
+  const signUpWithPin = async (pin) => {
     if (!supabaseClient) {
       setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
       setSyncState("error");
       return;
     }
-    if (!String(email || "").trim() || !isFourDigitPin(pin)) {
-      setSyncStatus("이메일과 4자리 PIN을 입력해 주세요.");
+    if (!localUser?.fakeEmail || !isFourDigitPin(pin)) {
+      setSyncStatus("4자리 PIN을 입력해 주세요.");
       setSyncState("error");
       return;
     }
-    const cleanEmail = email.trim();
-    store.set("accountEmail", cleanEmail);
-    setSyncStatus("내 계정 생성 중...");
+    setSyncStatus("클라우드 계정 생성 중...");
     setSyncState("syncing");
-    const password = await derivePinPassword(cleanEmail, pin);
+    const password = await derivePinPassword(localUser.fakeEmail, pin);
     const { data, error } = await supabaseClient.auth.signUp({
-      email: cleanEmail,
+      email: localUser.fakeEmail,
       password,
       options: { emailRedirectTo: window.location.origin + window.location.pathname }
     });
     if (error) {
-      setSyncStatus(`계정 생성 실패: ${error.message}`);
+      setSyncStatus(`클라우드 계정 생성 실패: ${error.message}`);
       setSyncState("error");
       return;
     }
-    setSyncStatus(data.session ? "내 계정 생성 및 로그인 완료" : "내 계정을 만들었어요. Supabase 설정에 따라 확인 메일이 한 번 필요할 수 있어요.");
+    setSyncStatus(data.session ? "클라우드 연결 완료" : "클라우드 계정 생성 완료. 이제 로그인해 주세요.");
     setSyncState(data.session ? "synced" : "ready");
   };
   const pushNow = async () => {
@@ -5236,6 +5350,16 @@ function App() {
     setScreen(id);
   };
 
+  const handleLogin = React.useCallback((user) => { setLocalUser(user); }, []);
+  const handleLogout = () => {
+    store.set("localUser", null);
+    setLocalUser(null);
+  };
+
+  if (!localUser) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app">
       {/* Sidebar */}
@@ -5302,6 +5426,7 @@ function App() {
             tweaks={tweaks}
             onImport={handleImport}
             supabaseConfig={supabaseConfig}
+            localUser={localUser}
             session={session}
             syncStatus={syncStatus}
             syncState={syncState}
@@ -5312,6 +5437,7 @@ function App() {
             onPinLogin={loginWithPin}
             onPinSignUp={signUpWithPin}
             onSignOut={signOutCloud}
+            onLocalSignOut={handleLogout}
             onPullCloud={pullNow}
             onPushCloud={pushNow}
           />
