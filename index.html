@@ -4025,7 +4025,7 @@ function BackupScreen({
 }) {
   const [status, setStatus] = React.useState("");
   const fileRef = React.useRef(null);
-  const username = session?.user?.email?.split("@")[0] || "사용자";
+  const username = session?.user?.user_metadata?.display_name || session?.user?.email?.split("@")[0] || "사용자";
   const exportData = () => {
     const payload = StorageService.exportPayload(stats, tweaks);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
@@ -4715,7 +4715,27 @@ const ARCHIVE_TOOLS = [
 ];
 
 /* ─── Local account helpers ─── */
-function usernameToFakeEmail(u) { return `${u.toLowerCase().replace(/[^a-z0-9_]/g,"")}@jingxi.app`; }
+function normalizeAccountName(u) {
+  return String(u || "").trim().replace(/\s+/g, " ");
+}
+function hashAccountName(u) {
+  let h = 2166136261;
+  for (const ch of String(u || "")) {
+    h ^= ch.codePointAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+function usernameToFakeEmail(u) {
+  const normalized = normalizeAccountName(u).toLowerCase();
+  const ascii = normalized
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 24);
+  return `u_${ascii || "user"}_${hashAccountName(normalized)}@jingxi.app`;
+}
 
 function LoginScreen({ onLogin }) {
   const [mode, setMode] = React.useState("login");
@@ -4731,7 +4751,7 @@ function LoginScreen({ onLogin }) {
   const handleSubmit = React.useCallback(async (currentPin) => {
     if (submittingRef.current) return;
     const thePin = currentPin !== undefined ? currentPin : pin;
-    const uname = username.trim().toLowerCase().replace(/\s+/g,"");
+    const uname = normalizeAccountName(username);
     if (!uname) { setError("사용자 이름을 입력해 주세요."); return; }
     if (!isFourDigitPin(thePin)) { setError("4자리 PIN을 모두 입력해 주세요."); return; }
     submittingRef.current = true;
@@ -5111,7 +5131,10 @@ function App() {
     if (mode === "signup") {
       const { data, error } = await supabaseClient.auth.signUp({
         email: fakeEmail, password,
-        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+        options: {
+          emailRedirectTo: window.location.origin + window.location.pathname,
+          data: { display_name: username }
+        }
       });
       if (error) return { error: "계정 만들기 실패: " + error.message };
       if (!data.session) return { error: "계정이 만들어졌어요. 이제 로그인해 주세요." };
