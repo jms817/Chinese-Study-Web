@@ -3432,6 +3432,30 @@ function toneSummaryFromTokens(tokens, fallbackPinyin) {
   return fallbackPinyin ? [{ text:"문장", pinyin:fallbackPinyin, tones:[] }] : [];
 }
 
+function buildWordRows(tokens) {
+  const rows = [];
+  const isHan = (text) => /[\u3400-\u9fff]/.test(text);
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (tok.isPunct) continue;
+    if (tok.meaning || tok.pinyin || tok.word) {
+      rows.push(tok);
+      continue;
+    }
+    if (!isHan(tok.text)) {
+      rows.push(tok);
+      continue;
+    }
+    let text = tok.text;
+    while (i + 1 < tokens.length && !tokens[i + 1].isPunct && !tokens[i + 1].meaning && isHan(tokens[i + 1].text)) {
+      text += tokens[i + 1].text;
+      i++;
+    }
+    rows.push({ ...tok, text, meaning:text.length > 1 ? "이름/고유명사 추정" : "뜻 정보 없음" });
+  }
+  return rows;
+}
+
 function SentenceInsight({
   sentence, pinyin, meaning, focusWord, stats,
   onToggleWordFavorite, onTogglePhraseFavorite, phraseSet, phrase
@@ -3445,6 +3469,7 @@ function SentenceInsight({
   const phraseKey = phraseSet && phrase ? `${phraseSet.id}:${phrase.char}` : "";
   const toneTokens = toneSummaryFromTokens(tokens, pinyin);
   const canFavPhrase = !!(onTogglePhraseFavorite && phraseSet && phrase);
+  const wordRows = buildWordRows(tokens);
 
   const favButton = (tok) => {
     if (!tok.word || !onToggleWordFavorite) return null;
@@ -3479,24 +3504,46 @@ function SentenceInsight({
         </div>
       </div>
 
-      <div style={{display:"flex",flexWrap:"wrap",gap:4,alignItems:"baseline",marginBottom:8}}>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"stretch",marginBottom:10}}>
         {tokens.map((tok, i) => tok.isPunct ? (
-          <span key={i} style={{fontFamily:"var(--font-zh)",fontSize:20,color:"var(--sub2)"}}>{tok.text}</span>
+          <span key={i} style={{fontFamily:"var(--font-zh)",fontSize:22,color:"var(--sub2)",alignSelf:"center"}}>{tok.text}</span>
         ) : (
           <button key={i} onClick={()=>tok.word && onToggleWordFavorite?.(tok.word)} disabled={!tok.word || !onToggleWordFavorite}
             style={{
-              border:"1px solid rgba(28,27,26,0.06)",borderRadius:12,padding:"5px 7px",
-              background:focusWord && tok.text === focusWord.char ? "var(--accent-dim)" : "rgba(255,255,255,0.5)",
+              border:"1px solid rgba(28,27,26,0.07)",borderRadius:13,padding:"7px 8px 6px",
+              background:focusWord && tok.text === focusWord.char ? "var(--accent-dim)" : "rgba(255,255,255,0.56)",
               color:"var(--text)",cursor:tok.word && onToggleWordFavorite ? "pointer" : "default",
-              fontFamily:"var(--font-zh)",fontSize:20,lineHeight:1.1,
+              fontFamily:"var(--font-ui)",lineHeight:1.15,minWidth:48,textAlign:"center",
             }}>
-            {tok.text}
+            <div style={{fontFamily:"var(--font-zh)",fontSize:20,fontWeight:800}}>{tok.text}</div>
+            <div style={{fontSize:10,color:"var(--accent)",fontWeight:800,marginTop:4}}>{tok.pinyin || "?"}</div>
+            <div style={{fontSize:10,color:"var(--sub)",marginTop:2,maxWidth:78,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {tok.meaning || "뜻 확인"}
+            </div>
           </button>
         ))}
       </div>
 
       <div style={{fontSize:12,color:"var(--accent)",lineHeight:1.5,marginBottom:4}}>{pinyin}</div>
       <div style={{fontSize:13,color:"var(--text)",fontWeight:700,lineHeight:1.5,marginBottom:12}}>{meaning}</div>
+
+      <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:12,marginBottom:12}}>
+        <div style={{fontSize:11,fontWeight:900,color:"var(--sub)",marginBottom:8}}>단어 매칭표</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          {wordRows.map((tok, i) => (
+            <div key={`${tok.text}-${i}`} style={{
+              display:"grid",gridTemplateColumns:"minmax(52px,.7fr) minmax(78px,1fr) minmax(92px,1.15fr) auto",
+              gap:8,alignItems:"center",background:"rgba(255,255,255,0.58)",
+              border:"1px solid rgba(28,27,26,0.06)",borderRadius:12,padding:"8px 9px"
+            }}>
+              <div style={{fontFamily:"var(--font-zh)",fontSize:21,fontWeight:900,color:"var(--text)",lineHeight:1.15}}>{tok.text}</div>
+              <div style={{fontSize:12,color:"var(--accent)",fontWeight:800,lineHeight:1.35}}>{tok.pinyin || "발음 정보 없음"}</div>
+              <div style={{fontSize:12,color:"var(--text)",fontWeight:800,lineHeight:1.35}}>{tok.meaning || "뜻 정보 없음"}</div>
+              {favButton(tok) || <span style={{width:22,height:22}}/>}
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10,marginBottom:12}}>
         <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:12}}>
@@ -3533,7 +3580,7 @@ function SentenceInsight({
         )}
       </div>
 
-      <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+      <div style={{display:"none",flexWrap:"wrap",gap:8}}>
         {meaningful.map((tok, i) => (
           <div key={`${tok.text}-${i}`} style={{
             display:"grid",gridTemplateColumns:"auto auto",columnGap:6,rowGap:2,alignItems:"center",
