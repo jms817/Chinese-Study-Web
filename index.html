@@ -1956,7 +1956,7 @@ Object.assign(window, { ToneBadge, PinyinRow, TTSBtn, ProgressBar, Chip, Btn, Em
 <script type="text/babel">
 // HomeScreen — dashboard with XP/level, chapters & streak
 
-function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncState, onToggleWordFavorite }) {
+function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncState, onToggleWordFavorite, onSignOut }) {
   const chapters = getStudyChapters(stats);
   const allWords = getAllWords(stats);
   const totalWords = allWords.length;
@@ -1980,6 +1980,14 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{fontSize:11,color:"var(--sub2)",fontWeight:700}}>{stats.todayCount||0}문항 · {xp}XP</div>
           {session && <div style={{width:7,height:7,borderRadius:"50%",background:syncDot,flexShrink:0}} title={syncStatus}/>}
+          {onSignOut && (
+            <button onClick={onSignOut} style={{
+              border:"1px solid rgba(28,27,26,0.08)",borderRadius:999,
+              background:"rgba(255,255,255,0.52)",color:"var(--sub)",
+              fontSize:11,fontWeight:800,padding:"7px 10px",cursor:"pointer",
+              fontFamily:"var(--font-ui)",backdropFilter:"blur(12px)"
+            }}>로그아웃</button>
+          )}
         </div>
       </div>
 
@@ -4647,6 +4655,18 @@ const ACCENT_OPTIONS = {
   periwinkle:{ accent:"#7B8EE0", bright:"#9BAAE8", dim:"rgba(123,142,224,.10)"  },
 };
 
+function explainSceneDrillAnswer(word, selected, ok) {
+  const tags = (word.tags || []).slice(0, 2).join(", ");
+  const tagPart = tags ? `${tags} 표현으로, ` : "";
+  const examplePart = word.example && word.exMeaning
+    ? ` 예문 “${word.example}”에서는 “${word.exMeaning}”라는 뜻으로 쓰여요.`
+    : "";
+  if (ok) {
+    return `맞아요. ${word.char}(${word.pinyin})는 ${tagPart}“${word.meaning}”로 기억하면 됩니다.${examplePart}`;
+  }
+  return `정답은 “${word.meaning}”이에요. ${word.char}(${word.pinyin})는 ${tagPart}방금 고른 “${selected}”보다 “${word.meaning}” 쪽 의미로 쓰입니다.${examplePart}`;
+}
+
 function SceneScreen({ stats, onResult }) {
   const [activeScene, setActiveScene] = React.useState(null);
   const [step, setStep] = React.useState(0);       // 0=intro 1=learn 2=drill 3=done
@@ -4852,6 +4872,20 @@ function SceneScreen({ stats, onResult }) {
           })}
         </div>
         {answered && (
+          <div style={{
+            background:isCorrect?"rgba(125,140,122,0.12)":"rgba(166,93,80,0.08)",
+            border:`1px solid ${isCorrect?"rgba(125,140,122,0.30)":"rgba(166,93,80,0.25)"}`,
+            borderRadius:18,padding:"13px 16px",marginBottom:14,
+            color:"var(--text)",fontSize:13,lineHeight:1.65,
+            boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.36)"
+          }}>
+            <div style={{fontSize:11,fontWeight:900,color:isCorrect?"var(--gold)":"var(--coral)",letterSpacing:".08em",textTransform:"uppercase",marginBottom:5}}>
+              {isCorrect ? "좋아요" : "짚고 가기"}
+            </div>
+            {explainSceneDrillAnswer(w, selected, isCorrect)}
+          </div>
+        )}
+        {answered && (
           <button onClick={() => {
             if (isLastDrill) setStep(3);
             else { setDrillIdx(i => i+1); setSelected(null); }
@@ -4947,6 +4981,32 @@ function usernameToFakeEmail(u) {
     .slice(0, 24);
   return `u_${ascii || "user"}_${hashAccountName(normalized)}@jingxi.app`;
 }
+const SAVED_ACCOUNTS_KEY = "jingshi.savedAccounts.v1";
+function loadSavedAccounts() {
+  try {
+    const raw = localStorage.getItem(SAVED_ACCOUNTS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 6) : [];
+  } catch {
+    return [];
+  }
+}
+function rememberSavedAccount(name) {
+  const normalized = normalizeAccountName(name);
+  if (!normalized) return loadSavedAccounts();
+  const next = [
+    normalized,
+    ...loadSavedAccounts().filter(item => item.toLowerCase() !== normalized.toLowerCase())
+  ].slice(0, 6);
+  try { localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(next)); } catch {}
+  return next;
+}
+function forgetSavedAccount(name) {
+  const normalized = normalizeAccountName(name);
+  const next = loadSavedAccounts().filter(item => item.toLowerCase() !== normalized.toLowerCase());
+  try { localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(next)); } catch {}
+  return next;
+}
 
 function LoginScreen({ onLogin }) {
   const [mode, setMode] = React.useState("login");
@@ -4954,10 +5014,17 @@ function LoginScreen({ onLogin }) {
   const [pin, setPin] = React.useState("");
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [savedAccounts, setSavedAccounts] = React.useState(() => loadSavedAccounts());
   const submittingRef = React.useRef(false);
 
   const addDigit = (d) => setPin(p => p.length < 4 ? p + d : p);
   const delDigit = () => setPin(p => p.slice(0, -1));
+  const chooseAccount = (name) => {
+    setMode("login");
+    setUsername(name);
+    setPin("");
+    setError("");
+  };
 
   const handleSubmit = React.useCallback(async (currentPin) => {
     if (submittingRef.current) return;
@@ -4968,6 +5035,10 @@ function LoginScreen({ onLogin }) {
     submittingRef.current = true;
     setLoading(true); setError("");
     const result = await onLogin(uname, thePin, mode);
+    if (result?.ok) {
+      setSavedAccounts(rememberSavedAccount(uname));
+      return;
+    }
     if (result?.error) {
       setError(result.error);
       setPin("");
@@ -5006,6 +5077,34 @@ function LoginScreen({ onLogin }) {
             </button>
           ))}
         </div>
+
+        {mode === "login" && savedAccounts.length > 0 && (
+          <div style={{marginBottom:16,textAlign:"left"}}>
+            <div style={{fontSize:11,fontWeight:800,color:"var(--sub2)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:8}}>내 계정</div>
+            <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              {savedAccounts.map(name => (
+                <button key={name} onClick={()=>chooseAccount(name)} style={{
+                  width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+                  border:`1.5px solid ${username===name ? "var(--accent)" : "rgba(255,255,255,0.62)"}`,
+                  background:username===name ? "var(--accent-dim)" : "rgba(255,255,255,0.50)",
+                  color:"var(--text)",borderRadius:14,padding:"10px 12px",cursor:"pointer",
+                  fontFamily:"var(--font-ui)",boxShadow:"0 2px 10px rgba(0,0,0,0.03)"
+                }}>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:9,fontWeight:800}}>
+                    <span style={{width:24,height:24,borderRadius:8,display:"grid",placeItems:"center",background:"rgba(28,27,26,0.07)",fontFamily:"var(--font-brush)",color:"var(--accent)"}}>
+                      {name.slice(0,1).toUpperCase()}
+                    </span>
+                    {name}
+                  </span>
+                  <span onClick={(e)=>{e.stopPropagation();setSavedAccounts(forgetSavedAccount(name));if(username===name)setUsername("");}} style={{
+                    width:24,height:24,borderRadius:999,display:"grid",placeItems:"center",
+                    color:"var(--sub2)",background:"rgba(28,27,26,0.04)",fontSize:12,fontWeight:900
+                  }}>×</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <input value={username} onChange={e=>setUsername(e.target.value)}
           placeholder="사용자 이름" autoComplete="username"
@@ -5418,6 +5517,7 @@ function App() {
             syncStatus={syncStatus}
             syncState={syncState}
             onToggleWordFavorite={handleToggleWordFavorite}
+            onSignOut={handleLogout}
           />
         )}
         {screen==="scene"  && <SceneScreen stats={stats} onResult={handleResult}/>}
