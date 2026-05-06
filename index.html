@@ -2890,6 +2890,196 @@ Object.assign(window, { PhraseScreen });
 </script>
 
 <script type="text/babel">
+// MyLibraryScreen — a study desk for starred words and expressions
+
+function MyLibraryScreen({ stats, onStudyChapter, onToggleWordFavorite, onTogglePhraseFavorite }) {
+  const [tab, setTab] = React.useState("words");
+  const [query, setQuery] = React.useState("");
+  const favWords = (stats.favorites && stats.favorites.words) || {};
+  const favPhrases = (stats.favorites && stats.favorites.phrases) || {};
+  const allWords = getAllWords(stats);
+  const userWords = stats.userWords || [];
+  const q = query.trim().toLowerCase();
+
+  const savedWords = allWords
+    .filter(w => !!favWords[wordKey(w)] || (w.chapterId === "user" || w.level === 0))
+    .filter((w, index, arr) => arr.findIndex(x => wordKey(x) === wordKey(w)) === index);
+  const dueWords = getDueReviewWords(stats);
+  const savedPhraseItems = PHRASE_SETS.flatMap(set =>
+    set.phrases.map(phrase => ({ set, phrase, key:`${set.id}:${phrase.char}` }))
+  ).filter(item => !!favPhrases[item.key]);
+
+  const matchWord = (w) => {
+    if (!q) return true;
+    return [w.char, w.pinyin, w.meaning, w.example, w.exMeaning, ...(w.tags || [])]
+      .join(" ").toLowerCase().includes(q);
+  };
+  const matchPhrase = ({ set, phrase }) => {
+    if (!q) return true;
+    return [set.title, set.titleZh, phrase.char, phrase.pinyin, phrase.meaning, phrase.tip]
+      .join(" ").toLowerCase().includes(q);
+  };
+
+  const filteredWords = savedWords.filter(matchWord);
+  const filteredPhrases = savedPhraseItems.filter(matchPhrase);
+  const filteredDue = dueWords.filter(matchWord);
+  const activeWords = tab === "review" ? filteredDue : filteredWords;
+  const activePhrases = filteredPhrases;
+  const canStudy = tab !== "phrases" && activeWords.length > 0;
+
+  const startStudy = () => {
+    const words = (tab === "review" ? activeWords : activeWords).slice(0, 40);
+    if (!words.length) return;
+    onStudyChapter({
+      id:tab === "review" ? "my-due-review" : "my-library-words",
+      level:0,
+      title:tab === "review" ? "오늘의 헷갈림" : "내 단어장",
+      titleZh:tab === "review" ? "复习" : "私藏词",
+      emoji:"★",
+      words,
+    });
+  };
+
+  return (
+    <div style={{animation:"fadeUp .3s ease both"}}>
+      <SectionTitle sub="별표한 단어와 표현을 다시 꺼내 보는 개인 공부 책상">내 서재</SectionTitle>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14}}>
+        {[
+          { label:"내 단어", value:savedWords.length, sub:`사용자 단어 ${userWords.length}개 포함` },
+          { label:"내 표현", value:savedPhraseItems.length, sub:"별표한 회화 문장" },
+          { label:"헷갈림", value:dueWords.length, sub:"복습 대기" },
+        ].map(item => (
+          <div key={item.label} style={{
+            background:"rgba(255,255,255,0.52)",border:"1px solid rgba(255,255,255,0.66)",
+            borderRadius:20,padding:"14px 12px",boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.45)"
+          }}>
+            <div style={{fontSize:11,color:"var(--sub)",fontWeight:900,letterSpacing:".06em",marginBottom:5}}>{item.label}</div>
+            <div style={{fontSize:24,fontWeight:900,color:"var(--text)",lineHeight:1}}>{item.value}</div>
+            <div style={{fontSize:10,color:"var(--sub2)",marginTop:5,lineHeight:1.35}}>{item.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:"flex",gap:8,marginBottom:12,overflowX:"auto",paddingBottom:3}}>
+        <Chip label="내 단어장" active={tab==="words"} onClick={()=>setTab("words")}/>
+        <Chip label="내 표현장" active={tab==="phrases"} onClick={()=>setTab("phrases")} color="var(--gold)"/>
+        <Chip label="오늘의 헷갈림" active={tab==="review"} onClick={()=>setTab("review")} color="var(--coral)"/>
+        {canStudy && (
+          <Btn variant="primary" onClick={startStudy} style={{padding:"7px 13px",fontSize:12,marginLeft:"auto",whiteSpace:"nowrap"}}>
+            복습 시작
+          </Btn>
+        )}
+      </div>
+
+      <div style={{position:"relative",marginBottom:16}}>
+        <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"var(--sub2)",pointerEvents:"none"}}>⌕</span>
+        <input value={query} onChange={e=>setQuery(e.target.value)}
+          placeholder={tab==="phrases" ? "표현 뜻, 중국어, 상황으로 검색..." : "단어 뜻, 한자, 병음, 예문으로 검색..."}
+          style={{
+            width:"100%",padding:"11px 14px 11px 38px",borderRadius:16,
+            border:"1px solid rgba(255,255,255,0.66)",background:"rgba(255,255,255,0.52)",
+            color:"var(--text)",fontSize:14,fontFamily:"var(--font-ui)",outline:"none",
+            boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.44)"
+          }}
+        />
+      </div>
+
+      {tab !== "phrases" && (
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {activeWords.length === 0 && (
+            <EmptyState icon="★" title={tab==="review" ? "오늘 헷갈림이 비었어요" : "저장한 단어가 아직 없어요"}
+              sub={tab==="review" ? "틀린 단어가 생기면 여기에 모여요." : "문장 분석이나 단어장에서 별표를 누르면 이곳에 모입니다."}/>
+          )}
+          {activeWords.map(word => {
+            const info = (stats.reviewLedger || {})[wordKey(word)] || {};
+            const isFav = !!favWords[wordKey(word)];
+            return (
+              <div key={wordKey(word)} style={{
+                background:"rgba(255,255,255,0.54)",border:"1px solid rgba(255,255,255,0.68)",
+                borderRadius:20,padding:"14px 14px",boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.45)"
+              }}>
+                <div style={{display:"flex",gap:13,alignItems:"flex-start"}}>
+                  <div style={{fontFamily:"var(--font-zh)",fontSize:34,color:"var(--text)",minWidth:52,textAlign:"center",lineHeight:1.1}}>{word.char}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,color:"var(--accent)",fontWeight:800,marginBottom:2}}>{word.pinyin}</div>
+                    <div style={{fontSize:15,fontWeight:900,color:"var(--text)",marginBottom:4}}>{word.meaning}</div>
+                    {word.example && (
+                      <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.55}}>
+                        <span style={{fontFamily:"var(--font-zh)",color:"var(--text)"}}>{word.example}</span>
+                        {word.exMeaning && <span> · {word.exMeaning}</span>}
+                      </div>
+                    )}
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8}}>
+                      {(word.tags || []).slice(0,3).map(t => (
+                        <span key={t} style={{fontSize:10,padding:"3px 8px",borderRadius:999,background:"rgba(28,27,26,0.05)",color:"var(--sub)",fontWeight:800}}>{t}</span>
+                      ))}
+                      {info.wrong > 0 && <span style={{fontSize:10,padding:"3px 8px",borderRadius:999,background:"var(--coral-dim)",color:"var(--coral)",fontWeight:900}}>오답 {info.wrong}</span>}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:7,alignItems:"center"}}>
+                    <button onClick={()=>onToggleWordFavorite(word)} title={isFav ? "별표 해제" : "별표 추가"} style={{
+                      width:34,height:34,borderRadius:10,border:"1px solid var(--border)",
+                      background:isFav?"var(--gold-dim)":"var(--card2)",
+                      color:isFav?"var(--gold)":"var(--sub)",fontSize:15,cursor:"pointer"
+                    }}>{isFav ? "★" : "☆"}</button>
+                    <TTSBtn text={word.char}/>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === "phrases" && (
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {activePhrases.length === 0 && (
+            <EmptyState icon="話" title="저장한 표현이 아직 없어요" sub="회화 카드나 문장 분석에서 표현 별표를 누르면 이곳에 모입니다."/>
+          )}
+          {activePhrases.map(({ set, phrase, key }) => (
+            <div key={key} style={{
+              background:"rgba(255,255,255,0.54)",border:"1px solid rgba(255,255,255,0.68)",
+              borderRadius:20,padding:"15px 15px",boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.45)"
+            }}>
+              <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:11,color:"var(--sub2)",fontWeight:900,letterSpacing:".06em",marginBottom:7}}>{set.title} · {phrase.tip}</div>
+                  <div style={{fontFamily:"var(--font-zh)",fontSize:20,color:"var(--text)",lineHeight:1.55,marginBottom:4}}>{phrase.char}</div>
+                  <div style={{fontSize:12,color:"var(--accent)",fontWeight:800,marginBottom:3}}>{phrase.pinyin}</div>
+                  <div style={{fontSize:14,color:"var(--text)",fontWeight:800}}>{phrase.meaning}</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:7,alignItems:"center"}}>
+                  <button onClick={()=>onTogglePhraseFavorite(set, phrase)} title="표현장에서 제거" style={{
+                    width:34,height:34,borderRadius:10,border:"1px solid var(--border)",
+                    background:"var(--gold-dim)",color:"var(--gold)",fontSize:15,cursor:"pointer"
+                  }}>★</button>
+                  <TTSBtn text={phrase.char}/>
+                </div>
+              </div>
+              <SentenceInsight
+                sentence={phrase.char}
+                pinyin={phrase.pinyin}
+                meaning={phrase.meaning}
+                stats={stats}
+                onToggleWordFavorite={onToggleWordFavorite}
+                onTogglePhraseFavorite={onTogglePhraseFavorite}
+                phraseSet={set}
+                phrase={phrase}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { MyLibraryScreen });
+
+</script>
+
+<script type="text/babel">
 // MissionScreen — blends traditional repetition with scenario-based sentence building
 
 function MissionScreen({ stats, onCompleteMission }) {
@@ -4949,6 +5139,7 @@ const NAV = [
 ];
 
 const ARCHIVE_TOOLS = [
+  { id:"my",      label:"내 서재", desc:"별표 모음", icon:"藏" },
   { id:"vocab",   label:"단어장", desc:"한자와 뜻", icon:"文" },
   { id:"phrase",  label:"회화",   desc:"장면별 표현", icon:"話" },
   { id:"grammar", label:"문법",   desc:"말의 뼈대", icon:"法" },
@@ -5426,7 +5617,7 @@ function App() {
   const goNav = (id) => {
     if (id === "archive") {
       setHubOpen(v => !v);
-      if (!hubOpen && !archiveScreens.includes(screen)) setScreen("vocab");
+      if (!hubOpen && !archiveScreens.includes(screen)) setScreen("my");
       return;
     }
     setHubOpen(false);
@@ -5523,6 +5714,7 @@ function App() {
         {screen==="scene"  && <SceneScreen stats={stats} onResult={handleResult}/>}
         {screen==="study"  && <StudyScreen chapter={activeChapter||getStudyChapters(stats)[0]} stats={stats} onResult={handleResult} onBack={()=>setScreen("home")} onToggleWordFavorite={handleToggleWordFavorite}/>}
         {screen==="mission" && <MissionScreen stats={stats} onCompleteMission={handleMissionComplete}/>}
+        {screen==="my"     && <MyLibraryScreen stats={stats} onStudyChapter={handleStudyChapter} onToggleWordFavorite={handleToggleWordFavorite} onTogglePhraseFavorite={handleTogglePhraseFavorite}/>}
         {screen==="vocab"  && <VocabScreen stats={stats} onStudyChapter={handleStudyChapter} onToggleWordFavorite={handleToggleWordFavorite} onAddUserWord={handleAddUserWord}/>}
         {screen==="phrase" && <PhraseScreen stats={stats} onTogglePhraseFavorite={handleTogglePhraseFavorite} onToggleWordFavorite={handleToggleWordFavorite}/>}
         {screen==="grammar" && <GrammarScreen/>}
@@ -5556,7 +5748,7 @@ function App() {
       {hubOpen && (
         <div className="hub-sheet">
           <div className="hub-head">
-            <div className="hub-title">Archive Tools</div>
+            <div className="hub-title">서재</div>
             <button onClick={()=>setHubOpen(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"var(--sub)"}}>✕</button>
           </div>
           <div className="hub-grid">
