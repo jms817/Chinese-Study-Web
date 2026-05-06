@@ -4666,7 +4666,7 @@ function SceneScreen({ stats, onResult }) {
       const wrong = allWords.filter(x => x.char !== w.char && x.meaning !== w.meaning);
       return shuffle([w.meaning, ...shuffle(wrong).slice(0,3).map(x=>x.meaning)]);
     });
-  }, [activeScene, allWords]);
+  }, [activeScene?.id]);
 
   const startScene = (scene) => {
     setActiveScene(scene);
