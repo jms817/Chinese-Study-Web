@@ -4339,20 +4339,12 @@ Object.assign(window, { ChatScreen });
 
 function BackupScreen({
   stats, tweaks, onImport,
-  supabaseConfig, localUser, session, syncStatus, syncState, lastSyncedAt, lastRemoteUpdatedAt, hasSyncConflict,
-  onSaveSupabaseConfig, onPinLogin, onPinSignUp, onSignOut, onLocalSignOut, onPullCloud, onPushCloud
+  session, syncStatus, syncState, lastSyncedAt, hasSyncConflict,
+  onSignOut, onPullCloud, onPushCloud
 }) {
   const [status, setStatus] = React.useState("");
-  const [showConfig, setShowConfig] = React.useState(false);
-  const [cloudPin, setCloudPin] = React.useState("");
-  const [cloudForm, setCloudForm] = React.useState(() => ({
-    url:supabaseConfig?.url || "",
-    anonKey:supabaseConfig?.anonKey || "",
-  }));
   const fileRef = React.useRef(null);
-  React.useEffect(() => {
-    setCloudForm(f => ({ ...f, url:supabaseConfig?.url || "", anonKey:supabaseConfig?.anonKey || "" }));
-  }, [supabaseConfig?.url, supabaseConfig?.anonKey]);
+  const username = session?.user?.email?.split("@")[0] || "사용자";
   const exportData = () => {
     const payload = StorageService.exportPayload(stats, tweaks);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
@@ -4382,88 +4374,30 @@ function BackupScreen({
     };
     reader.readAsText(file, "utf-8");
   };
-  const sample = {
-    progress:"chapterProgress / learnedKeys",
-    review:"reviewLedger / reviewQueue",
-    favorites:"favorites.words / favorites.phrases",
-    customWords:"userWords",
-    stats:"totalXP / totalAnswered / studyDays",
-  };
-  const sqlGuide = `create table if not exists public.study_snapshots (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  data jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.study_snapshots enable row level security;
-
-create policy "select own snapshot"
-on public.study_snapshots
-for select
-to authenticated
-using ((select auth.uid()) = user_id);
-
-create policy "insert own snapshot"
-on public.study_snapshots
-for insert
-to authenticated
-with check ((select auth.uid()) = user_id);
-
-create policy "update own snapshot"
-on public.study_snapshots
-for update
-to authenticated
-using ((select auth.uid()) = user_id)
-with check ((select auth.uid()) = user_id);
-
--- 검수 테이블 (로그인 불필요)
-create table if not exists public.nuance_reviews (
-  id uuid primary key default gen_random_uuid(),
-  reviewer_name text not null,
-  item_id text not null,
-  choice text,
-  comment text not null default '',
-  reviewed_at timestamptz not null default now(),
-  unique(reviewer_name, item_id)
-);
-alter table public.nuance_reviews enable row level security;
-create policy "anon select nuance reviews"
-  on public.nuance_reviews for select to anon using (true);
-create policy "anon insert nuance reviews"
-  on public.nuance_reviews for insert to anon with check (true);
-create policy "anon update nuance reviews"
-  on public.nuance_reviews for update to anon using (true) with check (true);`;
-
   return (
     <div style={{animation:"fadeUp .3s ease both"}}>
-      <SectionTitle sub="사용자 이름과 PIN으로 들어오면 학습 기록이 이 기기에 저장돼요. Supabase를 연결하면 클라우드에도 자동 백업됩니다.">내 계정</SectionTitle>
+      <SectionTitle sub="클라우드에 자동 저장돼요. 다른 기기에서도 같은 계정으로 로그인하면 이어서 학습할 수 있어요.">내 계정</SectionTitle>
 
       {/* ── 현재 사용자 카드 ── */}
       <Card style={{marginBottom:14,border:"1.5px solid var(--accent)44"}}>
         <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:"center",marginBottom:16}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={{width:44,height:44,borderRadius:14,background:"var(--accent-dim)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontFamily:"var(--font-brush)",color:"var(--accent)"}}>
-              {(localUser?.username?.[0] || "?").toUpperCase()}
+              {username[0].toUpperCase()}
             </div>
             <div>
-              <div style={{fontSize:16,fontWeight:800,color:"var(--text)"}}>{localUser?.username || "사용자"}</div>
-              <div style={{fontSize:12,color:"var(--sub)",marginTop:2}}>로컬 계정 활성</div>
+              <div style={{fontSize:16,fontWeight:800,color:"var(--text)"}}>{username}</div>
+              <div style={{fontSize:12,color:"var(--sub)",marginTop:2}}>클라우드 계정</div>
             </div>
           </div>
-          <Btn variant="ghost" onClick={onLocalSignOut} style={{padding:"7px 12px",fontSize:12}}>로그아웃</Btn>
+          <Btn variant="ghost" onClick={onSignOut} style={{padding:"7px 12px",fontSize:12}}>로그아웃</Btn>
         </div>
 
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:14}}>
           <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
-            <div style={{fontSize:11,color:"var(--sub)",fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",marginBottom:4}}>클라우드</div>
-            <div style={{fontSize:13,fontWeight:800,color:session?"var(--accent)":"var(--sub)"}}>
-              {session ? "연결됨" : "연결 안 됨"}
-            </div>
-          </div>
-          <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
             <div style={{fontSize:11,color:"var(--sub)",fontWeight:800,letterSpacing:".05em",textTransform:"uppercase",marginBottom:4}}>저장 상태</div>
-            <div style={{fontSize:13,fontWeight:800,color:hasSyncConflict?"var(--coral)":syncState==="syncing"?"var(--gold)":"var(--text)"}}>
-              {hasSyncConflict?"충돌":syncState==="syncing"?"저장 중":syncState==="error"?"확인 필요":syncState==="dirty"?"대기 중":session?"자동 저장":"로컬만"}
+            <div style={{fontSize:13,fontWeight:800,color:hasSyncConflict?"var(--coral)":syncState==="syncing"?"var(--gold)":"var(--accent)"}}>
+              {hasSyncConflict?"충돌":syncState==="syncing"?"저장 중":syncState==="error"?"확인 필요":syncState==="dirty"?"대기 중":"자동 저장"}
             </div>
           </div>
           <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:12,padding:12}}>
@@ -4472,52 +4406,11 @@ create policy "anon update nuance reviews"
           </div>
         </div>
 
-        {/* ── 클라우드 연결 (Supabase) ── */}
-        <div style={{borderTop:"1px solid var(--border)",paddingTop:14}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontSize:13,fontWeight:800}}>클라우드 동기화</div>
-            <Btn variant="ghost" onClick={()=>setShowConfig(v=>!v)} style={{padding:"6px 10px",fontSize:12}}>
-              {showConfig?"설정 접기":"Supabase 설정"}
-            </Btn>
-          </div>
-
-          {showConfig && (
-            <div style={{marginBottom:12}}>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:8,marginBottom:8}}>
-                <input value={cloudForm.url} onChange={e=>setCloudForm(f=>({...f,url:e.target.value}))} placeholder="Supabase Project URL"
-                  style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-                <input value={cloudForm.anonKey} onChange={e=>setCloudForm(f=>({...f,anonKey:e.target.value}))} placeholder="Supabase anon key"
-                  style={{width:"100%",padding:"9px 12px",borderRadius:10,border:"1.5px solid var(--border)",background:"var(--card)",fontFamily:"var(--font-ui)"}}/>
-              </div>
-              <Btn variant="ghost" onClick={()=>onSaveSupabaseConfig({url:cloudForm.url,anonKey:cloudForm.anonKey})} style={{padding:"8px 13px",fontSize:12}}>
-                URL / Key 저장
-              </Btn>
-            </div>
-          )}
-
-          {!session ? (
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-              <input inputMode="numeric" maxLength="4" value={cloudPin}
-                onChange={e=>setCloudPin(e.target.value.replace(/\D/g,"").slice(0,4))}
-                placeholder="4자리 PIN"
-                style={{flex:"0 1 130px",padding:"9px 12px",borderRadius:10,border:"1.5px solid var(--border)",
-                  background:"var(--card)",fontFamily:"var(--font-ui)",letterSpacing:".28em",fontWeight:900,textAlign:"center"}}/>
-              <Btn variant="primary" onClick={()=>onPinLogin(cloudPin)} style={{padding:"9px 13px",fontSize:13}}>
-                클라우드 연결
-              </Btn>
-              <Btn variant="ghost" onClick={()=>onPinSignUp(cloudPin)} style={{padding:"9px 13px",fontSize:13}}>
-                클라우드 계정 생성
-              </Btn>
-            </div>
-          ) : (
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-              <Btn variant="success" onClick={onPullCloud} style={{padding:"9px 13px",fontSize:13}}>클라우드에서 불러오기</Btn>
-              <Btn variant="primary" onClick={onPushCloud} style={{padding:"9px 13px",fontSize:13}}>지금 저장</Btn>
-              <Btn variant="ghost" onClick={onSignOut} style={{padding:"9px 13px",fontSize:13}}>클라우드 연결 해제</Btn>
-            </div>
-          )}
+        <div style={{borderTop:"1px solid var(--border)",paddingTop:14,display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+          <Btn variant="success" onClick={onPullCloud} style={{padding:"9px 13px",fontSize:13}}>클라우드에서 불러오기</Btn>
+          <Btn variant="primary" onClick={onPushCloud} style={{padding:"9px 13px",fontSize:13}}>지금 저장</Btn>
           {syncStatus && (
-            <div style={{marginTop:8,fontSize:12,color:hasSyncConflict?"var(--coral)":"var(--sub)",fontWeight:hasSyncConflict?700:400}}>
+            <div style={{fontSize:12,color:hasSyncConflict?"var(--coral)":"var(--sub)",fontWeight:hasSyncConflict?700:400}}>
               {syncStatus}
             </div>
           )}
@@ -4564,27 +4457,6 @@ create policy "anon update nuance reviews"
         </div>
       )}
 
-      <Card>
-        <div style={{fontSize:14,fontWeight:800,marginBottom:8}}>저장 데이터 구조</div>
-        <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.65,marginBottom:12}}>
-          나중에 Supabase로 옮길 때 아래 묶음을 테이블로 분리하면 됩니다. 현재는 모두 localStorage와 백업 JSON에 보관돼요.
-        </div>
-        <pre style={{
-          whiteSpace:"pre-wrap",background:"var(--surface)",border:"1px solid var(--border)",
-          borderRadius:12,padding:14,fontSize:12,lineHeight:1.5,color:"var(--text)",overflowX:"auto",
-        }}>{JSON.stringify(sample, null, 2)}</pre>
-      </Card>
-
-      <Card style={{marginTop:14}}>
-        <div style={{fontSize:14,fontWeight:800,marginBottom:8}}>Supabase SQL</div>
-        <div style={{fontSize:12,color:"var(--sub)",lineHeight:1.65,marginBottom:12}}>
-          SQL Editor에 아래를 한 번 실행하면 개인용 스냅샷 동기화 테이블과 RLS가 준비됩니다.
-        </div>
-        <pre style={{
-          whiteSpace:"pre-wrap",background:"var(--surface)",border:"1px solid var(--border)",
-          borderRadius:12,padding:14,fontSize:12,lineHeight:1.5,color:"var(--text)",overflowX:"auto",
-        }}>{sqlGuide}</pre>
-      </Card>
     </div>
   );
 }
@@ -4903,8 +4775,6 @@ const ARCHIVE_TOOLS = [
 ];
 
 /* ─── Local account helpers ─── */
-function getLocalAccounts() { return store.get("accounts", {}); }
-function setLocalAccounts(a) { store.set("accounts", a); }
 function usernameToFakeEmail(u) { return `${u.toLowerCase().replace(/[^a-z0-9_]/g,"")}@jingxi.app`; }
 
 function LoginScreen({ onLogin }) {
@@ -4926,21 +4796,13 @@ function LoginScreen({ onLogin }) {
     if (!isFourDigitPin(thePin)) { setError("4자리 PIN을 모두 입력해 주세요."); return; }
     submittingRef.current = true;
     setLoading(true); setError("");
-    const accounts = getLocalAccounts();
-    const fakeEmail = usernameToFakeEmail(uname);
-    const hash = await derivePinPassword(fakeEmail, thePin);
-    if (mode === "signup") {
-      if (accounts[uname]) { setError("이미 사용 중인 이름이에요."); setPin(""); setLoading(false); submittingRef.current=false; return; }
-      setLocalAccounts({ ...accounts, [uname]: { hash } });
-      store.set("localUser", { username: uname, fakeEmail });
-      onLogin({ username: uname, fakeEmail });
-    } else {
-      if (!accounts[uname]) { setError("등록된 계정이 없어요. '계정 만들기'를 눌러 주세요."); setPin(""); setLoading(false); submittingRef.current=false; return; }
-      if (accounts[uname].hash !== hash) { setError("PIN이 틀렸어요. 다시 확인해 주세요."); setPin(""); setLoading(false); submittingRef.current=false; return; }
-      store.set("localUser", { username: uname, fakeEmail });
-      onLogin({ username: uname, fakeEmail });
+    const result = await onLogin(uname, thePin, mode);
+    if (result?.error) {
+      setError(result.error);
+      setPin("");
+      setLoading(false);
+      submittingRef.current = false;
     }
-    setLoading(false); submittingRef.current=false;
   }, [username, pin, mode, onLogin]);
 
   React.useEffect(() => {
@@ -5036,13 +4898,13 @@ function App() {
   const bootstrappedUserRef = React.useRef(null);
   const autoSyncTimerRef = React.useRef(null);
   const suppressNextAutoSyncRef = React.useRef(false);
-  const [localUser, setLocalUser] = React.useState(() => store.get("localUser", null));
-  const [screen, setScreen] = React.useState(() => store.get("screen","home"));
+  const [sessionLoading, setSessionLoading] = React.useState(true);
+  const [screen, setScreen] = React.useState("home");
   const [hubOpen, setHubOpen] = React.useState(false);
   const [activeChapter, setActiveChapter] = React.useState(null);
   const [tweaksOpen, setTweaksOpen] = React.useState(false);
-  const [tweaks, setTweaks] = React.useState(() => ({...TWEAK_DEFAULTS, ...store.get("tweaks", {})}));
-  const [stats, setStats] = React.useState(() => hydrateStats(store.get("stats", makeDefaultStats())));
+  const [tweaks, setTweaks] = React.useState(() => ({...TWEAK_DEFAULTS}));
+  const [stats, setStats] = React.useState(() => hydrateStats(makeDefaultStats()));
   const [supabaseConfig, setSupabaseConfigState] = React.useState(() => getSupabaseConfig());
   const [supabaseClient, setSupabaseClient] = React.useState(null);
   const [session, setSession] = React.useState(null);
@@ -5052,8 +4914,6 @@ function App() {
   const [lastRemoteUpdatedAt, setLastRemoteUpdatedAt] = React.useState(null);
   const [hasSyncConflict, setHasSyncConflict] = React.useState(false);
 
-  React.useEffect(() => { store.set("screen", screen); }, [screen]);
-  React.useEffect(() => { store.set("stats", stats); }, [stats]);
   React.useEffect(() => {
     if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
       navigator.serviceWorker.register("./sw.js").catch(()=>{});
@@ -5071,19 +4931,21 @@ function App() {
     if (!client) {
       setSession(null);
       bootstrappedUserRef.current = null;
-      setSyncStatus("로컬 저장 사용 중");
+      setSyncStatus("");
       setSyncState("local");
       setLastSyncedAt(null);
       setLastRemoteUpdatedAt(null);
       setHasSyncConflict(false);
+      setSessionLoading(false);
       return;
     }
     let unsub = null;
     client.auth.getSession().then(({ data }) => {
       setSession(data.session || null);
-      setSyncStatus(data.session ? `로그인됨: ${data.session.user?.email || "사용자"}` : "Supabase 설정 완료");
+      setSyncStatus(data.session ? "클라우드 연결됨" : "");
       setSyncState(data.session ? "synced" : "ready");
       if (!data.session) setHasSyncConflict(false);
+      setSessionLoading(false);
     });
     const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession || null);
@@ -5139,7 +5001,6 @@ function App() {
   const applyTweak = (key, val) => {
     const next = {...tweaks, [key]:val};
     setTweaks(next);
-    store.set("tweaks", next);
   };
 
   const handleStudyChapter = (ch) => {
@@ -5219,54 +5080,6 @@ function App() {
     setSyncStatus(`${modeLabel} 완료`);
     setSyncState("synced");
     return { ok:true };
-  };
-  const loginWithPin = async (pin) => {
-    if (!supabaseClient) {
-      setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
-      setSyncState("error");
-      return;
-    }
-    if (!localUser?.fakeEmail || !isFourDigitPin(pin)) {
-      setSyncStatus("4자리 PIN을 입력해 주세요.");
-      setSyncState("error");
-      return;
-    }
-    setSyncStatus("클라우드 계정 확인 중...");
-    setSyncState("syncing");
-    const password = await derivePinPassword(localUser.fakeEmail, pin);
-    const { error } = await supabaseClient.auth.signInWithPassword({
-      email: localUser.fakeEmail,
-      password,
-    });
-    setSyncStatus(error ? `클라우드 연결 실패: ${error.message}` : "클라우드 연결 완료");
-    setSyncState(error ? "error" : "synced");
-  };
-  const signUpWithPin = async (pin) => {
-    if (!supabaseClient) {
-      setSyncStatus("먼저 Supabase URL과 anon key를 저장해 주세요.");
-      setSyncState("error");
-      return;
-    }
-    if (!localUser?.fakeEmail || !isFourDigitPin(pin)) {
-      setSyncStatus("4자리 PIN을 입력해 주세요.");
-      setSyncState("error");
-      return;
-    }
-    setSyncStatus("클라우드 계정 생성 중...");
-    setSyncState("syncing");
-    const password = await derivePinPassword(localUser.fakeEmail, pin);
-    const { data, error } = await supabaseClient.auth.signUp({
-      email: localUser.fakeEmail,
-      password,
-      options: { emailRedirectTo: window.location.origin + window.location.pathname }
-    });
-    if (error) {
-      setSyncStatus(`클라우드 계정 생성 실패: ${error.message}`);
-      setSyncState("error");
-      return;
-    }
-    setSyncStatus(data.session ? "클라우드 연결 완료" : "클라우드 계정 생성 완료. 이제 로그인해 주세요.");
-    setSyncState(data.session ? "synced" : "ready");
   };
   const pushNow = async () => {
     if (!supabaseClient || !session?.user?.id) {
@@ -5350,13 +5163,42 @@ function App() {
     setScreen(id);
   };
 
-  const handleLogin = React.useCallback((user) => { setLocalUser(user); }, []);
-  const handleLogout = () => {
-    store.set("localUser", null);
-    setLocalUser(null);
+  const handleLogin = React.useCallback(async (username, pin, mode) => {
+    if (!supabaseClient) return { error: "Supabase 연결 오류예요." };
+    const fakeEmail = usernameToFakeEmail(username);
+    const password = await derivePinPassword(fakeEmail, pin);
+    if (mode === "signup") {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: fakeEmail, password,
+        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+      });
+      if (error) return { error: "계정 만들기 실패: " + error.message };
+      if (!data.session) return { error: "계정이 만들어졌어요. 이제 로그인해 주세요." };
+    } else {
+      const { error } = await supabaseClient.auth.signInWithPassword({ email: fakeEmail, password });
+      if (error) return { error: "사용자 이름이나 PIN이 틀렸어요." };
+    }
+    setScreen("home");
+    return { ok: true };
+  }, [supabaseClient]);
+
+  const handleLogout = async () => {
+    if (supabaseClient) await supabaseClient.auth.signOut();
+    setSession(null);
+    bootstrappedUserRef.current = null;
+    setStats(hydrateStats(makeDefaultStats()));
+    setTweaks({...TWEAK_DEFAULTS});
+    setScreen("home");
   };
 
-  if (!localUser) {
+  if (sessionLoading) {
+    return (
+      <div style={{position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg)"}}>
+        <div style={{fontFamily:"var(--font-brush)",fontSize:40,color:"var(--sub2)",animation:"blink 1.4s ease-in-out infinite"}}>靜習</div>
+      </div>
+    );
+  }
+  if (!session) {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
@@ -5425,19 +5267,12 @@ function App() {
             stats={stats}
             tweaks={tweaks}
             onImport={handleImport}
-            supabaseConfig={supabaseConfig}
-            localUser={localUser}
             session={session}
             syncStatus={syncStatus}
             syncState={syncState}
             lastSyncedAt={lastSyncedAt}
-            lastRemoteUpdatedAt={lastRemoteUpdatedAt}
             hasSyncConflict={hasSyncConflict}
-            onSaveSupabaseConfig={saveSupabaseRuntimeConfig}
-            onPinLogin={loginWithPin}
-            onPinSignUp={signUpWithPin}
-            onSignOut={signOutCloud}
-            onLocalSignOut={handleLogout}
+            onSignOut={handleLogout}
             onPullCloud={pullNow}
             onPushCloud={pushNow}
           />
@@ -5507,7 +5342,7 @@ function App() {
             onClick={()=>{
               if(!confirm("정말 초기화할까요?")) return;
               const fresh = makeDefaultStats();
-              setStats(fresh); store.set("stats",fresh);
+              setStats(fresh);
               setTweaksOpen(false);
             }}>데이터 초기화</button>
         </div>
