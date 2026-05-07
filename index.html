@@ -2562,15 +2562,33 @@ function MatchingMode({ cardPool, chapters }) {
   const PAIR_COUNT = 4;
   const [round, setRound] = React.useState(0);
   const [matched, setMatched] = React.useState(new Set());
-  const [dragging, setDragging] = React.useState(null); // { word, w, ox, oy }
+  const [dragging, setDragging] = React.useState(null); // { word } — just for source card highlight
   const [flash, setFlash] = React.useState(null);
   const [shake, setShake] = React.useState(null);
   const [score, setScore] = React.useState(0);
   const [roundDone, setRoundDone] = React.useState(false);
   const [pickedChapter, setPickedChapter] = React.useState(null);
   const wordRefs = React.useRef({});
-  const floatRef = React.useRef(null);
-  const dragState = React.useRef(null); // mutable, no re-render on move
+  const dragState = React.useRef(null); // { word, ox, oy }
+  const floatEl = React.useRef(null);  // DOM node appended to body
+
+  // Create floating card as direct child of body — bypasses any parent transform/filter
+  React.useEffect(() => {
+    const el = document.createElement('div');
+    el.style.cssText = [
+      'display:none','position:fixed','pointer-events:none','z-index:9999',
+      'border-radius:18px','text-align:center','padding:14px 10px',
+      `background:linear-gradient(135deg,${TEAL},${TEAL_DARK})`,
+      'box-shadow:0 14px 36px rgba(27,157,142,0.45)',
+      'color:#fff','font-weight:900','font-size:15px','line-height:1.3',
+      'align-items:center','justify-content:center',
+      'transform:scale(1.06) rotate(-1.5deg)',
+      'font-family:var(--font-ui)',
+    ].join(';');
+    document.body.appendChild(el);
+    floatEl.current = el;
+    return () => { document.body.removeChild(el); };
+  }, []);
 
   const activePool = React.useMemo(() => {
     if (pickedChapter) return pickedChapter.words;
@@ -2592,17 +2610,18 @@ function MatchingMode({ cardPool, chapters }) {
   const handlePointerDown = (e, word) => {
     if (matched.has(word.char)) return;
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
     const rect = e.currentTarget.getBoundingClientRect();
     const ox = e.clientX - rect.left;
     const oy = e.clientY - rect.top;
-    dragState.current = { word, ox, oy, w: rect.width };
-    setDragging({ word, w: rect.width, ox, oy });
-    if (floatRef.current) {
-      floatRef.current.style.display = "flex";
-      floatRef.current.style.width = rect.width + "px";
-      floatRef.current.style.left = (e.clientX - ox) + "px";
-      floatRef.current.style.top  = (e.clientY - oy) + "px";
+    dragState.current = { word, ox, oy };
+    setDragging({ word });
+    const el = floatEl.current;
+    if (el) {
+      el.textContent = word.meaning;
+      el.style.width = rect.width + "px";
+      el.style.left  = (e.clientX - ox) + "px";
+      el.style.top   = (e.clientY - oy) + "px";
+      el.style.display = "flex";
     }
   };
 
@@ -2610,16 +2629,17 @@ function MatchingMode({ cardPool, chapters }) {
     const onMove = (e) => {
       if (!dragState.current) return;
       const { ox, oy } = dragState.current;
-      if (floatRef.current) {
-        floatRef.current.style.left = (e.clientX - ox) + "px";
-        floatRef.current.style.top  = (e.clientY - oy) + "px";
+      const el = floatEl.current;
+      if (el) {
+        el.style.left = (e.clientX - ox) + "px";
+        el.style.top  = (e.clientY - oy) + "px";
       }
     };
     const onUp = (e) => {
       if (!dragState.current) return;
       const ds = dragState.current;
       dragState.current = null;
-      if (floatRef.current) floatRef.current.style.display = "none";
+      if (floatEl.current) floatEl.current.style.display = "none";
       let hit = null;
       for (const [char, ref] of Object.entries(wordRefs.current)) {
         if (!ref) continue;
@@ -2777,20 +2797,7 @@ function MatchingMode({ cardPool, chapters }) {
         })}
       </div>
 
-      {/* Floating drag card — DOM-direct position, no React re-render on move */}
-      <div ref={floatRef} style={{
-        display: "none",
-        position: "fixed", padding: "14px 10px", borderRadius: 18,
-        background: `linear-gradient(135deg,${TEAL},${TEAL_DARK})`,
-        boxShadow: "0 14px 36px rgba(27,157,142,0.45)",
-        textAlign: "center", pointerEvents: "none", zIndex: 1000,
-        transform: "scale(1.06) rotate(-1.5deg)",
-        alignItems: "center", justifyContent: "center",
-      }}>
-        <div style={{ fontSize: "clamp(12px,3vw,15px)", fontWeight: 900, color: "#fff", lineHeight: 1.3 }}>
-          {dragging?.word.meaning}
-        </div>
-      </div>
+      {/* Floating card lives in document.body (see useEffect) */}
 
       {/* Round complete overlay */}
       {roundDone && (
