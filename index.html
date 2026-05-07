@@ -2243,7 +2243,7 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
   );
 }
 
-Object.assign(window, { HomeScreen });
+Object.assign(window, { HomeScreen, TEAL, TEAL_DARK, TEAL_SHADOW });
 
 </script>
 
@@ -5300,6 +5300,7 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
   const [activeScene, setActiveScene] = React.useState(null);
   const [step, setStep] = React.useState(0);       // 0=intro 1=learn 2=drill 3=done
   const [wordIdx, setWordIdx] = React.useState(0);
+  const [cardFlipped, setCardFlipped] = React.useState(false);
   const [drillIdx, setDrillIdx] = React.useState(0);
   const [selected, setSelected] = React.useState(null);
   const [correctCount, setCorrectCount] = React.useState(0);
@@ -5394,56 +5395,129 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
     );
   }
 
-  // Step 1: Learn expressions
+  // Step 1: Learn expressions (flip card)
   if (step === 1) {
     const w = sceneWords[wordIdx];
     const isLast = wordIdx === sceneWords.length - 1;
+    const isFavW = !!favWords[wordKey(w)];
+    const goNext = (e) => {
+      e.stopPropagation();
+      setCardFlipped(false);
+      if (isLast) setStep(2);
+      else setWordIdx(i => i + 1);
+    };
     return (
       <div style={{animation:"fadeUp .22s ease both",maxWidth:480,margin:"0 auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        {/* Header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <button onClick={reset} style={{background:"none",border:"none",cursor:"pointer",
             fontSize:13,color:"var(--sub)",fontFamily:"var(--font-ui)",fontWeight:700,padding:0}}>← 목록</button>
-          <div style={{fontSize:12,color:"var(--sub2)",fontWeight:700}}>
-            {wordIdx+1} / {sceneWords.length}
-          </div>
+          <div style={{fontSize:12,color:"var(--sub2)",fontWeight:700}}>{wordIdx+1} / {sceneWords.length}</div>
           <div style={{width:80,height:4,borderRadius:4,background:"rgba(28,27,26,0.08)",overflow:"hidden"}}>
             <div style={{height:"100%",background:"var(--accent)",
               width:`${((wordIdx+1)/sceneWords.length)*100}%`,transition:"width .3s"}}/>
           </div>
         </div>
-        <div className="glass-card" style={{padding:"20px 18px",textAlign:"center",marginBottom:12}}>
-          <div style={{fontSize:11,letterSpacing:"0.18em",color:"var(--sub2)",textTransform:"uppercase",marginBottom:16}}>핵심 표현</div>
-          <div className="focus-hanzi" style={{marginBottom:10,...hanziDisplayStyle(w.char)}}>{w.char}</div>
-          <div style={{fontSize:13,letterSpacing:"0.08em",color:"var(--sub2)",marginBottom:4,overflowWrap:"anywhere"}}>{w.pinyin}</div>
-          <div style={{fontSize:19,fontWeight:800,letterSpacing:0,marginBottom:10,overflowWrap:"anywhere"}}>{w.meaning}</div>
-          <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:10,alignItems:"center"}}>
-            <TTSBtn text={w.char}/>
-            {onToggleWordFavorite && (
-              <button onClick={()=>onToggleWordFavorite(w)} title={favWords[wordKey(w)]?"즐겨찾기 해제":"즐겨찾기 추가"} style={{
-                width:36,height:36,borderRadius:10,border:"1px solid var(--border)",cursor:"pointer",
-                background:favWords[wordKey(w)]?"var(--gold-dim)":"var(--card2)",
-                color:favWords[wordKey(w)]?"var(--gold)":"var(--sub)",fontSize:17,
-                display:"grid",placeItems:"center",
-              }}>{favWords[wordKey(w)]?"★":"☆"}</button>
-            )}
+
+        {/* Flip card */}
+        <div style={{perspective:1400,cursor:"pointer"}}
+          onClick={()=>setCardFlipped(f=>!f)}>
+          <div key={wordIdx} style={{
+            position:"relative",
+            transformStyle:"preserve-3d",
+            transition:"transform .50s cubic-bezier(.4,0,.2,1)",
+            transform:cardFlipped?"rotateY(180deg)":"rotateY(0deg)",
+            height:"clamp(340px,70vw,430px)",
+          }}>
+
+            {/* ── FRONT ── */}
+            <div style={{
+              position:"absolute",inset:0,
+              backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
+              background:`linear-gradient(148deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`,
+              borderRadius:28,padding:"clamp(18px,4vw,26px)",
+              display:"flex",flexDirection:"column",
+              boxShadow:`0 20px 50px ${TEAL_SHADOW}`,
+              overflow:"hidden",
+            }}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                <div style={{fontSize:10,fontWeight:900,letterSpacing:".14em",color:"rgba(255,255,255,0.65)",
+                  textTransform:"uppercase",background:"rgba(255,255,255,0.12)",borderRadius:99,padding:"3px 10px"}}>
+                  핵심 표현
+                </div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",fontWeight:700}}>탭하여 분석 보기</div>
+              </div>
+              <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,padding:"8px 0 12px"}}>
+                <div style={{fontFamily:"var(--font-zh)",color:"#fff",fontWeight:900,lineHeight:1,...hanziDisplayStyle(w.char)}}>{w.char}</div>
+                <div style={{fontSize:14,color:"rgba(255,255,255,0.78)",fontWeight:700,letterSpacing:".05em",overflowWrap:"anywhere",textAlign:"center"}}>{w.pinyin}</div>
+                <div style={{fontSize:"clamp(20px,5vw,28px)",fontWeight:900,color:"#fff",marginTop:2,overflowWrap:"anywhere",textAlign:"center"}}>{w.meaning}</div>
+              </div>
+              {w.example && (
+                <div style={{background:"rgba(0,0,0,0.18)",borderRadius:16,padding:"10px 14px"}}>
+                  <div style={{fontFamily:"var(--font-zh)",fontSize:15,color:"rgba(255,255,255,0.92)",fontWeight:700,marginBottom:2,overflowWrap:"anywhere"}}>{w.example}</div>
+                  {w.exPinyin && <div style={{fontSize:11,color:"rgba(255,255,255,0.72)",fontWeight:600,marginBottom:2,overflowWrap:"anywhere"}}>{w.exPinyin}</div>}
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.55)"}}>{w.exMeaning}</div>
+                </div>
+              )}
+            </div>
+
+            {/* ── BACK ── */}
+            <div style={{
+              position:"absolute",inset:0,
+              backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
+              transform:"rotateY(180deg)",
+              background:"var(--card)",border:`1.5px solid rgba(27,157,142,0.18)`,
+              borderRadius:28,padding:"clamp(16px,4vw,24px)",
+              overflowY:"auto",
+              boxShadow:`0 20px 50px ${TEAL_SHADOW}`,
+              display:"flex",flexDirection:"column",
+            }}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                <div>
+                  <div style={{fontFamily:"var(--font-zh)",fontSize:32,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{w.char}</div>
+                  <div style={{fontSize:13,color:TEAL,fontWeight:800,marginTop:2}}>{w.pinyin}</div>
+                  <div style={{fontSize:20,fontWeight:900,color:"var(--text)",marginTop:3}}>{w.meaning}</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",paddingTop:2}}>
+                  <TTSBtn text={w.char}/>
+                  {onToggleWordFavorite && (
+                    <button onClick={e=>{e.stopPropagation();onToggleWordFavorite(w);}} style={{
+                      width:32,height:32,borderRadius:9,
+                      border:`1px solid ${isFavW?"rgba(166,106,19,0.3)":"var(--border)"}`,
+                      background:isFavW?"var(--gold-dim)":"var(--card2)",
+                      color:isFavW?"var(--gold)":"var(--sub)",
+                      fontSize:15,display:"grid",placeItems:"center",cursor:"pointer",
+                    }}>{isFavW?"★":"☆"}</button>
+                  )}
+                </div>
+              </div>
+              {w.example && (
+                <SentenceInsight
+                  sentence={w.example}
+                  pinyin={w.exPinyin}
+                  meaning={w.exMeaning}
+                  focusWord={w}
+                  stats={stats}
+                  onToggleWordFavorite={onToggleWordFavorite}
+                  compact={true}
+                />
+              )}
+              <div style={{display:"flex",gap:8,marginTop:"auto",paddingTop:12}}>
+                <button onClick={e=>{e.stopPropagation();setCardFlipped(false);}} style={{
+                  flex:1,padding:"12px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                  background:"var(--card2)",border:"1px solid var(--border)",
+                  color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
+                }}>← 뒤집기</button>
+                <button onClick={goNext} style={{
+                  flex:2,padding:"12px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                  background:TEAL,color:"#fff",border:"none",cursor:"pointer",
+                  fontFamily:"var(--font-ui)",
+                }}>{isLast?"문제 풀기 →":"다음 표현 →"}</button>
+              </div>
+            </div>
+
           </div>
-          {w.example && (
-            <SentenceInsight
-              sentence={w.example}
-              pinyin={w.exPinyin}
-              meaning={w.exMeaning}
-              focusWord={w}
-              stats={stats}
-              onToggleWordFavorite={onToggleWordFavorite}
-              compact={true}
-            />
-          )}
         </div>
-        <button onClick={() => { if (isLast) setStep(2); else setWordIdx(i => i+1); }} style={{
-          width:"100%",padding:"16px",borderRadius:999,border:"none",
-          background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:800,
-          cursor:"pointer",fontFamily:"var(--font-ui)"
-        }}>{isLast ? "문제 풀기 →" : "다음 표현 →"}</button>
       </div>
     );
   }
