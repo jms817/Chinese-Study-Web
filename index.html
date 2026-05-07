@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://translate.googleapis.com; img-src 'self' data: https:; media-src 'self' blob:;"/>
 <meta name="theme-color" content="#fdf9f6"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
@@ -2154,8 +2155,7 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
       </div>
 
       {/* Flip card */}
-      <div style={{perspective:1400,marginBottom:14,cursor:"pointer"}}
-        onClick={()=>{ if (!flipped) setFlipped(true); else setFlipped(false); }}>
+      <div style={{perspective:1400,marginBottom:14}}>
         <div key={safeIdx} style={{
           position:"relative",
           transformStyle:"preserve-3d",
@@ -2164,14 +2164,14 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
           height:"clamp(370px,72vw,460px)",
         }}>
 
-          {/* ── FRONT ── */}
-          <div style={{
+          {/* ── FRONT ── tap anywhere to flip */}
+          <div onClick={()=>setFlipped(true)} style={{
             position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
             background:`linear-gradient(148deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`,
             borderRadius:32,padding:"clamp(18px,4vw,28px)",
             display:"flex",flexDirection:"column",
             boxShadow:`0 22px 56px ${TEAL_SHADOW}`,
-            overflow:"hidden",
+            overflow:"hidden",cursor:"pointer",
           }}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
               <div style={{fontSize:10,fontWeight:900,letterSpacing:".14em",color:"rgba(255,255,255,0.65)",textTransform:"uppercase",background:"rgba(255,255,255,0.12)",borderRadius:99,padding:"4px 10px"}}>
@@ -2203,18 +2203,16 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
             </div>
           </div>
 
-          {/* ── BACK ── */}
-          <div style={{
+          {/* ── BACK ── tap bare background to flip back */}
+          <div onClick={()=>setFlipped(false)} style={{
             position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
             transform:"rotateY(180deg)",
             background:"var(--card)",border:`1.5px solid rgba(27,157,142,0.18)`,
             borderRadius:32,padding:"clamp(18px,4vw,26px)",
             overflowY:"auto",
             boxShadow:`0 22px 56px ${TEAL_SHADOW}`,
-            display:"flex",flexDirection:"column",
+            display:"flex",flexDirection:"column",cursor:"pointer",
           }}>
-            {/* stopPropagation wrapper — only background taps bubble up to flip */}
-            <div onClick={e=>e.stopPropagation()} style={{display:"flex",flexDirection:"column",flex:1}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                 <div>
                   <div style={{fontFamily:"var(--font-zh)",fontSize:36,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{focusWord.char}</div>
@@ -2224,7 +2222,7 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
                 <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",paddingTop:4}}>
                   <TTSBtn text={focusWord.char}/>
                   {onToggleWordFavorite && (
-                    <button onClick={()=>onToggleWordFavorite(focusWord)} style={{
+                    <button onClick={e=>{e.stopPropagation();onToggleWordFavorite(focusWord);}} style={{
                       width:34,height:34,borderRadius:10,
                       border:`1px solid ${isFav?"rgba(166,106,19,0.3)":"var(--border)"}`,
                       background:isFav?"var(--gold-dim)":"var(--card2)",
@@ -2247,18 +2245,17 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
               )}
 
               <div style={{display:"flex",gap:10,marginTop:14}}>
-                <button onClick={()=>setFlipped(false)} style={{
+                <button onClick={e=>{e.stopPropagation();setFlipped(false);}} style={{
                   flex:1,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
                   background:"var(--card2)",border:"1px solid var(--border)",
                   color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
                 }}>← 뒤집기</button>
-                <button onClick={nextCard} style={{
+                <button onClick={e=>{e.stopPropagation();nextCard();}} style={{
                   flex:2,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
                   background:TEAL,color:"#fff",border:"none",cursor:"pointer",
                   fontFamily:"var(--font-ui)",
                 }}>다음 표현 →</button>
               </div>
-            </div>
           </div>
         </div>
       </div>
@@ -3924,7 +3921,7 @@ function SentenceInsight({
         <div style={{fontSize:12,fontWeight:900,color:"var(--sub)",letterSpacing:".10em",textTransform:"uppercase"}}>sentence map</div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           {canFavPhrase && (
-            <button onClick={()=>onTogglePhraseFavorite(phraseSet, phrase)} style={{
+            <button onClick={e=>{e.stopPropagation();onTogglePhraseFavorite(phraseSet,phrase);}} style={{
               border:"1px solid var(--border)",borderRadius:999,padding:"5px 9px",fontSize:11,fontWeight:800,
               background:phraseFavs[phraseKey]?"var(--gold-dim)":"rgba(255,255,255,0.55)",
               color:phraseFavs[phraseKey]?"var(--gold)":"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)"
@@ -3939,7 +3936,7 @@ function SentenceInsight({
           const canSave = !!(tok.word && onToggleWordFavorite);
           const saved = !!(tok.word && favWords[wordKey(tok.word)]);
           return (
-          <button key={i} onClick={()=>canSave && onToggleWordFavorite(tok.word)} disabled={!canSave}
+          <button key={i} onClick={e=>{e.stopPropagation();canSave&&onToggleWordFavorite(tok.word);}} disabled={!canSave}
             title={canSave ? (saved ? "서재에서 빼기" : "서재에 저장") : "뜻만 확인"}
             style={{
               border:"1px solid rgba(255,255,255,0.74)",borderRadius:16,padding:compact?"8px 9px":"9px 10px 8px",
@@ -5467,8 +5464,7 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
         </div>
 
         {/* Flip card */}
-        <div style={{perspective:1400,cursor:"pointer"}}
-          onClick={()=>setCardFlipped(f=>!f)}>
+        <div style={{perspective:1400}}>
           <div key={wordIdx} style={{
             position:"relative",
             transformStyle:"preserve-3d",
@@ -5477,15 +5473,15 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
             height:"clamp(340px,70vw,430px)",
           }}>
 
-            {/* ── FRONT ── */}
-            <div style={{
+            {/* ── FRONT ── tap anywhere to flip */}
+            <div onClick={()=>setCardFlipped(true)} style={{
               position:"absolute",inset:0,
               backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
               background:`linear-gradient(148deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`,
               borderRadius:28,padding:"clamp(18px,4vw,26px)",
               display:"flex",flexDirection:"column",
               boxShadow:`0 20px 50px ${TEAL_SHADOW}`,
-              overflow:"hidden",
+              overflow:"hidden",cursor:"pointer",
             }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                 <div style={{fontSize:10,fontWeight:900,letterSpacing:".14em",color:"rgba(255,255,255,0.65)",
@@ -5508,8 +5504,8 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
               )}
             </div>
 
-            {/* ── BACK ── */}
-            <div style={{
+            {/* ── BACK ── tap bare background to flip back */}
+            <div onClick={()=>setCardFlipped(false)} style={{
               position:"absolute",inset:0,
               backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
               transform:"rotateY(180deg)",
@@ -5517,10 +5513,8 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
               borderRadius:28,padding:"clamp(16px,4vw,24px)",
               overflowY:"auto",
               boxShadow:`0 20px 50px ${TEAL_SHADOW}`,
-              display:"flex",flexDirection:"column",
+              display:"flex",flexDirection:"column",cursor:"pointer",
             }}>
-              {/* stopPropagation wrapper — only bare background taps bubble up to flip */}
-              <div onClick={e=>e.stopPropagation()} style={{display:"flex",flexDirection:"column",flex:1}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                 <div>
                   <div style={{fontFamily:"var(--font-zh)",fontSize:32,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{w.char}</div>
@@ -5557,12 +5551,11 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
                   background:"var(--card2)",border:"1px solid var(--border)",
                   color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
                 }}>← 뒤집기</button>
-                <button onClick={goNext} style={{
+                <button onClick={e=>{e.stopPropagation();goNext();}} style={{
                   flex:2,padding:"12px 0",borderRadius:99,fontSize:13,fontWeight:800,
                   background:TEAL,color:"#fff",border:"none",cursor:"pointer",
                   fontFamily:"var(--font-ui)",
                 }}>{isLast?"문제 풀기 →":"다음 표현 →"}</button>
-              </div>
               </div>
             </div>
 
