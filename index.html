@@ -26,9 +26,9 @@
   --card2:       rgba(245,241,235,0.72);
   --border:      rgba(28,27,26,0.08);
   --border-glass:rgba(255,255,255,0.64);
-  --accent:      #2457b8;
-  --accent-bright:#3f72d8;
-  --accent-dim:  rgba(36,87,184,0.12);
+  --accent:      #1B9D8E;
+  --accent-bright:#23C4B2;
+  --accent-dim:  rgba(27,157,142,0.12);
   --gold:        #a66a13;
   --gold-bright: #c27f1d;
   --gold-dim:    rgba(166,106,19,.13);
@@ -208,7 +208,7 @@ input:focus, textarea:focus, select:focus {
   background:linear-gradient(135deg, var(--accent), var(--accent-bright));
   color:#fff;
   border-color:rgba(255,255,255,0.28);
-  box-shadow:0 18px 38px rgba(36,87,184,0.26);
+  box-shadow:0 18px 38px rgba(27,157,142,0.26);
   transform:translateY(-2px);
 }
 .bnav-item .icon {
@@ -1969,10 +1969,10 @@ function Btn({ children, onClick, variant="primary", style={}, disabled=false })
     opacity: disabled ? .5 : 1,
   };
   const variants = {
-    primary: { background:"var(--accent)", color:"#fff", padding:"13px 24px", boxShadow:"0 10px 22px rgba(36,87,184,0.22)" },
+    primary: { background:"var(--accent)", color:"#fff", padding:"13px 24px", boxShadow:"0 10px 22px rgba(27,157,142,0.22)" },
     ghost:   { background:"rgba(255,255,255,0.66)", border:"1px solid rgba(255,255,255,0.72)", color:"var(--text)", padding:"11px 20px", backdropFilter:"blur(18px)" },
     danger:  { background:"var(--coral-dim)", color:"var(--coral)", padding:"11px 20px", border:"1px solid rgba(166,93,80,0.22)" },
-    success: { background:"var(--accent-dim)", color:"var(--accent)", padding:"11px 20px", border:"1px solid rgba(36,87,184,0.18)" },
+    success: { background:"var(--accent-dim)", color:"var(--accent)", padding:"11px 20px", border:"1px solid rgba(27,157,142,0.18)" },
   };
   return (
     <button onClick={disabled ? undefined : onClick}
@@ -2042,7 +2042,14 @@ Object.assign(window, { ToneBadge, PinyinRow, TTSBtn, ProgressBar, Chip, Btn, Em
 <script type="text/babel">
 // HomeScreen — dashboard with XP/level, chapters & streak
 
+const TEAL = "#1B9D8E";
+const TEAL_DARK = "#12746A";
+const TEAL_SHADOW = "rgba(27,157,142,0.28)";
+
 function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncState, onToggleWordFavorite, onSignOut }) {
+  const [cardIdx, setCardIdx] = React.useState(0);
+  const [flipped, setFlipped] = React.useState(false);
+
   const chapters = getStudyChapters(stats);
   const allWords = getAllWords(stats);
   const totalWords = allWords.length;
@@ -2051,19 +2058,42 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
   const reviewWords = getDueReviewWords(stats);
   const reviewCount = reviewWords.length;
   const xp = stats.totalXP || 0;
-  const nextChapter = chapters.find(ch => ((stats.chapterProgress||{})[ch.id] || 0) < ch.words.length) || chapters[0];
-  const nextChapterProgress = nextChapter ? ((stats.chapterProgress || {})[nextChapter.id] || 0) : 0;
-  const nextWord = nextChapter?.words?.[nextChapterProgress] || nextChapter?.words?.[0];
-  const focusWord = reviewWords[0] || nextWord || allWords[new Date().getDate() % Math.max(allWords.length, 1)] || {
-    char:"学", pinyin:"xué", meaning:"배우다", example:"我学习中文。", exMeaning:"나는 중국어를 공부해요."
-  };
   const syncDot = syncState==="error" ? "var(--coral)" : syncState==="synced" ? "var(--gold)" : "var(--sub2)";
+
+  const cardPool = React.useMemo(() => {
+    const nextChapter = chapters.find(ch => ((stats.chapterProgress||{})[ch.id]||0) < ch.words.length) || chapters[0];
+    const nextProg = nextChapter ? ((stats.chapterProgress||{})[nextChapter.id]||0) : 0;
+    const pool = [...reviewWords.slice(0, 5)];
+    if (nextChapter) {
+      nextChapter.words.slice(nextProg, nextProg + 8).forEach(w => {
+        if (!pool.some(x => x.char === w.char)) pool.push(w);
+      });
+    }
+    allWords.forEach(w => {
+      if (pool.length >= 12) return;
+      if (!pool.some(x => x.char === w.char)) pool.push(w);
+    });
+    return pool.length ? pool : [{ char:"学", pinyin:"xué", meaning:"배우다", example:"我学习中文。", exPinyin:"Wǒ xuéxí zhōngwén。", exMeaning:"나는 중국어를 공부해요.", chapterId:"hsk1" }];
+  }, [stats]);
+
+  const safeIdx = cardPool.length ? cardIdx % cardPool.length : 0;
+  const focusWord = cardPool[safeIdx];
+  const favWords = (stats?.favorites?.words) || {};
+  const isFav = !!favWords[wordKey(focusWord)];
+  const isReview = reviewWords.some(w => w.char === focusWord.char);
+
+  const nextCard = (e) => {
+    e.stopPropagation();
+    setCardIdx(i => (i + 1) % Math.max(cardPool.length, 1));
+    setFlipped(false);
+  };
 
   return (
     <div style={{animation:"fadeUp .3s ease both",maxWidth:780,margin:"0 auto"}}>
+      {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:18}}>
         <div>
-          <div style={{fontSize:"clamp(42px,9vw,74px)",fontWeight:900,lineHeight:.92,color:"var(--text)",letterSpacing:0,overflowWrap:"anywhere"}}>오늘의 중국어</div>
+          <div style={{fontSize:"clamp(38px,9vw,66px)",fontWeight:900,lineHeight:.92,color:"var(--text)",letterSpacing:0,overflowWrap:"anywhere"}}>오늘의 중국어</div>
           <div style={{fontSize:15,color:"var(--sub)",fontWeight:800,marginTop:10}}>{stats.todayCount||0}문항 · {xp}XP</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2079,50 +2109,111 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
         </div>
       </div>
 
-      <div className="glass-card" style={{marginBottom:14,padding:"clamp(18px,4vw,28px)"}}>
-        <div style={{display:"grid",gridTemplateColumns:"auto minmax(0,1fr)",gap:"clamp(14px,3vw,24px)",alignItems:"center",marginBottom:14}}>
+      {/* Flip card */}
+      <div style={{perspective:1400,marginBottom:14,cursor:"pointer"}}
+        onClick={()=>{ if (!flipped) setFlipped(true); else setFlipped(false); }}>
+        <div key={safeIdx} style={{
+          position:"relative",
+          transformStyle:"preserve-3d",
+          transition:"transform .52s cubic-bezier(.4,0,.2,1)",
+          transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+          height:"clamp(370px,72vw,460px)",
+        }}>
+
+          {/* ── FRONT ── */}
           <div style={{
-            width:"clamp(96px,20vw,148px)",height:"clamp(96px,20vw,148px)",borderRadius:28,display:"grid",placeItems:"center",
-            background:"#111",color:"#fff",fontFamily:"var(--font-zh)",fontWeight:900,
-            boxShadow:"0 18px 42px rgba(0,0,0,0.14)",overflow:"hidden",padding:"10px",
-            ...hanziDisplayStyle(focusWord.char, "tile")
-          }}>{focusWord.char}</div>
-          <div style={{minWidth:0}}>
-            <div style={{fontSize:13,color:"var(--sub2)",fontWeight:900,letterSpacing:0,marginBottom:6}}>바로 외울 표현</div>
-            <div style={{fontSize:17,color:"var(--accent)",fontWeight:900,overflowWrap:"anywhere",lineHeight:1.35}}>{focusWord.pinyin}</div>
-            <div style={{fontSize:"clamp(27px,5vw,44px)",fontWeight:900,marginTop:4,letterSpacing:0,overflowWrap:"anywhere",lineHeight:1.08}}>{focusWord.meaning}</div>
-            <div style={{display:"flex",gap:10,alignItems:"center",marginTop:14}}>
-              <TTSBtn text={focusWord.char}/>
-              {onToggleWordFavorite && focusWord.char && (() => {
-                const fws = (stats?.favorites?.words) || {};
-                const isFav = !!fws[wordKey(focusWord)];
-                return (
-                  <button onClick={()=>onToggleWordFavorite(focusWord)} title={isFav?"즐겨찾기 해제":"즐겨찾기 추가"} style={{
-                    width:46,height:46,borderRadius:14,border:"1px solid var(--border)",cursor:"pointer",
-                    background:isFav?"var(--gold-dim)":"rgba(255,255,255,0.6)",
-                    color:isFav?"var(--gold)":"var(--sub)",fontSize:20,flexShrink:0,
-                    display:"grid",placeItems:"center",
+            position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
+            background:`linear-gradient(148deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`,
+            borderRadius:32,padding:"clamp(18px,4vw,28px)",
+            display:"flex",flexDirection:"column",
+            boxShadow:`0 22px 56px ${TEAL_SHADOW}`,
+            overflow:"hidden",
+          }}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:10,fontWeight:900,letterSpacing:".14em",color:"rgba(255,255,255,0.65)",textTransform:"uppercase",background:"rgba(255,255,255,0.12)",borderRadius:99,padding:"4px 10px"}}>
+                {isReview ? "복습" : "오늘의 표현"}
+              </div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.55)",fontWeight:700}}>
+                {safeIdx+1} / {cardPool.length}
+              </div>
+            </div>
+
+            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,padding:"12px 0 16px"}}>
+              <div style={{fontFamily:"var(--font-zh)",color:"#fff",fontWeight:900,lineHeight:1,...hanziDisplayStyle(focusWord.char)}}>{focusWord.char}</div>
+              <div style={{fontSize:15,color:"rgba(255,255,255,0.78)",fontWeight:700,letterSpacing:".05em"}}>{focusWord.pinyin}</div>
+              <div style={{fontSize:"clamp(22px,5vw,32px)",fontWeight:900,color:"#fff",marginTop:2}}>{focusWord.meaning}</div>
+            </div>
+
+            {focusWord.example && (
+              <div style={{background:"rgba(0,0,0,0.18)",borderRadius:18,padding:"12px 16px"}}>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:16,color:"rgba(255,255,255,0.92)",fontWeight:700,marginBottom:3,overflowWrap:"anywhere"}}>{focusWord.example}</div>
+                {focusWord.exPinyin && (
+                  <div style={{fontSize:12,color:"rgba(255,255,255,0.78)",fontWeight:600,marginBottom:3,letterSpacing:".02em",overflowWrap:"anywhere"}}>{focusWord.exPinyin}</div>
+                )}
+                <div style={{fontSize:12,color:"rgba(255,255,255,0.58)",lineHeight:1.5}}>{focusWord.exMeaning}</div>
+              </div>
+            )}
+
+            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"rgba(255,255,255,0.42)",fontWeight:700,letterSpacing:".04em"}}>
+              탭하여 분석 보기
+            </div>
+          </div>
+
+          {/* ── BACK ── */}
+          <div style={{
+            position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
+            transform:"rotateY(180deg)",
+            background:"var(--card)",border:`1.5px solid rgba(27,157,142,0.18)`,
+            borderRadius:32,padding:"clamp(18px,4vw,26px)",
+            overflowY:"auto",
+            boxShadow:`0 22px 56px ${TEAL_SHADOW}`,
+            display:"flex",flexDirection:"column",
+          }}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+              <div>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:36,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{focusWord.char}</div>
+                <div style={{fontSize:14,color:TEAL,fontWeight:800,marginTop:3}}>{focusWord.pinyin}</div>
+                <div style={{fontSize:22,fontWeight:900,color:"var(--text)",marginTop:4}}>{focusWord.meaning}</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",paddingTop:4}}>
+                <TTSBtn text={focusWord.char}/>
+                {onToggleWordFavorite && (
+                  <button onClick={e=>{e.stopPropagation();onToggleWordFavorite(focusWord);}} style={{
+                    width:34,height:34,borderRadius:10,
+                    border:`1px solid ${isFav?"rgba(166,106,19,0.3)":"var(--border)"}`,
+                    background:isFav?"var(--gold-dim)":"var(--card2)",
+                    color:isFav?"var(--gold)":"var(--sub)",
+                    fontSize:16,display:"grid",placeItems:"center",cursor:"pointer",
                   }}>{isFav?"★":"☆"}</button>
-                );
-              })()}
-              <button onClick={onStartScene} style={{
-                flex:1,padding:"14px 16px",borderRadius:20,border:"none",
-                background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:900,
-                cursor:"pointer",fontFamily:"var(--font-ui)"
-              }}>바로 연습</button>
+                )}
+              </div>
+            </div>
+
+            {focusWord.example && (
+              <SentenceInsight
+                sentence={focusWord.example}
+                pinyin={focusWord.exPinyin}
+                meaning={focusWord.exMeaning}
+                focusWord={focusWord}
+                stats={stats}
+                onToggleWordFavorite={onToggleWordFavorite}
+              />
+            )}
+
+            <div style={{display:"flex",gap:10,marginTop:14}}>
+              <button onClick={e=>{e.stopPropagation();setFlipped(false);}} style={{
+                flex:1,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                background:"var(--card2)",border:"1px solid var(--border)",
+                color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
+              }}>← 뒤집기</button>
+              <button onClick={nextCard} style={{
+                flex:2,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                background:TEAL,color:"#fff",border:"none",cursor:"pointer",
+                fontFamily:"var(--font-ui)",
+              }}>다음 표현 →</button>
             </div>
           </div>
         </div>
-        {focusWord.example && (
-          <SentenceInsight
-            sentence={focusWord.example}
-            pinyin={focusWord.exPinyin}
-            meaning={focusWord.exMeaning}
-            focusWord={focusWord}
-            stats={stats}
-            onToggleWordFavorite={onToggleWordFavorite}
-          />
-        )}
       </div>
 
       {reviewCount > 0 && (
@@ -2339,7 +2430,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
               <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",
                 background:"var(--card)",border:"1.5px solid var(--border-glass)",borderRadius:32,
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,
-                boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.13)"}}>
+                boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(27,157,142,0.13)"}}>
                 <div style={{position:"absolute",top:12,right:14,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,background:"var(--card2)",color:"var(--sub)"}}>HSK {selectedChapter.level}</div>
                 <div style={{fontFamily:"var(--font-zh)",color:"var(--text)",fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}</div>
                 <div style={{fontSize:15,color:"var(--accent)",fontWeight:700,letterSpacing:".04em"}}>{word.pinyin}</div>
@@ -2350,7 +2441,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
                 transform:"rotateY(180deg)",
                 background:"var(--surface)",border:"1.5px solid var(--border-glass)",borderRadius:32,
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:20,
-                boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.10)",overflowY:"auto"}}>
+                boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(27,157,142,0.10)",overflowY:"auto"}}>
                 <div style={{position:"absolute",top:12,right:14,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,background:"var(--card2)",color:"var(--sub)"}}>HSK {selectedChapter.level}</div>
                 <div style={{fontFamily:"var(--font-zh)",color:"var(--text)",fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}</div>
                 <div style={{fontSize:20,color:"var(--accent)",fontWeight:600}}>{word.pinyin}</div>
@@ -2398,7 +2489,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
           {flipped&&!answered&&(
             <div style={{display:"flex",gap:10,justifyContent:"center",marginTop:18,maxWidth:400,margin:"18px auto 0"}}>
               <button onClick={()=>handleAnswer(false)} style={{flex:1,padding:"13px 0",borderRadius:99,fontSize:15,fontWeight:700,background:"var(--coral-dim)",color:"var(--coral)",border:"1.5px solid rgba(186,26,26,0.25)",cursor:"pointer",fontFamily:"var(--font-ui)"}}>✕ 몰랐어</button>
-              <button onClick={()=>handleAnswer(true)} style={{flex:1,padding:"13px 0",borderRadius:99,fontSize:15,fontWeight:700,background:"var(--accent-dim)",color:"var(--accent)",border:"1.5px solid rgba(79,85,174,0.25)",cursor:"pointer",fontFamily:"var(--font-ui)"}}>○ 알았어</button>
+              <button onClick={()=>handleAnswer(true)} style={{flex:1,padding:"13px 0",borderRadius:99,fontSize:15,fontWeight:700,background:"var(--accent-dim)",color:"var(--accent)",border:"1.5px solid rgba(27,157,142,0.25)",cursor:"pointer",fontFamily:"var(--font-ui)"}}>○ 알았어</button>
             </div>
           )}
           {flipped&&answered&&<div style={{textAlign:"center",marginTop:18,maxWidth:400,margin:"18px auto 0"}}><Btn variant="primary" onClick={next} style={{width:"100%"}}>{idx+1<total?"다음 카드 →":"결과 보기"}</Btn></div>}
@@ -2409,7 +2500,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
       {/* ── LISTEN MODE ── */}
       {mode==="listen" && (
         <div style={{animation:"fadeUp .25s ease"}}>
-          <div style={{background:"var(--card)",border:"1.5px solid var(--border-glass)",borderRadius:32,padding:"28px 20px",marginBottom:16,textAlign:"center",boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.40),0 8px 60px rgba(79,85,174,0.12)"}}>
+          <div style={{background:"var(--card)",border:"1.5px solid var(--border-glass)",borderRadius:32,padding:"28px 20px",marginBottom:16,textAlign:"center",boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.40),0 8px 60px rgba(27,157,142,0.12)"}}>
             <div style={{fontSize:13,color:"var(--sub)",fontWeight:600,marginBottom:18}}>음성을 듣고 맞는 뜻을 고르세요</div>
             <button onClick={()=>speak(word.char)} style={{
               width:72,height:72,borderRadius:"50%",border:"none",cursor:"pointer",
@@ -2454,7 +2545,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
       {/* ── FILL MODE ── */}
       {mode==="fill" && (
         <div style={{animation:"fadeUp .25s ease"}}>
-          <div style={{background:"var(--card)",border:"1.5px solid var(--border-glass)",borderRadius:32,padding:"22px 20px",marginBottom:16,boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.40),0 8px 60px rgba(79,85,174,0.12)"}}>
+          <div style={{background:"var(--card)",border:"1.5px solid var(--border-glass)",borderRadius:32,padding:"22px 20px",marginBottom:16,boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.40),0 8px 60px rgba(27,157,142,0.12)"}}>
             <div style={{fontSize:13,color:"var(--sub)",fontWeight:600,marginBottom:14}}>빈칸에 알맞은 단어를 고르세요</div>
             <div style={{fontFamily:"var(--font-zh)",fontSize:20,color:"var(--text)",lineHeight:1.8,letterSpacing:".05em"}}>
               {(() => {
@@ -2860,7 +2951,7 @@ function PhraseScreen({ stats, onTogglePhraseFavorite, onToggleWordFavorite }) {
             border:"1.5px solid rgba(255,255,255,0.70)",borderTopColor:"rgba(255,255,255,0.88)",borderLeftColor:"rgba(255,255,255,0.88)",
             borderRadius:32,display:"flex",flexDirection:"column",
             alignItems:"center",justifyContent:"center",gap:12,padding:24,
-            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.13)"}}>
+            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(27,157,142,0.13)"}}>
             <div style={{position:"absolute",top:12,left:14,fontSize:11,fontWeight:700,
               padding:"3px 10px",borderRadius:99,background:"var(--accent-dim)",color:"var(--accent)"}}>
               {activeSet.emoji} {activeSet.title}
@@ -2877,7 +2968,7 @@ function PhraseScreen({ stats, onTogglePhraseFavorite, onToggleWordFavorite }) {
             border:"1.5px solid rgba(255,255,255,0.70)",borderTopColor:"rgba(255,255,255,0.88)",borderLeftColor:"rgba(255,255,255,0.88)",
             borderRadius:32,display:"flex",flexDirection:"column",
             alignItems:"center",justifyContent:"center",gap:10,padding:24,
-            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.10)"}}>
+            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(27,157,142,0.10)"}}>
             <div style={{fontFamily:"var(--font-zh)",fontSize:18,color:"var(--text)",textAlign:"center",lineHeight:1.6}}>{phrase.char}</div>
             <div style={{fontSize:14,color:"var(--accent)",fontWeight:500,textAlign:"center"}}>{phrase.pinyin}</div>
             <div style={{fontSize:20,fontWeight:700,color:"var(--text)",textAlign:"center"}}>{phrase.meaning}</div>
@@ -4229,7 +4320,7 @@ function CommuteScreen({ stats }) {
             fontFamily:"var(--font-zh)",
             fontSize: current.char.length <= 4 ? 72 : current.char.length <= 8 ? 48 : 32,
             color:"var(--text)",lineHeight:1.2,fontWeight:600,
-            textShadow: phase==="zh"?"0 0 32px rgba(79,85,174,0.25)":"none",
+            textShadow: phase==="zh"?"0 0 32px rgba(27,157,142,0.25)":"none",
             transition:"text-shadow .3s",
           }}>{current.char}</div>
 
@@ -4269,7 +4360,7 @@ function CommuteScreen({ stats }) {
           background: playing ? "var(--accent)" : "var(--accent-dim)",
           color: playing ? "#fff" : "var(--accent)",
           fontSize:28,display:"grid",placeItems:"center",
-          boxShadow: playing ? "0 4px 24px rgba(79,85,174,0.35)" : "none",
+          boxShadow: playing ? "0 4px 24px rgba(27,157,142,0.35)" : "none",
           transition:"all .2s",
         }}>{playing ? "⏸" : "▶"}</button>
         <button onClick={handleNext} style={{
@@ -4378,7 +4469,7 @@ function ReviewScreen({ stats, onResult, onBack }) {
             border:"1.5px solid rgba(255,255,255,0.72)",borderTopColor:"rgba(255,255,255,0.88)",borderLeftColor:"rgba(255,255,255,0.88)",
             borderRadius:32,display:"flex",flexDirection:"column",
             alignItems:"center",justifyContent:"center",gap:10,
-            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.13)",
+            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(27,157,142,0.13)",
           }}>
             <div style={{
               position:"absolute",top:12,left:14,fontSize:11,fontWeight:700,
@@ -4403,7 +4494,7 @@ function ReviewScreen({ stats, onResult, onBack }) {
             border:"1.5px solid rgba(255,255,255,0.70)",borderTopColor:"rgba(255,255,255,0.88)",borderLeftColor:"rgba(255,255,255,0.88)",
             borderRadius:32,display:"flex",flexDirection:"column",
             alignItems:"center",justifyContent:"center",gap:8,padding:20,
-            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.10)",
+            boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(27,157,142,0.10)",
           }}>
             <div style={{fontFamily:"var(--font-zh)",color:"var(--text)",fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}</div>
             <div style={{fontSize:19,color:"var(--accent)",fontWeight:600}}>{word.pinyin}</div>
@@ -5180,12 +5271,13 @@ Object.assign(window, { InspectScreen, REVIEW_ITEMS, CHOICE_LABELS });
 <script type="text/babel">
 
 const TWEAK_DEFAULTS = {
-  "accent": "blue",
+  "accent": "teal",
   "zhFont": "serif",
   "density": "comfortable"
 };
 
 const ACCENT_OPTIONS = {
+  teal:      { accent:"#1B9D8E", bright:"#23C4B2", dim:"rgba(27,157,142,.12)"  },
   blue:      { accent:"#2457B8", bright:"#3F72D8", dim:"rgba(36,87,184,.12)"   },
   indigo:    { accent:"#5A4FCF", bright:"#7B70E2", dim:"rgba(90,79,207,.11)"   },
   sky:       { accent:"#337FBE", bright:"#4C9DDB", dim:"rgba(51,127,190,.11)"  },
@@ -5709,8 +5801,11 @@ function LoginScreen({ onLogin }) {
   );
 }
 
+function migrateAccent(key) {
+  return key === "blue" || !ACCENT_OPTIONS[key] ? "teal" : key;
+}
 function applyAccent(key) {
-  const c = ACCENT_OPTIONS[key] || ACCENT_OPTIONS.periwinkle;
+  const c = ACCENT_OPTIONS[migrateAccent(key)];
   document.documentElement.style.setProperty("--accent", c.accent);
   document.documentElement.style.setProperty("--accent-bright", c.bright);
   document.documentElement.style.setProperty("--accent-dim", c.dim);
@@ -5804,7 +5899,7 @@ function App() {
       if (remoteStamp > localStamp) {
         setStats(hydrateStats(remoteState));
         suppressNextAutoSyncRef.current = true;
-        if (remoteTweaks) setTweaks({...TWEAK_DEFAULTS, ...remoteTweaks});
+        if (remoteTweaks) setTweaks({...TWEAK_DEFAULTS, ...remoteTweaks, accent: migrateAccent(remoteTweaks.accent)});
         setSyncStatus("클라우드 최신 데이터를 가져왔어요.");
         setSyncState("synced");
         setLastSyncedAt(data.updated_at || new Date().toISOString());
