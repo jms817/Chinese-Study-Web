@@ -2174,6 +2174,7 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
   const [cardIdx, setCardIdx] = React.useState(0);
   const [flipped, setFlipped] = React.useState(false);
   const [learnMode, setLearnMode] = React.useState("card");
+  const [pickedChapter, setPickedChapter] = React.useState(null); // null = 자동
 
   const chapters = getStudyChapters(stats);
   const allWords = getAllWords(stats);
@@ -2191,6 +2192,10 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
       const favWords = (stats?.favorites?.words) || {};
       const starred = allWords.filter(w => favWords[wordKey(w)]);
       return starred.length ? starred.sort(() => Math.random() - 0.5) : fallback;
+    }
+    if (pickedChapter) {
+      const words = [...pickedChapter.words].sort(() => Math.random() - 0.5);
+      return words.length ? words : fallback;
     }
     const nextChapter = chapters.find(ch => ((stats.chapterProgress||{})[ch.id]||0) < ch.words.length) || chapters[0];
     const nextProg = nextChapter ? ((stats.chapterProgress||{})[nextChapter.id]||0) : 0;
@@ -2337,6 +2342,36 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
           </button>
         ))}
       </div>
+
+      {/* Chapter picker — card mode only */}
+      {learnMode === "card" && (
+        <div style={{
+          display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:10,
+          scrollbarWidth:"none",
+          WebkitMaskImage:"linear-gradient(to right,black 85%,transparent 100%)",
+          maskImage:"linear-gradient(to right,black 85%,transparent 100%)",
+        }}>
+          <button onClick={()=>{setPickedChapter(null);setCardIdx(0);setFlipped(false);}} style={{
+            flex:"0 0 auto",padding:"6px 14px",borderRadius:99,fontSize:12,fontWeight:800,
+            border:`1.5px solid ${!pickedChapter ? TEAL : "rgba(28,27,26,0.10)"}`,
+            background:!pickedChapter ? `rgba(27,157,142,0.12)` : "rgba(255,255,255,0.7)",
+            color:!pickedChapter ? TEAL : "var(--sub)",cursor:"pointer",
+            fontFamily:"var(--font-ui)",whiteSpace:"nowrap",
+          }}>자동</button>
+          {chapters.map(ch => {
+            const active = pickedChapter?.id === ch.id;
+            return (
+              <button key={ch.id} onClick={()=>{setPickedChapter(ch);setCardIdx(0);setFlipped(false);}} style={{
+                flex:"0 0 auto",padding:"6px 14px",borderRadius:99,fontSize:12,fontWeight:800,
+                border:`1.5px solid ${active ? TEAL : "rgba(28,27,26,0.10)"}`,
+                background:active ? `rgba(27,157,142,0.12)` : "rgba(255,255,255,0.7)",
+                color:active ? TEAL : "var(--sub)",cursor:"pointer",
+                fontFamily:"var(--font-ui)",whiteSpace:"nowrap",
+              }}>{ch.emoji} {ch.title}</button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Mode content: match */}
       {learnMode === "match" && (
