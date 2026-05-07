@@ -3769,22 +3769,31 @@ function SentenceInsight({
       </div>
 
       <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"stretch",marginBottom:compact?8:10}}>
-        {wordRows.map((tok, i) => (
-          <button key={i} onClick={()=>tok.word && onToggleWordFavorite?.(tok.word)} disabled={!tok.word || !onToggleWordFavorite}
+        {wordRows.map((tok, i) => {
+          const canSave = !!(tok.word && onToggleWordFavorite);
+          const saved = !!(tok.word && favWords[wordKey(tok.word)]);
+          return (
+          <button key={i} onClick={()=>canSave && onToggleWordFavorite(tok.word)} disabled={!canSave}
+            title={canSave ? (saved ? "서재에서 빼기" : "서재에 저장") : "뜻만 확인"}
             style={{
               border:"1px solid rgba(255,255,255,0.74)",borderRadius:16,padding:compact?"8px 9px":"9px 10px 8px",
-              background:focusWord && tok.text === focusWord.char ? "var(--accent-dim)" : "rgba(255,255,255,0.56)",
-              color:"var(--text)",cursor:tok.word && onToggleWordFavorite ? "pointer" : "default",
+              background:saved ? "var(--gold-dim)" : focusWord && tok.text === focusWord.char ? "var(--accent-dim)" : "rgba(255,255,255,0.56)",
+              color:"var(--text)",cursor:canSave ? "pointer" : "default",
               fontFamily:"var(--font-ui)",lineHeight:1.16,minWidth:compact?58:64,textAlign:"center",
-              boxShadow:"0 5px 14px rgba(28,27,26,0.04)"
+              boxShadow:saved ? "0 6px 18px rgba(166,106,19,0.10)" : "0 5px 14px rgba(28,27,26,0.04)",
+              position:"relative",opacity:canSave ? 1 : .82
             }}>
+            {canSave && <span style={{
+              position:"absolute",top:4,right:5,fontSize:10,lineHeight:1,
+              color:saved?"var(--gold)":"var(--sub2)",fontWeight:900
+            }}>{saved ? "★" : "☆"}</span>}
             <div style={{fontFamily:"var(--font-zh)",fontSize:compact?22:24,fontWeight:900,lineHeight:1.1}}>{tok.text}</div>
             <div style={{fontSize:12,color:"var(--accent)",fontWeight:900,marginTop:5,lineHeight:1.2,overflowWrap:"anywhere"}}>{tok.pinyin}</div>
             <div style={{fontSize:12,color:"var(--sub)",fontWeight:700,marginTop:3,maxWidth:compact?116:128,whiteSpace:"normal",overflow:"visible",textOverflow:"clip",overflowWrap:"anywhere",lineHeight:1.25}}>
               {tok.meaning}
             </div>
           </button>
-        ))}
+        )})}
       </div>
 
       <div style={{fontSize:14,color:"var(--accent)",lineHeight:1.45,marginBottom:5,overflowWrap:"anywhere",fontWeight:700}}>{pinyin}</div>
@@ -5167,7 +5176,7 @@ function explainSceneDrillAnswer(word, selected, ok) {
   return `정답은 “${word.meaning}”이에요. ${word.char}(${word.pinyin})는 ${tagPart}방금 고른 “${selected}”보다 “${word.meaning}” 쪽 의미로 쓰입니다.${examplePart}`;
 }
 
-function SceneScreen({ stats, onResult }) {
+function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
   const [activeScene, setActiveScene] = React.useState(null);
   const [step, setStep] = React.useState(0);       // 0=intro 1=learn 2=drill 3=done
   const [wordIdx, setWordIdx] = React.useState(0);
@@ -5296,6 +5305,7 @@ function SceneScreen({ stats, onResult }) {
               meaning={w.exMeaning}
               focusWord={w}
               stats={stats}
+              onToggleWordFavorite={onToggleWordFavorite}
               compact={true}
             />
           )}
@@ -5385,6 +5395,7 @@ function SceneScreen({ stats, onResult }) {
             meaning={w.exMeaning}
             focusWord={w}
             stats={stats}
+            onToggleWordFavorite={onToggleWordFavorite}
             compact={true}
           />
         )}
@@ -6024,7 +6035,7 @@ function App() {
             onSignOut={handleLogout}
           />
         )}
-        {screen==="scene"  && <SceneScreen stats={stats} onResult={handleResult}/>}
+        {screen==="scene"  && <SceneScreen stats={stats} onResult={handleResult} onToggleWordFavorite={handleToggleWordFavorite}/>}
         {screen==="study"  && <StudyScreen chapter={activeChapter||getStudyChapters(stats)[0]} stats={stats} onResult={handleResult} onBack={()=>setScreen("home")} onToggleWordFavorite={handleToggleWordFavorite}/>}
         {screen==="mission" && <MissionScreen stats={stats} onCompleteMission={handleMissionComplete}/>}
         {screen==="my"     && <MyLibraryScreen stats={stats} onStudyChapter={handleStudyChapter} onToggleWordFavorite={handleToggleWordFavorite} onTogglePhraseFavorite={handleTogglePhraseFavorite}/>}
