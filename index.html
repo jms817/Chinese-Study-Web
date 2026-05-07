@@ -2203,48 +2203,51 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
             boxShadow:`0 22px 56px ${TEAL_SHADOW}`,
             display:"flex",flexDirection:"column",
           }}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-              <div>
-                <div style={{fontFamily:"var(--font-zh)",fontSize:36,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{focusWord.char}</div>
-                <div style={{fontSize:14,color:TEAL,fontWeight:800,marginTop:3}}>{focusWord.pinyin}</div>
-                <div style={{fontSize:22,fontWeight:900,color:"var(--text)",marginTop:4}}>{focusWord.meaning}</div>
+            {/* stopPropagation wrapper — only background taps bubble up to flip */}
+            <div onClick={e=>e.stopPropagation()} style={{display:"flex",flexDirection:"column",flex:1}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                <div>
+                  <div style={{fontFamily:"var(--font-zh)",fontSize:36,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{focusWord.char}</div>
+                  <div style={{fontSize:14,color:TEAL,fontWeight:800,marginTop:3}}>{focusWord.pinyin}</div>
+                  <div style={{fontSize:22,fontWeight:900,color:"var(--text)",marginTop:4}}>{focusWord.meaning}</div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",paddingTop:4}}>
+                  <TTSBtn text={focusWord.char}/>
+                  {onToggleWordFavorite && (
+                    <button onClick={()=>onToggleWordFavorite(focusWord)} style={{
+                      width:34,height:34,borderRadius:10,
+                      border:`1px solid ${isFav?"rgba(166,106,19,0.3)":"var(--border)"}`,
+                      background:isFav?"var(--gold-dim)":"var(--card2)",
+                      color:isFav?"var(--gold)":"var(--sub)",
+                      fontSize:16,display:"grid",placeItems:"center",cursor:"pointer",
+                    }}>{isFav?"★":"☆"}</button>
+                  )}
+                </div>
               </div>
-              <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",paddingTop:4}}>
-                <TTSBtn text={focusWord.char}/>
-                {onToggleWordFavorite && (
-                  <button onClick={e=>{e.stopPropagation();onToggleWordFavorite(focusWord);}} style={{
-                    width:34,height:34,borderRadius:10,
-                    border:`1px solid ${isFav?"rgba(166,106,19,0.3)":"var(--border)"}`,
-                    background:isFav?"var(--gold-dim)":"var(--card2)",
-                    color:isFav?"var(--gold)":"var(--sub)",
-                    fontSize:16,display:"grid",placeItems:"center",cursor:"pointer",
-                  }}>{isFav?"★":"☆"}</button>
-                )}
+
+              {focusWord.example && (
+                <SentenceInsight
+                  sentence={focusWord.example}
+                  pinyin={focusWord.exPinyin}
+                  meaning={focusWord.exMeaning}
+                  focusWord={focusWord}
+                  stats={stats}
+                  onToggleWordFavorite={onToggleWordFavorite}
+                />
+              )}
+
+              <div style={{display:"flex",gap:10,marginTop:14}}>
+                <button onClick={()=>setFlipped(false)} style={{
+                  flex:1,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                  background:"var(--card2)",border:"1px solid var(--border)",
+                  color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
+                }}>← 뒤집기</button>
+                <button onClick={nextCard} style={{
+                  flex:2,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                  background:TEAL,color:"#fff",border:"none",cursor:"pointer",
+                  fontFamily:"var(--font-ui)",
+                }}>다음 표현 →</button>
               </div>
-            </div>
-
-            {focusWord.example && (
-              <SentenceInsight
-                sentence={focusWord.example}
-                pinyin={focusWord.exPinyin}
-                meaning={focusWord.exMeaning}
-                focusWord={focusWord}
-                stats={stats}
-                onToggleWordFavorite={onToggleWordFavorite}
-              />
-            )}
-
-            <div style={{display:"flex",gap:10,marginTop:14}}>
-              <button onClick={e=>{e.stopPropagation();setFlipped(false);}} style={{
-                flex:1,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
-                background:"var(--card2)",border:"1px solid var(--border)",
-                color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
-              }}>← 뒤집기</button>
-              <button onClick={nextCard} style={{
-                flex:2,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
-                background:TEAL,color:"#fff",border:"none",cursor:"pointer",
-                fontFamily:"var(--font-ui)",
-              }}>다음 표현 →</button>
             </div>
           </div>
         </div>
@@ -5506,6 +5509,8 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
               boxShadow:`0 20px 50px ${TEAL_SHADOW}`,
               display:"flex",flexDirection:"column",
             }}>
+              {/* stopPropagation wrapper — only bare background taps bubble up to flip */}
+              <div onClick={e=>e.stopPropagation()} style={{display:"flex",flexDirection:"column",flex:1}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                 <div>
                   <div style={{fontFamily:"var(--font-zh)",fontSize:32,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{w.char}</div>
@@ -5547,6 +5552,7 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
                   background:TEAL,color:"#fff",border:"none",cursor:"pointer",
                   fontFamily:"var(--font-ui)",
                 }}>{isLast?"문제 풀기 →":"다음 표현 →"}</button>
+              </div>
               </div>
             </div>
 
