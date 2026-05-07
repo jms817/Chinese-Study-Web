@@ -2562,13 +2562,15 @@ function MatchingMode({ cardPool, chapters }) {
   const PAIR_COUNT = 4;
   const [round, setRound] = React.useState(0);
   const [matched, setMatched] = React.useState(new Set());
-  const [dragging, setDragging] = React.useState(null); // { word, x, y, w, h, ox, oy }
+  const [dragging, setDragging] = React.useState(null); // { word, w, ox, oy }
   const [flash, setFlash] = React.useState(null);
   const [shake, setShake] = React.useState(null);
   const [score, setScore] = React.useState(0);
   const [roundDone, setRoundDone] = React.useState(false);
   const [pickedChapter, setPickedChapter] = React.useState(null);
   const wordRefs = React.useRef({});
+  const floatRef = React.useRef(null);
+  const dragState = React.useRef(null); // mutable, no re-render on move
 
   const activePool = React.useMemo(() => {
     if (pickedChapter) return pickedChapter.words;
@@ -2590,35 +2592,44 @@ function MatchingMode({ cardPool, chapters }) {
   const handlePointerDown = (e, word) => {
     if (matched.has(word.char)) return;
     e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
     const rect = e.currentTarget.getBoundingClientRect();
-    setDragging({
-      word,
-      x: e.clientX, y: e.clientY,
-      w: rect.width, h: rect.height,
-      ox: e.clientX - rect.left,
-      oy: e.clientY - rect.top,
-    });
+    const ox = e.clientX - rect.left;
+    const oy = e.clientY - rect.top;
+    dragState.current = { word, ox, oy, w: rect.width };
+    setDragging({ word, w: rect.width, ox, oy });
+    if (floatRef.current) {
+      floatRef.current.style.display = "flex";
+      floatRef.current.style.width = rect.width + "px";
+      floatRef.current.style.left = (e.clientX - ox) + "px";
+      floatRef.current.style.top  = (e.clientY - oy) + "px";
+    }
   };
 
   React.useEffect(() => {
-    if (!dragging) return;
     const onMove = (e) => {
-      const pt = e.touches ? e.touches[0] : e;
-      setDragging(d => d ? { ...d, x: pt.clientX, y: pt.clientY } : null);
+      if (!dragState.current) return;
+      const { ox, oy } = dragState.current;
+      if (floatRef.current) {
+        floatRef.current.style.left = (e.clientX - ox) + "px";
+        floatRef.current.style.top  = (e.clientY - oy) + "px";
+      }
     };
     const onUp = (e) => {
-      if (!dragging) { setDragging(null); return; }
-      const pt = e.changedTouches ? e.changedTouches[0] : e;
+      if (!dragState.current) return;
+      const ds = dragState.current;
+      dragState.current = null;
+      if (floatRef.current) floatRef.current.style.display = "none";
       let hit = null;
       for (const [char, ref] of Object.entries(wordRefs.current)) {
         if (!ref) continue;
         const r = ref.getBoundingClientRect();
-        if (pt.clientX >= r.left && pt.clientX <= r.right && pt.clientY >= r.top && pt.clientY <= r.bottom) {
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
           hit = char; break;
         }
       }
       if (hit) {
-        if (hit === dragging.word.char) {
+        if (hit === ds.word.char) {
           setMatched(m => {
             const next = new Set(m); next.add(hit);
             if (next.size === pairs.length) setTimeout(() => setRoundDone(true), 500);
@@ -2634,13 +2645,13 @@ function MatchingMode({ cardPool, chapters }) {
       }
       setDragging(null);
     };
-    document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
     return () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
     };
-  }, [dragging, pairs]);
+  }, [pairs]);
 
   const nextRound = () => { setRound(r => r + 1); };
 
@@ -2766,27 +2777,20 @@ function MatchingMode({ cardPool, chapters }) {
         })}
       </div>
 
-      {/* Floating drag card — follows exact grab point */}
-      {dragging && (
-        <div style={{
-          position: "fixed",
-          left: dragging.x - dragging.ox,
-          top: dragging.y - dragging.oy,
-          width: dragging.w,
-          padding: "14px 10px",
-          borderRadius: 18,
-          background: `linear-gradient(135deg,${TEAL},${TEAL_DARK})`,
-          boxShadow: "0 14px 36px rgba(27,157,142,0.45)",
-          textAlign: "center", pointerEvents: "none", zIndex: 1000,
-          transform: "scale(1.06) rotate(-1.5deg)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          willChange: "transform",
-        }}>
-          <div style={{ fontSize: "clamp(12px,3vw,15px)", fontWeight: 900, color: "#fff", lineHeight: 1.3 }}>
-            {dragging.word.meaning}
-          </div>
+      {/* Floating drag card — DOM-direct position, no React re-render on move */}
+      <div ref={floatRef} style={{
+        display: "none",
+        position: "fixed", padding: "14px 10px", borderRadius: 18,
+        background: `linear-gradient(135deg,${TEAL},${TEAL_DARK})`,
+        boxShadow: "0 14px 36px rgba(27,157,142,0.45)",
+        textAlign: "center", pointerEvents: "none", zIndex: 1000,
+        transform: "scale(1.06) rotate(-1.5deg)",
+        alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{ fontSize: "clamp(12px,3vw,15px)", fontWeight: 900, color: "#fff", lineHeight: 1.3 }}>
+          {dragging?.word.meaning}
         </div>
-      )}
+      </div>
 
       {/* Round complete overlay */}
       {roundDone && (
