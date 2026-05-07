@@ -63,17 +63,18 @@ html {
   height:100%;
   background-color: var(--bg);
   background-image:
-    radial-gradient(circle at 18% 8%, rgba(255,255,255,.65), transparent 34%),
-    linear-gradient(180deg, #eee8df 0%, #e3ddd4 100%);
-  background-size: auto;
-  background-position: 0 0, center;
+    radial-gradient(ellipse at 50% 0%, rgba(27,157,142,0.13), transparent 42%),
+    radial-gradient(ellipse at 10% 5%, rgba(255,255,255,0.60), transparent 32%),
+    radial-gradient(ellipse at 88% 95%, rgba(18,116,106,0.07), transparent 38%),
+    linear-gradient(180deg, #ebe7de 0%, #e1ddd4 100%);
+  background-attachment: fixed;
 }
 body { height:100%; background:transparent; color:var(--text); font-family:var(--font-body); font-size:15px; -webkit-font-smoothing:antialiased; }
 #root { height:100%; position:relative; z-index:1; }
 button, input, textarea, select, div, span {
   min-width:0;
 }
-button, .hub-tool, .bnav-item {
+button, .bnav-item {
   overflow-wrap:anywhere;
 }
 button { font-family:var(--font-ui); }
@@ -429,7 +430,6 @@ input:focus, textarea:focus, select:focus {
   box-shadow:0 18px 40px rgba(106,21,18,0.18);
 }
 @media(max-width:760px){
-  .hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .wordmark { font-size:23px; }
   .wordmark-sub { display:none; }
 }
@@ -446,13 +446,9 @@ input:focus, textarea:focus, select:focus {
     padding:18px 12px calc(94px + env(safe-area-inset-bottom));
   }
   .glass-card { border-radius:24px; }
-  .hub-sheet {
-    width:calc(100vw - 16px);
-    bottom:calc(max(10px, env(safe-area-inset-bottom)) + 70px);
-    padding:12px;
-  }
-  .hub-tool .label { font-size:12px; }
-  .hub-tool .desc { font-size:10px; }
+  .concept-grid { gap:10px; }
+  .concept-card { padding:18px 14px 16px; border-radius:18px; }
+  .me-user-card { padding:18px; }
 }
 
 /* ── TWEAKS ───────────────────────────────── */
@@ -2206,29 +2202,46 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
   const isFav = !!favWords[wordKey(focusWord)];
   const isReview = reviewWords.some(w => w.char === focusWord.char);
 
-  const nextCard = (e) => {
-    e.stopPropagation();
+
+  const goNext = () => {
     setCardIdx(i => (i + 1) % Math.max(cardPool.length, 1));
     setFlipped(false);
   };
 
   return (
     <div style={{animation:"fadeUp .3s ease both",maxWidth:780,margin:"0 auto"}}>
-      {/* Header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:18}}>
-        <div>
-          <div style={{fontSize:"clamp(38px,9vw,66px)",fontWeight:900,lineHeight:.92,color:"var(--text)",letterSpacing:0,overflowWrap:"anywhere"}}>오늘의 중국어</div>
-          <div style={{fontSize:15,color:"var(--sub)",fontWeight:800,marginTop:10}}>{stats.todayCount||0}문항 · {xp}XP</div>
+
+      {/* Compact header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,gap:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
+          <div style={{fontFamily:"var(--font-brush)",fontSize:"clamp(26px,6vw,34px)",lineHeight:1,color:"var(--text)",flexShrink:0}}>靜習</div>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:10,fontWeight:900,letterSpacing:".16em",color:"var(--sub2)",textTransform:"uppercase"}}>학습 모드</div>
+            <div style={{fontSize:13,fontWeight:700,color:"var(--sub)",marginTop:2,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+              <span style={{background:"rgba(27,157,142,0.12)",color:"var(--accent)",borderRadius:99,padding:"2px 9px",fontSize:11,fontWeight:800,whiteSpace:"nowrap"}}>
+                {stats.todayCount||0}문항
+              </span>
+              <span style={{whiteSpace:"nowrap"}}>{xp} XP</span>
+              {session && <span style={{width:6,height:6,borderRadius:"50%",background:syncDot,display:"inline-block",flexShrink:0}} title={syncStatus}/>}
+            </div>
+          </div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {session && <div style={{width:7,height:7,borderRadius:"50%",background:syncDot,flexShrink:0}} title={syncStatus}/>}
+        <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+          {reviewCount > 0 && (
+            <button onClick={onReview} style={{
+              border:"none",borderRadius:99,padding:"8px 14px",
+              background:"var(--coral)",color:"#fff",
+              fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"var(--font-ui)",
+              boxShadow:"0 4px 16px rgba(183,85,76,0.30)",whiteSpace:"nowrap",
+            }}>복습 {reviewCount}</button>
+          )}
           {onSignOut && (
             <button onClick={onSignOut} style={{
-              border:"1px solid rgba(255,255,255,0.72)",borderRadius:999,
-              background:"rgba(255,255,255,0.64)",color:"var(--sub)",
-              fontSize:12,fontWeight:800,padding:"9px 13px",cursor:"pointer",
-              fontFamily:"var(--font-ui)"
-            }}>로그아웃</button>
+              border:"1px solid rgba(28,27,26,0.10)",borderRadius:99,
+              background:"rgba(255,255,255,0.72)",color:"var(--sub)",
+              fontSize:12,fontWeight:800,padding:"8px 14px",cursor:"pointer",
+              fontFamily:"var(--font-ui)",whiteSpace:"nowrap",
+            }}>나가기</button>
           )}
         </div>
       </div>
@@ -2240,125 +2253,147 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
           transformStyle:"preserve-3d",
           transition:"transform .52s cubic-bezier(.4,0,.2,1)",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-          height:"clamp(370px,72vw,460px)",
+          height:"clamp(330px,66vw,430px)",
         }}>
 
-          {/* ── FRONT ── tap anywhere to flip */}
+          {/* FRONT: dark premium card */}
           <div onClick={()=>setFlipped(true)} style={{
-            position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
-            background:`linear-gradient(148deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`,
+            position:"absolute",inset:0,
+            backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
+            background:"linear-gradient(150deg,#0c1c19 0%,#102420 55%,#0e2119 100%)",
             borderRadius:32,padding:"clamp(18px,4vw,28px)",
             display:"flex",flexDirection:"column",
-            boxShadow:`0 22px 56px ${TEAL_SHADOW}`,
+            boxShadow:"0 36px 72px rgba(10,28,24,0.45),0 8px 24px rgba(10,28,24,0.22)",
             overflow:"hidden",cursor:"pointer",
           }}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <div style={{fontSize:10,fontWeight:900,letterSpacing:".14em",color:"rgba(255,255,255,0.65)",textTransform:"uppercase",background:"rgba(255,255,255,0.12)",borderRadius:99,padding:"4px 10px"}}>
-                {isReview ? "복습" : "오늘의 표현"}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:0}}>
+              <div style={{
+                fontSize:10,fontWeight:900,letterSpacing:".18em",textTransform:"uppercase",
+                color: isReview ? "var(--coral)" : TEAL,
+                background: isReview ? "rgba(183,85,76,0.18)" : "rgba(27,157,142,0.16)",
+                borderRadius:99,padding:"4px 12px",
+              }}>
+                {isReview ? "· 복습" : "· 학습"}
               </div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,0.55)",fontWeight:700}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.30)",fontWeight:700,letterSpacing:".04em"}}>
                 {safeIdx+1} / {cardPool.length}
               </div>
             </div>
 
-            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,padding:"12px 0 16px"}}>
-              <div style={{fontFamily:"var(--font-zh)",color:"#fff",fontWeight:900,lineHeight:1,...hanziDisplayStyle(focusWord.char)}}>{focusWord.char}</div>
-              <div style={{fontSize:15,color:"rgba(255,255,255,0.78)",fontWeight:700,letterSpacing:".05em"}}>{focusWord.pinyin}</div>
-              <div style={{fontSize:"clamp(22px,5vw,32px)",fontWeight:900,color:"#fff",marginTop:2}}>{focusWord.meaning}</div>
+            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:"6px 0 10px"}}>
+              <div style={{
+                fontFamily:"var(--font-zh)",color:"#fff",fontWeight:900,lineHeight:1,
+                textShadow:"0 10px 40px rgba(27,157,142,0.35)",
+                ...hanziDisplayStyle(focusWord.char),
+              }}>{focusWord.char}</div>
+              <div style={{
+                fontSize:"clamp(13px,3vw,17px)",color:TEAL,fontWeight:700,
+                letterSpacing:".06em",fontFamily:"var(--font-ui)",
+              }}>{focusWord.pinyin}</div>
+              <div style={{
+                fontSize:"clamp(17px,4vw,24px)",fontWeight:900,
+                color:"rgba(255,255,255,0.90)",textAlign:"center",lineHeight:1.25,
+                maxWidth:"100%",overflowWrap:"anywhere",
+              }}>{focusWord.meaning}</div>
             </div>
 
             {focusWord.example && (
-              <div style={{background:"rgba(0,0,0,0.18)",borderRadius:18,padding:"12px 16px"}}>
-                <div style={{fontFamily:"var(--font-zh)",fontSize:16,color:"rgba(255,255,255,0.92)",fontWeight:700,marginBottom:3,overflowWrap:"anywhere"}}>{focusWord.example}</div>
-                {focusWord.exPinyin && (
-                  <div style={{fontSize:12,color:"rgba(255,255,255,0.78)",fontWeight:600,marginBottom:3,letterSpacing:".02em",overflowWrap:"anywhere"}}>{focusWord.exPinyin}</div>
-                )}
-                <div style={{fontSize:12,color:"rgba(255,255,255,0.58)",lineHeight:1.5}}>{focusWord.exMeaning}</div>
+              <div style={{
+                background:"rgba(255,255,255,0.05)",
+                border:"1px solid rgba(255,255,255,0.07)",
+                borderRadius:20,padding:"12px 16px",
+              }}>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:"clamp(13px,3.2vw,15px)",color:"rgba(255,255,255,0.78)",fontWeight:600,marginBottom:4,overflowWrap:"anywhere",lineHeight:1.4}}>
+                  {focusWord.example}
+                </div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.38)",lineHeight:1.5}}>{focusWord.exMeaning}</div>
               </div>
             )}
 
-            <div style={{textAlign:"center",marginTop:10,fontSize:11,color:"rgba(255,255,255,0.42)",fontWeight:700,letterSpacing:".04em"}}>
-              탭하여 분석 보기
+            <div style={{textAlign:"center",marginTop:10,fontSize:10,color:"rgba(255,255,255,0.20)",fontWeight:900,letterSpacing:".12em"}}>
+              TAP TO REVEAL
             </div>
           </div>
 
-          {/* ── BACK ── tap bare background to flip back */}
+          {/* BACK: clean light card */}
           <div onClick={()=>setFlipped(false)} style={{
-            position:"absolute",inset:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
+            position:"absolute",inset:0,
+            backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",
             transform:"rotateY(180deg)",
-            background:"var(--card)",border:`1.5px solid rgba(27,157,142,0.18)`,
+            background:"rgba(255,255,255,0.96)",
+            border:"1px solid rgba(27,157,142,0.14)",
             borderRadius:32,padding:"clamp(18px,4vw,26px)",
             overflowY:"auto",
-            boxShadow:`0 22px 56px ${TEAL_SHADOW}`,
+            boxShadow:"0 36px 72px rgba(10,28,24,0.20)",
             display:"flex",flexDirection:"column",cursor:"pointer",
           }}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-                <div>
-                  <div style={{fontFamily:"var(--font-zh)",fontSize:36,fontWeight:900,color:"var(--text)",lineHeight:1.1}}>{focusWord.char}</div>
-                  <div style={{fontSize:14,color:TEAL,fontWeight:800,marginTop:3}}>{focusWord.pinyin}</div>
-                  <div style={{fontSize:22,fontWeight:900,color:"var(--text)",marginTop:4}}>{focusWord.meaning}</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+              <div style={{minWidth:0,paddingRight:12}}>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:"clamp(30px,7vw,42px)",fontWeight:900,color:"var(--text)",lineHeight:1,overflowWrap:"anywhere"}}>
+                  {focusWord.char}
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",paddingTop:4}}>
-                  <TTSBtn text={focusWord.char}/>
-                  {onToggleWordFavorite && (
-                    <button onClick={e=>{e.stopPropagation();onToggleWordFavorite(focusWord);}} style={{
-                      width:34,height:34,borderRadius:10,
-                      border:`1px solid ${isFav?"rgba(166,106,19,0.3)":"var(--border)"}`,
-                      background:isFav?"var(--gold-dim)":"var(--card2)",
-                      color:isFav?"var(--gold)":"var(--sub)",
-                      fontSize:16,display:"grid",placeItems:"center",cursor:"pointer",
-                    }}>{isFav?"★":"☆"}</button>
-                  )}
-                </div>
+                <div style={{fontSize:"clamp(13px,3vw,16px)",color:TEAL,fontWeight:800,marginTop:5,letterSpacing:".04em"}}>{focusWord.pinyin}</div>
+                <div style={{fontSize:"clamp(17px,4vw,22px)",fontWeight:900,color:"var(--text)",marginTop:6,lineHeight:1.2,overflowWrap:"anywhere"}}>{focusWord.meaning}</div>
               </div>
-
-              {focusWord.example && (
-                <SentenceInsight
-                  sentence={focusWord.example}
-                  pinyin={focusWord.exPinyin}
-                  meaning={focusWord.exMeaning}
-                  focusWord={focusWord}
-                  stats={stats}
-                  onToggleWordFavorite={onToggleWordFavorite}
-                />
-              )}
-
-              <div style={{display:"flex",gap:10,marginTop:14}}>
-                <button onClick={e=>{e.stopPropagation();setFlipped(false);}} style={{
-                  flex:1,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
-                  background:"var(--card2)",border:"1px solid var(--border)",
-                  color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
-                }}>← 뒤집기</button>
-                <button onClick={e=>{e.stopPropagation();nextCard();}} style={{
-                  flex:2,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
-                  background:TEAL,color:"#fff",border:"none",cursor:"pointer",
-                  fontFamily:"var(--font-ui)",
-                }}>다음 표현 →</button>
+              <div style={{display:"flex",flexDirection:"column",gap:8,alignItems:"center",paddingTop:2,flexShrink:0}}>
+                <TTSBtn text={focusWord.char}/>
+                {onToggleWordFavorite && (
+                  <button onClick={e=>{e.stopPropagation();onToggleWordFavorite(focusWord);}} style={{
+                    width:36,height:36,borderRadius:11,
+                    border:`1px solid ${isFav?"rgba(166,106,19,0.30)":"rgba(28,27,26,0.10)"}`,
+                    background:isFav?"var(--gold-dim)":"rgba(28,27,26,0.04)",
+                    color:isFav?"var(--gold)":"var(--sub2)",
+                    fontSize:17,display:"grid",placeItems:"center",cursor:"pointer",
+                  }}>{isFav?"★":"☆"}</button>
+                )}
               </div>
+            </div>
+
+            {focusWord.example && (
+              <SentenceInsight
+                sentence={focusWord.example}
+                pinyin={focusWord.exPinyin}
+                meaning={focusWord.exMeaning}
+                focusWord={focusWord}
+                stats={stats}
+                onToggleWordFavorite={onToggleWordFavorite}
+              />
+            )}
+
+            <div style={{display:"flex",gap:10,marginTop:"auto",paddingTop:14}}>
+              <button onClick={e=>{e.stopPropagation();setFlipped(false);}} style={{
+                flex:1,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                background:"rgba(28,27,26,0.05)",border:"1px solid rgba(28,27,26,0.08)",
+                color:"var(--sub)",cursor:"pointer",fontFamily:"var(--font-ui)",
+              }}>← 돌아가기</button>
+              <button onClick={e=>{e.stopPropagation();goNext();}} style={{
+                flex:2,padding:"13px 0",borderRadius:99,fontSize:13,fontWeight:800,
+                background:`linear-gradient(135deg,${TEAL},${TEAL_DARK})`,
+                color:"#fff",border:"none",cursor:"pointer",fontFamily:"var(--font-ui)",
+                boxShadow:"0 8px 24px rgba(27,157,142,0.32)",
+              }}>다음 →</button>
+            </div>
           </div>
         </div>
       </div>
 
-      {reviewCount > 0 && (
-        <button onClick={onReview} style={{
-          width:"100%",padding:"14px 16px",borderRadius:20,
-          border:"1px solid rgba(166,93,80,0.22)",background:"rgba(166,93,80,0.06)",
-          color:"var(--coral)",fontSize:15,fontWeight:800,cursor:"pointer",
-          marginBottom:10,letterSpacing:"0.04em",fontFamily:"var(--font-ui)"
-        }}>복습 {reviewCount}개 대기 중</button>
-      )}
-
+      {/* Stats strip */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
         {[
           { label:"진도", value:`${pct}%`, sub:`${learned}/${totalWords}` },
-          { label:"오늘", value:`${stats.todayCount||0}`, sub:"문항" },
-          { label:"연속", value:`${stats.streak||0}`, sub:"일" },
+          { label:"오늘", value:stats.todayCount||0, sub:"문항" },
+          { label:"연속", value:`${stats.streak||0}일`, sub:"스트릭" },
         ].map(item => (
-          <div key={item.label} style={{padding:"15px 10px",borderRadius:22,textAlign:"center",
-            background:"rgba(255,255,255,0.66)",border:"1px solid rgba(255,255,255,0.72)",backdropFilter:"blur(18px)"}}>
-            <div style={{fontSize:11,color:"var(--sub2)",fontWeight:800,textTransform:"uppercase",letterSpacing:".06em",marginBottom:7}}>{item.label}</div>
-            <div style={{fontSize:"clamp(24px,5vw,34px)",fontWeight:900,lineHeight:1}}>{item.value}</div>
-            <div style={{fontSize:12,color:"var(--sub)",marginTop:5,fontWeight:700}}>{item.sub}</div>
+          <div key={item.label} style={{
+            padding:"14px 10px 12px",borderRadius:20,textAlign:"center",
+            background:"rgba(255,255,255,0.72)",
+            border:"1px solid rgba(255,255,255,0.90)",
+            backdropFilter:"blur(18px)",
+            boxShadow:"0 4px 16px rgba(28,27,26,0.05),inset 1px 1px 0 rgba(255,255,255,0.9)",
+          }}>
+            <div style={{fontSize:10,color:"var(--sub2)",fontWeight:900,textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>{item.label}</div>
+            <div style={{fontSize:"clamp(20px,5vw,28px)",fontWeight:900,lineHeight:1,color:"var(--text)"}}>{item.value}</div>
+            <div style={{fontSize:11,color:"var(--sub)",marginTop:5,fontWeight:700}}>{item.sub}</div>
           </div>
         ))}
       </div>
