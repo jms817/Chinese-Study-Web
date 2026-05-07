@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="靜習"/>
 <meta name="mobile-web-app-capable" content="yes"/>
-<title>靜習 - 중국어 수련장</title>
+<title>靜習 - 중국어 학습장</title>
 <link rel="manifest" href="./manifest.webmanifest"/>
 <link rel="icon" type="image/svg+xml" href="./icon.svg"/>
 <link rel="apple-touch-icon" href="./icon.svg"/>
@@ -20,36 +20,36 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script><style>
 :root {
-  --bg:          #fdf9f6;
-  --surface:     rgba(255,255,255,0.36);
-  --card:        rgba(255,255,255,0.52);
-  --card2:       rgba(247,243,240,0.72);
+  --bg:          #e9e4dc;
+  --surface:     rgba(255,255,255,0.64);
+  --card:        rgba(255,255,255,0.70);
+  --card2:       rgba(245,241,235,0.72);
   --border:      rgba(28,27,26,0.08);
   --border-glass:rgba(255,255,255,0.64);
-  --accent:      #1a1a1a;
-  --accent-bright:#a65d50;
-  --accent-dim:  rgba(28,27,26,0.08);
-  --gold:        #7d8c7a;
-  --gold-bright: #95a693;
-  --gold-dim:    rgba(125,140,122,.12);
-  --coral:       #a65d50;
-  --coral-dim:   rgba(166,93,80,.12);
-  --mist:        #a5b8a2;
-  --mist-dim:    rgba(165,184,162,.10);
-  --text:        #1c1b1a;
-  --sub:         #5d5a56;
-  --sub2:        #8c8782;
+  --accent:      #2457b8;
+  --accent-bright:#3f72d8;
+  --accent-dim:  rgba(36,87,184,0.12);
+  --gold:        #a66a13;
+  --gold-bright: #c27f1d;
+  --gold-dim:    rgba(166,106,19,.13);
+  --coral:       #b7554c;
+  --coral-dim:   rgba(183,85,76,.13);
+  --mist:        #3d65a8;
+  --mist-dim:    rgba(61,101,168,.12);
+  --text:        #11110f;
+  --sub:         #4d4b45;
+  --sub2:        #817a70;
   --font-ui:     'Epilogue', sans-serif;
   --font-body:   'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
   --font-zh:     'Noto Serif SC', serif;
   --font-zh-sans:'Noto Sans SC', sans-serif;
   --font-brush:  'Ma Shan Zheng', 'Noto Serif SC', serif;
   --radius-pill: 9999px;
-  --radius-card: 32px;
-  --radius-md:   18px;
-  --glass-blur:  26px;
-  --shadow-lift: 0 20px 50px rgba(26,26,26,0.05);
-  --shadow-float:0 30px 60px rgba(0,0,0,0.08);
+  --radius-card: 30px;
+  --radius-md:   20px;
+  --glass-blur:  22px;
+  --shadow-lift: 0 22px 54px rgba(23,24,22,0.10);
+  --shadow-float:0 34px 70px rgba(0,0,0,0.12);
 }
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
 @keyframes aurora {
@@ -62,13 +62,19 @@ html {
   height:100%;
   background-color: var(--bg);
   background-image:
-    radial-gradient(circle, rgba(28,27,26,0.055) 1px, transparent 1.1px),
-    linear-gradient(180deg, #fffcfa 0%, #fdf9f6 100%);
-  background-size: 20px 20px, auto;
+    radial-gradient(circle at 18% 8%, rgba(255,255,255,.65), transparent 34%),
+    linear-gradient(180deg, #eee8df 0%, #e3ddd4 100%);
+  background-size: auto;
   background-position: 0 0, center;
 }
-body { height:100%; background:transparent; color:var(--text); font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+body { height:100%; background:transparent; color:var(--text); font-family:var(--font-body); font-size:15px; -webkit-font-smoothing:antialiased; }
 #root { height:100%; position:relative; z-index:1; }
+button, input, textarea, select, div, span {
+  min-width:0;
+}
+button, .hub-tool, .bnav-item {
+  overflow-wrap:anywhere;
+}
 button { font-family:var(--font-ui); }
 input  { font-family:var(--font-ui); }
 textarea { font-family:var(--font-ui); }
@@ -101,7 +107,7 @@ input:focus, textarea:focus, select:focus {
 
 /* ── INK WASH ATMOSPHERE ───────────────────── */
 #ambient-blobs {
-  position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+  display:none;
 }
 #ambient-blobs::before {
   content:''; position:absolute; top:-8%; left:-4%;
@@ -113,31 +119,27 @@ input:focus, textarea:focus, select:focus {
 
 .app {
   display:flex;
-  height:calc(100dvh - 28px);
-  min-height:calc(100vh - 28px);
-  margin:14px;
+  height:100dvh;
+  min-height:100vh;
+  margin:0;
   overflow:hidden;
   position:relative;
   z-index:1;
-  border:1px solid rgba(255,255,255,0.42);
-  border-radius:26px;
-  background:
-    radial-gradient(ellipse at 20% 16%, rgba(255,255,255,0.72) 0%, transparent 52%),
-    linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 100%);
-  box-shadow:0 18px 48px rgba(26,26,26,0.04), inset 0 1px 0 rgba(255,255,255,0.60);
+  border:none;
+  border-radius:0;
+  background:rgba(255,255,255,0.34);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:none;
 }
 
 /* ── GLASS CARD ─────────────────────────────── */
 .glass-card {
-  background:rgba(255,255,255,0.44);
+  background:var(--card);
   backdrop-filter:blur(var(--glass-blur));
   -webkit-backdrop-filter:blur(var(--glass-blur));
-  border:1px solid var(--border-glass);
-  border-top-color:rgba(255,255,255,0.82);
-  border-left-color:rgba(255,255,255,0.82);
-  box-shadow:
-    inset 1px 1px 0 rgba(255,255,255,0.50),
-    0 20px 50px rgba(26,26,26,0.05);
+  border:1px solid rgba(255,255,255,0.72);
+  box-shadow:var(--shadow-lift);
   border-radius: var(--radius-card);
 }
 
@@ -149,7 +151,7 @@ input:focus, textarea:focus, select:focus {
   flex:1; overflow-y:auto;
   position:relative;
   z-index:1;
-  padding:28px 20px calc(108px + env(safe-area-inset-bottom));
+  padding:20px 14px calc(92px + env(safe-area-inset-bottom));
   max-width:1320px;
   width:100%;
   margin:0 auto;
@@ -158,10 +160,10 @@ input:focus, textarea:focus, select:focus {
   -webkit-overflow-scrolling:touch;
 }
 @media(min-width:760px){
-  .main { padding:34px 30px calc(100px + env(safe-area-inset-bottom)); max-width:1320px; }
+  .main { padding:28px 26px calc(92px + env(safe-area-inset-bottom)); max-width:1080px; }
 }
 @media(min-width:1100px){
-  .main { padding:36px 36px calc(100px + env(safe-area-inset-bottom)); max-width:1320px; }
+  .main { padding:34px 34px calc(96px + env(safe-area-inset-bottom)); max-width:1180px; }
 }
 
 /* ── ORBITAL BOTTOM NAV (all viewports) ───── */
@@ -171,46 +173,74 @@ input:focus, textarea:focus, select:focus {
   position:fixed;
   bottom:max(14px, env(safe-area-inset-bottom));
   left:50%; transform:translateX(-50%);
-  width:max-content;
-  max-width:calc(100vw - 20px);
+  width:min(920px, calc(100vw - 28px));
+  max-width:calc(100vw - 28px);
   overflow-x:auto;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
-  background:rgba(255,255,255,0.72);
-  backdrop-filter:blur(var(--glass-blur));
-  -webkit-backdrop-filter:blur(var(--glass-blur));
-  border:1px solid rgba(255,255,255,0.72);
-  border-top-color:rgba(255,255,255,0.90);
-  border-left-color:rgba(255,255,255,0.90);
-  border-radius:var(--radius-pill);
-  padding:8px 10px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.58));
+  backdrop-filter:blur(28px) saturate(1.08);
+  -webkit-backdrop-filter:blur(28px) saturate(1.08);
+  border:1px solid rgba(255,255,255,0.82);
+  border-radius:34px;
+  padding:10px;
   z-index:100;
-  box-shadow:
-    inset 1px 1px 0 rgba(255,255,255,0.55),
-    0 20px 50px rgba(26,26,26,0.06);
+  box-shadow:0 18px 48px rgba(28,27,26,0.13), inset 1px 1px 0 rgba(255,255,255,0.72);
 }
-.bnav-inner { display:flex; align-items:center; gap:4px; }
+.bnav-inner { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; gap:10px; }
 .bnav-item {
   display:flex; flex-direction:column; align-items:center; gap:4px;
-  min-width:58px; min-height:54px; justify-content:center;
-  padding:8px 11px; cursor:pointer; color:var(--sub);
-  font-size:10px; font-weight:700;
+  min-width:0; min-height:78px; justify-content:center;
+  padding:12px 10px; cursor:pointer; color:var(--sub);
+  font-size:13px; font-weight:900;
   font-family:var(--font-ui);
-  letter-spacing:0.08em;
-  border-radius:var(--radius-pill);
+  letter-spacing:0;
+  border-radius:28px;
   transition:all .18s ease;
   position:relative;
   user-select:none;
-  text-transform:uppercase;
+  text-transform:none;
+  border:1px solid transparent;
+  background:rgba(255,255,255,0.22);
 }
-.bnav-item:hover { background:rgba(28,27,26,0.05); color:var(--text); }
+.bnav-item:hover { background:rgba(255,255,255,0.52); color:var(--text); border-color:rgba(255,255,255,0.72); transform:translateY(-1px); }
 .bnav-item.active {
-  background:var(--accent);
+  background:linear-gradient(135deg, var(--accent), var(--accent-bright));
   color:#fff;
-  box-shadow:0 10px 24px rgba(26,26,26,0.18);
+  border-color:rgba(255,255,255,0.28);
+  box-shadow:0 18px 38px rgba(36,87,184,0.26);
+  transform:translateY(-2px);
 }
-.bnav-item .icon { font-size:18px; line-height:1; }
-.bnav-item .sub { font-size:9px; letter-spacing:0.04em; text-transform:none; opacity:.72; }
+.bnav-item .icon {
+  width:34px; height:32px;
+  border-radius:15px;
+  display:grid; place-items:center;
+  font-size:21px; line-height:1;
+  background:rgba(28,27,26,0.06);
+  color:var(--text);
+  font-family:var(--font-zh);
+}
+.bnav-item .label {
+  font-size:15px;
+  line-height:1;
+  font-weight:900;
+  color:inherit;
+}
+.bnav-item .sub {
+  font-size:11px;
+  line-height:1;
+  letter-spacing:0;
+  text-transform:none;
+  opacity:.72;
+  font-family:var(--font-zh);
+}
+.bnav-item.active .icon {
+  background:rgba(255,255,255,0.22);
+  color:#fff;
+}
+.bnav-item.active .sub {
+  opacity:.76;
+}
 .bnav-badge {
   position:absolute; top:4px; right:6px;
   background:var(--coral); color:white;
@@ -218,9 +248,18 @@ input:focus, textarea:focus, select:focus {
   border-radius:99px; display:grid; place-items:center;
 }
 @media(max-width:430px){
-  .bnav-item { min-width:50px; padding:6px 7px; font-size:9px; }
-  .bnav-item .icon { font-size:17px; }
-  .bnav-item .sub { display:none; }
+  .bnav {
+    width:calc(100vw - 14px);
+    max-width:calc(100vw - 14px);
+    border-radius:26px;
+    padding:7px;
+    bottom:max(8px, env(safe-area-inset-bottom));
+  }
+  .bnav-inner { gap:5px; }
+  .bnav-item { min-width:0; min-height:64px; padding:9px 4px; border-radius:20px; }
+  .bnav-item .icon { width:26px; height:24px; border-radius:11px; font-size:17px; }
+  .bnav-item .label { font-size:12px; }
+  .bnav-item .sub { font-size:9px; }
 }
 
 .hub-sheet {
@@ -233,11 +272,15 @@ input:focus, textarea:focus, select:focus {
   backdrop-filter:blur(24px);
   -webkit-backdrop-filter:blur(24px);
   border:1px solid rgba(255,255,255,0.72);
-  border-radius:28px;
+  border-radius:20px;
   box-shadow:0 30px 60px rgba(0,0,0,0.08);
-  padding:16px;
+  padding:14px;
   z-index:101;
-  animation:fadeUp .18s ease;
+  animation:hubFloat .18s ease;
+}
+@keyframes hubFloat {
+  from { opacity:0; transform:translateX(-50%) translateY(10px) scale(.98); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
 }
 .hub-head {
   display:flex;
@@ -261,8 +304,8 @@ input:focus, textarea:focus, select:focus {
 .hub-tool {
   border:none;
   background:rgba(255,255,255,0.62);
-  border-radius:20px;
-  padding:14px 10px 13px;
+  border-radius:14px;
+  padding:12px 8px 11px;
   cursor:pointer;
   box-shadow:inset 1px 1px 0 rgba(255,255,255,0.5);
   display:flex;
@@ -309,6 +352,27 @@ input:focus, textarea:focus, select:focus {
   .hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .wordmark { font-size:23px; }
   .wordmark-sub { display:none; }
+}
+@media(max-width:520px){
+  .app {
+    height:100dvh;
+    min-height:100vh;
+    margin:0;
+    border-radius:0;
+    border-left:none;
+    border-right:none;
+  }
+  .main {
+    padding:18px 12px calc(94px + env(safe-area-inset-bottom));
+  }
+  .glass-card { border-radius:24px; }
+  .hub-sheet {
+    width:calc(100vw - 16px);
+    bottom:calc(max(10px, env(safe-area-inset-bottom)) + 70px);
+    padding:12px;
+  }
+  .hub-tool .label { font-size:12px; }
+  .hub-tool .desc { font-size:10px; }
 }
 
 /* ── TWEAKS ───────────────────────────────── */
@@ -1887,7 +1951,7 @@ function ProgressBar({ value=0, max=100, color="var(--accent)", height=6 }) {
 function Chip({ label, active, onClick, color }) {
   return (
     <button onClick={onClick} style={{
-      padding:"5px 14px", borderRadius:99, fontSize:13, fontWeight:500,
+      padding:"7px 16px", borderRadius:99, fontSize:14, fontWeight:700,
       border:`1.5px solid ${active ? (color||"var(--accent)") : "var(--border)"}`,
       background: active ? (color||"var(--accent)") : "transparent",
       color: active ? "#fff" : "var(--sub)",
@@ -1900,15 +1964,15 @@ function Chip({ label, active, onClick, color }) {
 function Btn({ children, onClick, variant="primary", style={}, disabled=false }) {
   const base = {
     display:"inline-flex", alignItems:"center", justifyContent:"center", gap:8,
-    borderRadius:99, fontSize:15, fontWeight:600, cursor:disabled?"not-allowed":"pointer",
+    borderRadius:18, fontSize:15, fontWeight:800, cursor:disabled?"not-allowed":"pointer",
     border:"none", fontFamily:"var(--font-ui)", transition:"all .18s",
     opacity: disabled ? .5 : 1,
   };
   const variants = {
-    primary: { background:"linear-gradient(135deg,#4f55ae,#8e94f2)", color:"#fff", padding:"13px 28px", boxShadow:"0 6px 24px rgba(79,85,174,0.36), 0 2px 8px rgba(79,85,174,0.20)" },
-    ghost:   { background:"rgba(255,255,255,0.55)", backdropFilter:"blur(40px)", WebkitBackdropFilter:"blur(40px)", border:"1.5px solid rgba(255,255,255,0.70)", color:"var(--text)", padding:"11px 22px", boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.50),0 4px 20px rgba(79,85,174,0.10)" },
-    danger:  { background:"var(--coral-dim)", color:"var(--coral)", padding:"11px 22px", border:"1.5px solid rgba(186,26,26,0.20)" },
-    success: { background:"var(--accent-dim)", color:"var(--accent)", padding:"11px 22px", border:"1.5px solid rgba(79,85,174,0.22)" },
+    primary: { background:"var(--accent)", color:"#fff", padding:"13px 24px", boxShadow:"0 10px 22px rgba(36,87,184,0.22)" },
+    ghost:   { background:"rgba(255,255,255,0.66)", border:"1px solid rgba(255,255,255,0.72)", color:"var(--text)", padding:"11px 20px", backdropFilter:"blur(18px)" },
+    danger:  { background:"var(--coral-dim)", color:"var(--coral)", padding:"11px 20px", border:"1px solid rgba(166,93,80,0.22)" },
+    success: { background:"var(--accent-dim)", color:"var(--accent)", padding:"11px 20px", border:"1px solid rgba(36,87,184,0.18)" },
   };
   return (
     <button onClick={disabled ? undefined : onClick}
@@ -1930,12 +1994,9 @@ function EmptyState({ icon, title, sub }) {
 
 function SectionTitle({ children, sub }) {
   return (
-    <div style={{marginBottom:18}}>
-      <div style={{fontSize:10, fontWeight:800, color:"rgba(166,93,80,0.72)", letterSpacing:"0.22em", fontFamily:"var(--font-ui)", marginBottom:6}}>
-        靜習
-      </div>
-      <div style={{fontSize:24, fontWeight:800, color:"var(--text)", letterSpacing:"0", lineHeight:1.2}}>{children}</div>
-      {sub && <div style={{fontSize:13, color:"var(--sub)", marginTop:6, lineHeight:1.6, maxWidth:680}}>{sub}</div>}
+    <div style={{marginBottom:16}}>
+      <div style={{fontSize:"clamp(28px,5vw,44px)", fontWeight:900, color:"var(--text)", letterSpacing:"0", lineHeight:1.05}}>{children}</div>
+      {sub && <div style={{fontSize:15, color:"var(--sub)", marginTop:8, lineHeight:1.55, maxWidth:720, overflowWrap:"anywhere"}}>{sub}</div>}
     </div>
   );
 }
@@ -1943,13 +2004,38 @@ function SectionTitle({ children, sub }) {
 function Card({ children, style={}, onClick }) {
   return (
     <div className="glass-card" onClick={onClick} style={{
-      padding:20, ...style,
+      padding:18, ...style,
       cursor: onClick ? "pointer" : "default",
     }}>{children}</div>
   );
 }
 
-Object.assign(window, { ToneBadge, PinyinRow, TTSBtn, ProgressBar, Chip, Btn, EmptyState, SectionTitle, Card, TONE_COLORS });
+function countDisplayChars(text) {
+  return Array.from(String(text || "").replace(/[，。！？,.!?、\s]/g, "")).length || 1;
+}
+
+function hanziDisplayStyle(text, mode="hero") {
+  const len = countDisplayChars(text);
+  const isTile = mode === "tile";
+  const size = len <= 1
+    ? (isTile ? "clamp(52px,11vw,82px)" : "clamp(54px,16vw,78px)")
+    : len <= 2
+      ? (isTile ? "clamp(36px,8vw,56px)" : "clamp(40px,12vw,62px)")
+      : len <= 4
+        ? (isTile ? "clamp(25px,5.4vw,38px)" : "clamp(30px,8vw,48px)")
+        : (isTile ? "clamp(18px,4.4vw,29px)" : "clamp(23px,6vw,36px)");
+  return {
+    fontSize:size,
+    lineHeight:len <= 2 ? .96 : 1.04,
+    maxWidth:"100%",
+    textAlign:"center",
+    whiteSpace:len <= 2 ? "nowrap" : "normal",
+    overflowWrap:"anywhere",
+    wordBreak:"break-word",
+  };
+}
+
+Object.assign(window, { ToneBadge, PinyinRow, TTSBtn, ProgressBar, Chip, Btn, EmptyState, SectionTitle, Card, TONE_COLORS, hanziDisplayStyle });
 
 </script>
 
@@ -1974,30 +2060,46 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
   const syncDot = syncState==="error" ? "var(--coral)" : syncState==="synced" ? "var(--gold)" : "var(--sub2)";
 
   return (
-    <div style={{animation:"fadeUp .3s ease both",maxWidth:480,margin:"0 auto"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <div className="wordmark">靜習</div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{fontSize:11,color:"var(--sub2)",fontWeight:700}}>{stats.todayCount||0}문항 · {xp}XP</div>
+    <div style={{animation:"fadeUp .3s ease both",maxWidth:780,margin:"0 auto"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16,marginBottom:18}}>
+        <div>
+          <div style={{fontSize:"clamp(42px,9vw,74px)",fontWeight:900,lineHeight:.92,color:"var(--text)",letterSpacing:0,overflowWrap:"anywhere"}}>오늘의 중국어</div>
+          <div style={{fontSize:15,color:"var(--sub)",fontWeight:800,marginTop:10}}>{stats.todayCount||0}문항 · {xp}XP</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
           {session && <div style={{width:7,height:7,borderRadius:"50%",background:syncDot,flexShrink:0}} title={syncStatus}/>}
           {onSignOut && (
             <button onClick={onSignOut} style={{
-              border:"1px solid rgba(28,27,26,0.08)",borderRadius:999,
-              background:"rgba(255,255,255,0.52)",color:"var(--sub)",
-              fontSize:11,fontWeight:800,padding:"7px 10px",cursor:"pointer",
-              fontFamily:"var(--font-ui)",backdropFilter:"blur(12px)"
+              border:"1px solid rgba(255,255,255,0.72)",borderRadius:999,
+              background:"rgba(255,255,255,0.64)",color:"var(--sub)",
+              fontSize:12,fontWeight:800,padding:"9px 13px",cursor:"pointer",
+              fontFamily:"var(--font-ui)"
             }}>로그아웃</button>
           )}
         </div>
       </div>
 
-      <div className="glass-card" style={{marginBottom:14,padding:"28px 24px 24px",textAlign:"center"}}>
-        <div style={{fontSize:10,letterSpacing:"0.22em",color:"var(--sub2)",textTransform:"uppercase",marginBottom:16}}>오늘의 한자</div>
-        <div className="focus-hanzi" style={{fontSize:110,lineHeight:.92,color:"var(--text)"}}>{focusWord.char}</div>
-        <div style={{fontSize:13,letterSpacing:"0.12em",color:"var(--sub2)",marginTop:14}}>{focusWord.pinyin}</div>
-        <div style={{fontSize:20,fontWeight:800,marginTop:4,letterSpacing:"-0.02em"}}>{focusWord.meaning}</div>
-        <div style={{display:"flex",justifyContent:"center",marginTop:10}}>
-          <TTSBtn text={focusWord.char}/>
+      <div className="glass-card" style={{marginBottom:14,padding:"clamp(18px,4vw,28px)"}}>
+        <div style={{display:"grid",gridTemplateColumns:"auto minmax(0,1fr)",gap:"clamp(14px,3vw,24px)",alignItems:"center",marginBottom:14}}>
+          <div style={{
+            width:"clamp(96px,20vw,148px)",height:"clamp(96px,20vw,148px)",borderRadius:28,display:"grid",placeItems:"center",
+            background:"#111",color:"#fff",fontFamily:"var(--font-zh)",fontWeight:900,
+            boxShadow:"0 18px 42px rgba(0,0,0,0.14)",overflow:"hidden",padding:"10px",
+            ...hanziDisplayStyle(focusWord.char, "tile")
+          }}>{focusWord.char}</div>
+          <div style={{minWidth:0}}>
+            <div style={{fontSize:13,color:"var(--sub2)",fontWeight:900,letterSpacing:0,marginBottom:6}}>바로 외울 표현</div>
+            <div style={{fontSize:17,color:"var(--accent)",fontWeight:900,overflowWrap:"anywhere",lineHeight:1.35}}>{focusWord.pinyin}</div>
+            <div style={{fontSize:"clamp(27px,5vw,44px)",fontWeight:900,marginTop:4,letterSpacing:0,overflowWrap:"anywhere",lineHeight:1.08}}>{focusWord.meaning}</div>
+            <div style={{display:"flex",gap:10,alignItems:"center",marginTop:14}}>
+              <TTSBtn text={focusWord.char}/>
+              <button onClick={onStartScene} style={{
+                flex:1,padding:"14px 16px",borderRadius:20,border:"none",
+                background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:900,
+                cursor:"pointer",fontFamily:"var(--font-ui)"
+              }}>바로 연습</button>
+            </div>
+          </div>
         </div>
         {focusWord.example && (
           <SentenceInsight
@@ -2011,32 +2113,26 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
         )}
       </div>
 
-      <button onClick={onStartScene} style={{
-        width:"100%",padding:"16px",borderRadius:999,border:"none",
-        background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:800,
-        cursor:"pointer",marginBottom:10,letterSpacing:"0.04em",fontFamily:"var(--font-ui)"
-      }}>수련 시작</button>
-
       {reviewCount > 0 && (
         <button onClick={onReview} style={{
-          width:"100%",padding:"13px",borderRadius:999,
+          width:"100%",padding:"14px 16px",borderRadius:20,
           border:"1px solid rgba(166,93,80,0.22)",background:"rgba(166,93,80,0.06)",
-          color:"var(--coral)",fontSize:13,fontWeight:800,cursor:"pointer",
+          color:"var(--coral)",fontSize:15,fontWeight:800,cursor:"pointer",
           marginBottom:10,letterSpacing:"0.04em",fontFamily:"var(--font-ui)"
         }}>복습 {reviewCount}개 대기 중</button>
       )}
 
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
         {[
           { label:"진도", value:`${pct}%`, sub:`${learned}/${totalWords}` },
           { label:"오늘", value:`${stats.todayCount||0}`, sub:"문항" },
           { label:"연속", value:`${stats.streak||0}`, sub:"일" },
         ].map(item => (
-          <div key={item.label} style={{padding:"14px 10px",borderRadius:20,textAlign:"center",
-            background:"rgba(255,255,255,0.44)",border:"1px solid rgba(255,255,255,0.62)"}}>
-            <div style={{fontSize:10,color:"var(--sub2)",fontWeight:700,textTransform:"uppercase",letterSpacing:".06em",marginBottom:6}}>{item.label}</div>
-            <div style={{fontSize:22,fontWeight:800,lineHeight:1}}>{item.value}</div>
-            <div style={{fontSize:10,color:"var(--sub)",marginTop:3}}>{item.sub}</div>
+          <div key={item.label} style={{padding:"15px 10px",borderRadius:22,textAlign:"center",
+            background:"rgba(255,255,255,0.66)",border:"1px solid rgba(255,255,255,0.72)",backdropFilter:"blur(18px)"}}>
+            <div style={{fontSize:11,color:"var(--sub2)",fontWeight:800,textTransform:"uppercase",letterSpacing:".06em",marginBottom:7}}>{item.label}</div>
+            <div style={{fontSize:"clamp(24px,5vw,34px)",fontWeight:900,lineHeight:1}}>{item.value}</div>
+            <div style={{fontSize:12,color:"var(--sub)",marginTop:5,fontWeight:700}}>{item.sub}</div>
           </div>
         ))}
       </div>
@@ -2232,7 +2328,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:10,
                 boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.13)"}}>
                 <div style={{position:"absolute",top:12,right:14,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,background:"var(--card2)",color:"var(--sub)"}}>HSK {selectedChapter.level}</div>
-                <div style={{fontFamily:"var(--font-zh)",fontSize:80,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+                <div style={{fontFamily:"var(--font-zh)",color:"var(--text)",fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}</div>
                 <div style={{fontSize:15,color:"var(--accent)",fontWeight:700,letterSpacing:".04em"}}>{word.pinyin}</div>
                 <PinyinRow tones={word.tones}/>
                 <div style={{position:"absolute",bottom:12,fontSize:11,color:"var(--sub2)"}}>탭하여 뒤집기</div>
@@ -2243,7 +2339,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:20,
                 boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.10)",overflowY:"auto"}}>
                 <div style={{position:"absolute",top:12,right:14,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:99,background:"var(--card2)",color:"var(--sub)"}}>HSK {selectedChapter.level}</div>
-                <div style={{fontFamily:"var(--font-zh)",fontSize:44,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+                <div style={{fontFamily:"var(--font-zh)",color:"var(--text)",fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}</div>
                 <div style={{fontSize:20,color:"var(--accent)",fontWeight:600}}>{word.pinyin}</div>
                 <PinyinRow tones={word.tones}/>
                 <div style={{fontSize:16,color:"var(--text)",fontWeight:500}}>{word.meaning}</div>
@@ -2302,7 +2398,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
             }} onMouseEnter={e=>e.currentTarget.style.background="var(--accent)33"}
                onMouseLeave={e=>e.currentTarget.style.background="var(--accent-dim)"}>▶</button>
             <div style={{fontSize:12,color:"var(--sub2)"}}>다시 듣기</div>
-            {answered&&<div style={{fontFamily:"var(--font-zh)",fontSize:36,color:"var(--text)",marginTop:14,fontWeight:700}}>{word.char}<span style={{fontSize:16,color:"var(--accent)",marginLeft:8}}>{word.pinyin}</span></div>}
+            {answered&&<div style={{fontFamily:"var(--font-zh)",color:"var(--text)",marginTop:14,fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}<span style={{fontSize:16,color:"var(--accent)",marginLeft:8,fontFamily:"var(--font-ui)"}}>{word.pinyin}</span></div>}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {choices.map((c,i)=>{
@@ -2562,8 +2658,9 @@ function VocabScreen({ stats, onStudyChapter, onToggleWordFavorite, onAddUserWor
                     borderBottom: i < ch.words.length-1 ? "1px solid var(--border)" : "none",
                   }}>
                     <div style={{
-                      fontFamily:"var(--font-zh)", fontSize:28,
-                      color:"var(--text)", minWidth:42, textAlign:"center",
+                      fontFamily:"var(--font-zh)", fontSize:24,
+                      color:"var(--text)", width:58, flexShrink:0, textAlign:"center",
+                      lineHeight:1.08, overflowWrap:"anywhere", wordBreak:"break-word",
                     }}>{w.char}</div>
                     <div style={{flex:1, minWidth:0}}>
                       <div style={{fontSize:13, color:"var(--accent)", fontWeight:500, marginBottom:2}}>{w.pinyin}</div>
@@ -3000,7 +3097,7 @@ function MyLibraryScreen({ stats, onStudyChapter, onToggleWordFavorite, onToggle
                 borderRadius:20,padding:"14px 14px",boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.45)"
               }}>
                 <div style={{display:"flex",gap:13,alignItems:"flex-start"}}>
-                  <div style={{fontFamily:"var(--font-zh)",fontSize:34,color:"var(--text)",minWidth:52,textAlign:"center",lineHeight:1.1}}>{word.char}</div>
+                  <div style={{fontFamily:"var(--font-zh)",fontSize:28,color:"var(--text)",width:64,flexShrink:0,textAlign:"center",lineHeight:1.08,overflowWrap:"anywhere",wordBreak:"break-word"}}>{word.char}</div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,color:"var(--accent)",fontWeight:800,marginBottom:2}}>{word.pinyin}</div>
                     <div style={{fontSize:15,fontWeight:900,color:"var(--text)",marginBottom:4}}>{word.meaning}</div>
@@ -3362,9 +3459,167 @@ const GRAMMAR_KEY_MAP = {
   "yi-jiu":            ["一","就"],
 };
 
+const SUPPLEMENTAL_WORDS = [
+  { char:"叫", pinyin:"jiào", tones:[4], meaning:"~라고 부르다, 이름이 ~이다", tags:["기본","동사"], chapterId:"supplement" },
+  { char:"金志宇", pinyin:"Jīn Zhìyǔ", tones:[1,4,3], meaning:"김지우(사람 이름)", tags:["이름","고유명사"], chapterId:"supplement" },
+  { char:"金", pinyin:"jīn", tones:[1], meaning:"김/금, 성씨", tags:["성씨","고유명사"], chapterId:"supplement" },
+  { char:"志", pinyin:"zhì", tones:[4], meaning:"뜻, 의지", tags:["이름","글자뜻"], chapterId:"supplement" },
+  { char:"宇", pinyin:"yǔ", tones:[3], meaning:"집, 우주/이름 글자", tags:["이름","글자뜻"], chapterId:"supplement" },
+  { char:"中文", pinyin:"Zhōngwén", tones:[1,2], meaning:"중국어", tags:["언어"], chapterId:"supplement" },
+  { char:"中国", pinyin:"Zhōngguó", tones:[1,2], meaning:"중국", tags:["나라"], chapterId:"supplement" },
+  { char:"韩国", pinyin:"Hánguó", tones:[2,2], meaning:"한국", tags:["나라"], chapterId:"supplement" },
+  { char:"人", pinyin:"rén", tones:[2], meaning:"사람", tags:["명사"], chapterId:"supplement" },
+  { char:"茶", pinyin:"chá", tones:[2], meaning:"차", tags:["음식"], chapterId:"supplement" },
+  { char:"坐", pinyin:"zuò", tones:[4], meaning:"앉다", tags:["동작"], chapterId:"supplement" },
+  { char:"帮忙", pinyin:"bāngmáng", tones:[1,2], meaning:"도와주다", tags:["동사"], chapterId:"supplement" },
+  { char:"帮助", pinyin:"bāngzhù", tones:[1,4], meaning:"도움, 돕다", tags:["동사"], chapterId:"supplement" },
+  { char:"给我", pinyin:"gěi wǒ", tones:[3,3], meaning:"나에게 주다", tags:["구문"], chapterId:"supplement" },
+  { char:"给你", pinyin:"gěi nǐ", tones:[3,3], meaning:"너에게 주다/보내다", tags:["구문"], chapterId:"supplement" },
+  { char:"很好", pinyin:"hěn hǎo", tones:[3,3], meaning:"아주 좋다, 잘 지내다", tags:["기본"], chapterId:"supplement" },
+  { char:"很好吃", pinyin:"hěn hǎochī", tones:[3,3,1], meaning:"아주 맛있다", tags:["음식"], chapterId:"supplement" },
+  { char:"好吃", pinyin:"hǎochī", tones:[3,1], meaning:"맛있다", tags:["음식"], chapterId:"supplement" },
+  { char:"好好", pinyin:"hǎohāo", tones:[3,1], meaning:"제대로, 잘", tags:["부사"], chapterId:"supplement" },
+  { char:"不好意思", pinyin:"bù hǎoyìsi", tones:[4,3,4,5], meaning:"미안합니다, 실례합니다", tags:["표현"], chapterId:"supplement" },
+  { char:"天气怎么样", pinyin:"tiānqì zěnmeyàng", tones:[1,4,3,5,4], meaning:"날씨가 어때요", tags:["날씨"], chapterId:"supplement" },
+  { char:"怎么样", pinyin:"zěnmeyàng", tones:[3,5,4], meaning:"어때요, 어떻습니까", tags:["질문"], chapterId:"supplement" },
+  { char:"菜单", pinyin:"càidān", tones:[4,1], meaning:"메뉴판", tags:["식당"], chapterId:"supplement" },
+  { char:"点菜", pinyin:"diǎncài", tones:[3,4], meaning:"음식을 주문하다", tags:["식당"], chapterId:"supplement" },
+  { char:"不辣", pinyin:"bú là", tones:[2,4], meaning:"맵지 않다", tags:["식당"], chapterId:"supplement" },
+  { char:"买单", pinyin:"mǎidān", tones:[3,1], meaning:"계산하다", tags:["식당"], chapterId:"supplement" },
+  { char:"麻烦", pinyin:"máfan", tones:[2,5], meaning:"번거롭지만 부탁하다", tags:["표현"], chapterId:"supplement" },
+  { char:"请问", pinyin:"qǐngwèn", tones:[3,4], meaning:"실례지만 묻겠습니다", tags:["표현"], chapterId:"supplement" },
+  { char:"地铁站", pinyin:"dìtiě zhàn", tones:[4,3,4], meaning:"지하철역", tags:["교통"], chapterId:"supplement" },
+  { char:"哪里", pinyin:"nǎlǐ", tones:[3,3], meaning:"어디", tags:["의문"], chapterId:"supplement" },
+  { char:"几号线", pinyin:"jǐ hào xiàn", tones:[3,4,4], meaning:"몇 호선", tags:["교통"], chapterId:"supplement" },
+  { char:"下车", pinyin:"xià chē", tones:[4,1], meaning:"내리다", tags:["교통"], chapterId:"supplement" },
+  { char:"今天", pinyin:"jīntiān", tones:[1,1], meaning:"오늘", tags:["시간"], chapterId:"supplement" },
+  { char:"明天", pinyin:"míngtiān", tones:[2,1], meaning:"내일", tags:["시간"], chapterId:"supplement" },
+  { char:"昨天", pinyin:"zuótiān", tones:[2,1], meaning:"어제", tags:["시간"], chapterId:"supplement" },
+  { char:"现在", pinyin:"xiànzài", tones:[4,4], meaning:"지금", tags:["시간"], chapterId:"supplement" },
+  { char:"最近", pinyin:"zuìjìn", tones:[4,4], meaning:"최근, 요즘", tags:["시간"], chapterId:"supplement" },
+  { char:"有空", pinyin:"yǒu kòng", tones:[3,4], meaning:"시간이 있다", tags:["약속"], chapterId:"supplement" },
+  { char:"我们", pinyin:"wǒmen", tones:[3,5], meaning:"우리", tags:["대명사"], chapterId:"supplement" },
+  { char:"几点", pinyin:"jǐ diǎn", tones:[3,3], meaning:"몇 시", tags:["시간"], chapterId:"supplement" },
+  { char:"快到", pinyin:"kuài dào", tones:[4,4], meaning:"곧 도착하다", tags:["이동"], chapterId:"supplement" },
+  { char:"方便", pinyin:"fāngbiàn", tones:[1,4], meaning:"편하다, 괜찮다", tags:["표현"], chapterId:"supplement" },
+  { char:"说话", pinyin:"shuōhuà", tones:[1,4], meaning:"말하다, 통화하다", tags:["동사"], chapterId:"supplement" },
+  { char:"发个消息", pinyin:"fā ge xiāoxi", tones:[1,5,1,5], meaning:"메시지를 하나 보내다", tags:["메시지"], chapterId:"supplement" },
+  { char:"一会儿", pinyin:"yíhuìr", tones:[2,4,5], meaning:"잠시 후, 이따가", tags:["시간"], chapterId:"supplement" },
+  { char:"回你", pinyin:"huí nǐ", tones:[2,3], meaning:"너에게 답하다", tags:["메시지"], chapterId:"supplement" },
+  { char:"有没有", pinyin:"yǒu méi yǒu", tones:[3,2,3], meaning:"있는지 없는지", tags:["질문"], chapterId:"supplement" },
+  { char:"感冒药", pinyin:"gǎnmào yào", tones:[3,4,4], meaning:"감기약", tags:["약국"], chapterId:"supplement" },
+  { char:"一天", pinyin:"yì tiān", tones:[2,1], meaning:"하루", tags:["시간"], chapterId:"supplement" },
+  { char:"几次", pinyin:"jǐ cì", tones:[3,4], meaning:"몇 번", tags:["횟수"], chapterId:"supplement" },
+  { char:"这个", pinyin:"zhège", tones:[4,5], meaning:"이것", tags:["지시"], chapterId:"supplement" },
+  { char:"多少钱", pinyin:"duōshao qián", tones:[1,5,2], meaning:"얼마", tags:["가격"], chapterId:"supplement" },
+  { char:"预约", pinyin:"yùyuē", tones:[4,1], meaning:"예약하다, 예약", tags:["호텔"], chapterId:"supplement" },
+  { char:"安静一点", pinyin:"ānjìng yìdiǎn", tones:[1,4,4,3], meaning:"조금 더 조용한", tags:["요청"], chapterId:"supplement" },
+  { char:"房间", pinyin:"fángjiān", tones:[2,1], meaning:"방", tags:["호텔"], chapterId:"supplement" },
+  { char:"退房", pinyin:"tuì fáng", tones:[4,2], meaning:"체크아웃하다", tags:["호텔"], chapterId:"supplement" },
+  { char:"之前", pinyin:"zhīqián", tones:[1,2], meaning:"이전, 전까지", tags:["시간"], chapterId:"supplement" },
+];
+
+const BASIC_HANZI_FALLBACK = {
+  "我":{ pinyin:"wǒ", meaning:"나" }, "你":{ pinyin:"nǐ", meaning:"너" }, "他":{ pinyin:"tā", meaning:"그" },
+  "她":{ pinyin:"tā", meaning:"그녀" }, "它":{ pinyin:"tā", meaning:"그것" }, "们":{ pinyin:"men", meaning:"복수 표시" },
+  "有":{ pinyin:"yǒu", meaning:"있다, 가지다" }, "没":{ pinyin:"méi", meaning:"없다, 아직 아니다" },
+  "不":{ pinyin:"bù", meaning:"아니다, 하지 않다" }, "在":{ pinyin:"zài", meaning:"~에 있다, ~하는 중" }, "是":{ pinyin:"shì", meaning:"~이다" },
+  "的":{ pinyin:"de", meaning:"~의, 수식 표시" }, "吗":{ pinyin:"ma", meaning:"질문 어기조사" }, "了":{ pinyin:"le", meaning:"완료/변화 표시" },
+  "要":{ pinyin:"yào", meaning:"원하다, 해야 하다" }, "会":{ pinyin:"huì", meaning:"할 줄 알다, ~할 것이다" }, "想":{ pinyin:"xiǎng", meaning:"생각하다, 원하다" },
+  "能":{ pinyin:"néng", meaning:"할 수 있다" }, "可":{ pinyin:"kě", meaning:"가능하다" }, "以":{ pinyin:"yǐ", meaning:"~로써, 할 수 있다" },
+  "很":{ pinyin:"hěn", meaning:"매우, 꽤" }, "好":{ pinyin:"hǎo", meaning:"좋다, 잘" }, "太":{ pinyin:"tài", meaning:"너무, 매우" },
+  "请":{ pinyin:"qǐng", meaning:"부디, 청하다" }, "问":{ pinyin:"wèn", meaning:"묻다" }, "给":{ pinyin:"gěi", meaning:"주다" },
+  "坐":{ pinyin:"zuò", meaning:"앉다, 타다" }, "吃":{ pinyin:"chī", meaning:"먹다" }, "喝":{ pinyin:"hē", meaning:"마시다" },
+  "见":{ pinyin:"jiàn", meaning:"만나다, 보다" }, "说":{ pinyin:"shuō", meaning:"말하다" }, "看":{ pinyin:"kàn", meaning:"보다" },
+  "到":{ pinyin:"dào", meaning:"도착하다" }, "回":{ pinyin:"huí", meaning:"돌아가다, 답하다" }, "发":{ pinyin:"fā", meaning:"보내다" },
+  "去":{ pinyin:"qù", meaning:"가다" }, "来":{ pinyin:"lái", meaning:"오다" }, "下":{ pinyin:"xià", meaning:"아래, 내리다" },
+  "上":{ pinyin:"shàng", meaning:"위, 오르다" }, "出":{ pinyin:"chū", meaning:"나가다" }, "进":{ pinyin:"jìn", meaning:"들어가다" },
+  "个":{ pinyin:"ge", meaning:"개, 양사" }, "这":{ pinyin:"zhè", meaning:"이것, 이" }, "那":{ pinyin:"nà", meaning:"저것, 저" },
+  "哪":{ pinyin:"nǎ", meaning:"어느, 어디" }, "几":{ pinyin:"jǐ", meaning:"몇" }, "什":{ pinyin:"shén", meaning:"무엇의 앞글자" },
+  "么":{ pinyin:"me", meaning:"의문/어기 성분" }, "怎":{ pinyin:"zěn", meaning:"어찌, 어떻게" }, "样":{ pinyin:"yàng", meaning:"모양, 상태" },
+  "多":{ pinyin:"duō", meaning:"많다" }, "少":{ pinyin:"shǎo", meaning:"적다" }, "大":{ pinyin:"dà", meaning:"크다" },
+  "小":{ pinyin:"xiǎo", meaning:"작다" }, "高":{ pinyin:"gāo", meaning:"높다" }, "重":{ pinyin:"zhòng", meaning:"무겁다, 중요하다" },
+  "快":{ pinyin:"kuài", meaning:"빠르다, 곧" }, "慢":{ pinyin:"màn", meaning:"느리다" }, "冷":{ pinyin:"lěng", meaning:"춥다" },
+  "热":{ pinyin:"rè", meaning:"덥다, 뜨겁다" }, "钱":{ pinyin:"qián", meaning:"돈" }, "药":{ pinyin:"yào", meaning:"약" },
+  "次":{ pinyin:"cì", meaning:"번, 회" }, "天":{ pinyin:"tiān", meaning:"하늘, 날" }, "气":{ pinyin:"qì", meaning:"공기, 기운" },
+  "前":{ pinyin:"qián", meaning:"앞, 이전" }, "后":{ pinyin:"hòu", meaning:"뒤, 이후" }, "年":{ pinyin:"nián", meaning:"해, 년" },
+  "月":{ pinyin:"yuè", meaning:"달, 월" }, "日":{ pinyin:"rì", meaning:"날, 해" }, "点":{ pinyin:"diǎn", meaning:"시, 점" },
+  "分":{ pinyin:"fēn", meaning:"분, 나누다" }, "钟":{ pinyin:"zhōng", meaning:"시계, 종" }, "家":{ pinyin:"jiā", meaning:"집" },
+  "店":{ pinyin:"diàn", meaning:"가게" }, "车":{ pinyin:"chē", meaning:"차" }, "站":{ pinyin:"zhàn", meaning:"역, 서다" },
+  "路":{ pinyin:"lù", meaning:"길" }, "门":{ pinyin:"mén", meaning:"문" }, "菜":{ pinyin:"cài", meaning:"요리, 채소" },
+  "饭":{ pinyin:"fàn", meaning:"밥, 식사" }, "水":{ pinyin:"shuǐ", meaning:"물" }, "茶":{ pinyin:"chá", meaning:"차" },
+  "衣":{ pinyin:"yī", meaning:"옷" }, "服":{ pinyin:"fu", meaning:"옷, 복종하다" }, "手":{ pinyin:"shǒu", meaning:"손" },
+  "机":{ pinyin:"jī", meaning:"기계, 기회" }, "书":{ pinyin:"shū", meaning:"책" }, "字":{ pinyin:"zì", meaning:"글자" },
+  "文":{ pinyin:"wén", meaning:"글, 언어" }, "语":{ pinyin:"yǔ", meaning:"언어, 말" }, "学":{ pinyin:"xué", meaning:"배우다" },
+  "习":{ pinyin:"xí", meaning:"익히다, 연습하다" }, "工":{ pinyin:"gōng", meaning:"일" }, "作":{ pinyin:"zuò", meaning:"하다, 작품" },
+};
+
+Object.assign(BASIC_HANZI_FALLBACK, {
+  "一":{pinyin:"yī",meaning:"하나"}, "二":{pinyin:"èr",meaning:"둘"}, "三":{pinyin:"sān",meaning:"셋"}, "四":{pinyin:"sì",meaning:"넷"},
+  "五":{pinyin:"wǔ",meaning:"다섯"}, "六":{pinyin:"liù",meaning:"여섯"}, "七":{pinyin:"qī",meaning:"일곱"}, "八":{pinyin:"bā",meaning:"여덟"},
+  "九":{pinyin:"jiǔ",meaning:"아홉"}, "十":{pinyin:"shí",meaning:"열"}, "中":{pinyin:"zhōng",meaning:"가운데, 중국"}, "国":{pinyin:"guó",meaning:"나라"},
+  "人":{pinyin:"rén",meaning:"사람"}, "名":{pinyin:"míng",meaning:"이름"}, "儿":{pinyin:"ér",meaning:"아이, 접미사"}, "友":{pinyin:"yǒu",meaning:"친구"},
+  "老":{pinyin:"lǎo",meaning:"오래된, 어른"}, "师":{pinyin:"shī",meaning:"스승, 선생"}, "同":{pinyin:"tóng",meaning:"같다, 함께"}, "事":{pinyin:"shì",meaning:"일, 사건"},
+  "时":{pinyin:"shí",meaning:"시간"}, "候":{pinyin:"hòu",meaning:"때, 기다리다"}, "早":{pinyin:"zǎo",meaning:"이르다, 아침"}, "晚":{pinyin:"wǎn",meaning:"늦다, 저녁"},
+  "周":{pinyin:"zhōu",meaning:"주, 일주일"}, "岁":{pinyin:"suì",meaning:"살, 나이"}, "亮":{pinyin:"liàng",meaning:"밝다, 예쁘다"}, "累":{pinyin:"lèi",meaning:"피곤하다"},
+  "忙":{pinyin:"máng",meaning:"바쁘다"}, "近":{pinyin:"jìn",meaning:"가깝다"}, "远":{pinyin:"yuǎn",meaning:"멀다"}, "便":{pinyin:"biàn",meaning:"편리하다"},
+  "宜":{pinyin:"yí",meaning:"적당하다, 싸다"}, "开":{pinyin:"kāi",meaning:"열다, 시작하다"}, "关":{pinyin:"guān",meaning:"닫다, 관계하다"}, "做":{pinyin:"zuò",meaning:"하다, 만들다"},
+  "买":{pinyin:"mǎi",meaning:"사다"}, "卖":{pinyin:"mài",meaning:"팔다"}, "找":{pinyin:"zhǎo",meaning:"찾다"}, "拿":{pinyin:"ná",meaning:"가지다, 들다"},
+  "放":{pinyin:"fàng",meaning:"놓다"}, "打":{pinyin:"dǎ",meaning:"치다, 전화하다"}, "加":{pinyin:"jiā",meaning:"더하다, 추가하다"}, "洗":{pinyin:"xǐ",meaning:"씻다"},
+  "穿":{pinyin:"chuān",meaning:"입다"}, "睡":{pinyin:"shuì",meaning:"자다"}, "休":{pinyin:"xiū",meaning:"쉬다"}, "息":{pinyin:"xi",meaning:"쉬다, 숨"},
+  "笑":{pinyin:"xiào",meaning:"웃다"}, "谢":{pinyin:"xiè",meaning:"감사하다"}, "认":{pinyin:"rèn",meaning:"알아보다"}, "识":{pinyin:"shi",meaning:"알다"},
+  "觉":{pinyin:"jué",meaning:"느끼다"}, "得":{pinyin:"de",meaning:"~라고 느끼다, 얻다"}, "喜":{pinyin:"xǐ",meaning:"기뻐하다"}, "欢":{pinyin:"huān",meaning:"좋아하다"},
+  "爱":{pinyin:"ài",meaning:"사랑하다"}, "心":{pinyin:"xīn",meaning:"마음"}, "意":{pinyin:"yì",meaning:"뜻, 의미"}, "思":{pinyin:"sī",meaning:"생각"},
+  "病":{pinyin:"bìng",meaning:"병"}, "痛":{pinyin:"tòng",meaning:"아프다"}, "烧":{pinyin:"shāo",meaning:"열나다, 태우다"}, "春":{pinyin:"chūn",meaning:"봄"},
+  "夏":{pinyin:"xià",meaning:"여름"}, "秋":{pinyin:"qiū",meaning:"가을"}, "冬":{pinyin:"dōng",meaning:"겨울"}, "风":{pinyin:"fēng",meaning:"바람"},
+  "雨":{pinyin:"yǔ",meaning:"비"}, "雪":{pinyin:"xuě",meaning:"눈"}, "云":{pinyin:"yún",meaning:"구름"}, "晴":{pinyin:"qíng",meaning:"맑다"},
+  "温":{pinyin:"wēn",meaning:"따뜻하다, 온도"}, "度":{pinyin:"dù",meaning:"도, 정도"}, "凉":{pinyin:"liáng",meaning:"서늘하다"}, "暖":{pinyin:"nuǎn",meaning:"따뜻하다"},
+  "变":{pinyin:"biàn",meaning:"변하다"}, "化":{pinyin:"huà",meaning:"바뀌다, 변화"}, "差":{pinyin:"chà",meaning:"나쁘다, 차이"}, "肉":{pinyin:"ròu",meaning:"고기"},
+  "汤":{pinyin:"tāng",meaning:"국, 탕"}, "粉":{pinyin:"fěn",meaning:"가루, 면"}, "果":{pinyin:"guǒ",meaning:"과일, 결과"}, "甜":{pinyin:"tián",meaning:"달다"},
+  "辣":{pinyin:"là",meaning:"맵다"}, "烤":{pinyin:"kǎo",meaning:"굽다"}, "碗":{pinyin:"wǎn",meaning:"그릇"}, "杯":{pinyin:"bēi",meaning:"컵, 잔"},
+  "包":{pinyin:"bāo",meaning:"가방, 싸다"}, "伞":{pinyin:"sǎn",meaning:"우산"}, "票":{pinyin:"piào",meaning:"표"}, "餐":{pinyin:"cān",meaning:"식사"},
+  "房":{pinyin:"fáng",meaning:"방, 집"}, "间":{pinyin:"jiān",meaning:"사이, 방"}, "住":{pinyin:"zhù",meaning:"살다, 묵다"}, "城":{pinyin:"chéng",meaning:"도시, 성"},
+  "市":{pinyin:"shì",meaning:"도시, 시장"}, "东":{pinyin:"dōng",meaning:"동쪽"}, "西":{pinyin:"xī",meaning:"서쪽"}, "北":{pinyin:"běi",meaning:"북쪽"},
+  "外":{pinyin:"wài",meaning:"밖"}, "里":{pinyin:"lǐ",meaning:"안, 속"}, "直":{pinyin:"zhí",meaning:"곧다, 바로"}, "走":{pinyin:"zǒu",meaning:"걷다, 가다"},
+  "步":{pinyin:"bù",meaning:"걸음"}, "旅":{pinyin:"lǚ",meaning:"여행"}, "游":{pinyin:"yóu",meaning:"놀다, 여행하다"}, "飞":{pinyin:"fēi",meaning:"날다"},
+  "海":{pinyin:"hǎi",meaning:"바다"}, "电":{pinyin:"diàn",meaning:"전기"}, "网":{pinyin:"wǎng",meaning:"인터넷, 그물"}, "评":{pinyin:"píng",meaning:"평하다"},
+  "论":{pinyin:"lùn",meaning:"논하다"}, "信":{pinyin:"xìn",meaning:"믿다, 편지"}, "考":{pinyin:"kǎo",meaning:"시험보다"}, "试":{pinyin:"shì",meaning:"시험"},
+  "成":{pinyin:"chéng",meaning:"이루다"}, "绩":{pinyin:"jì",meaning:"성적"}, "知":{pinyin:"zhī",meaning:"알다"}, "词":{pinyin:"cí",meaning:"단어"},
+  "复":{pinyin:"fù",meaning:"반복하다"}, "增":{pinyin:"zēng",meaning:"늘다"}, "结":{pinyin:"jié",meaning:"맺다, 결과"}, "保":{pinyin:"bǎo",meaning:"보호하다"},
+  "护":{pinyin:"hù",meaning:"보호하다"}, "社":{pinyin:"shè",meaning:"사회"}, "代":{pinyin:"dài",meaning:"시대"}, "经":{pinyin:"jīng",meaning:"경영, 지나가다"},
+  "济":{pinyin:"jì",meaning:"경제, 돕다"}, "把":{pinyin:"bǎ",meaning:"~을 처리 대상으로 표시"}, "被":{pinyin:"bèi",meaning:"~에게 당하다"}, "让":{pinyin:"ràng",meaning:"하게 하다, 양보하다"},
+  "比":{pinyin:"bǐ",meaning:"비교하다"}, "更":{pinyin:"gèng",meaning:"더욱"}, "最":{pinyin:"zuì",meaning:"가장"}, "越":{pinyin:"yuè",meaning:"점점 ~할수록"},
+  "过":{pinyin:"guò",meaning:"경험하다, 지나가다"}, "还":{pinyin:"hái",meaning:"아직, 또한"}, "都":{pinyin:"dōu",meaning:"모두"}, "只":{pinyin:"zhǐ",meaning:"오직"},
+  "再":{pinyin:"zài",meaning:"다시"}, "吧":{pinyin:"ba",meaning:"권유/제안 어기조사"}, "呢":{pinyin:"ne",meaning:"상황을 묻는 어기조사"}
+});
+
+Object.assign(BASIC_HANZI_FALLBACK, {
+  "业":{pinyin:"yè",meaning:"일, 업"}, "久":{pinyin:"jiǔ",meaning:"오래"}, "京":{pinyin:"jīng",meaning:"수도"}, "今":{pinyin:"jīn",meaning:"오늘, 지금"},
+  "件":{pinyin:"jiàn",meaning:"건, 벌, 양사"}, "像":{pinyin:"xiàng",meaning:"~와 같다"}, "冰":{pinyin:"bīng",meaning:"얼음"}, "净":{pinyin:"jìng",meaning:"깨끗하다"},
+  "凌":{pinyin:"líng",meaning:"능가하다, 차갑다"}, "利":{pinyin:"lì",meaning:"이롭다, 순조롭다"}, "别":{pinyin:"bié",meaning:"다른, 하지 마라"}, "功":{pinyin:"gōng",meaning:"공, 성과"},
+  "务":{pinyin:"wù",meaning:"업무, 일"}, "午":{pinyin:"wǔ",meaning:"정오"}, "单":{pinyin:"dān",meaning:"단일한, 계산서"}, "厅":{pinyin:"tīng",meaning:"홀, 식당"},
+  "口":{pinyin:"kǒu",meaning:"입, 출입구"}, "各":{pinyin:"gè",meaning:"각각"}, "合":{pinyin:"hé",meaning:"맞다, 합하다"}, "员":{pinyin:"yuán",meaning:"인원, 직원"},
+  "块":{pinyin:"kuài",meaning:"조각, 덩어리"}, "婚":{pinyin:"hūn",meaning:"결혼"}, "完":{pinyin:"wán",meaning:"끝나다, 완료하다"}, "对":{pinyin:"duì",meaning:"맞다, ~에 대해"},
+  "就":{pinyin:"jiù",meaning:"곧, 바로"}, "带":{pinyin:"dài",meaning:"가지고 가다, 데리다"}, "帮":{pinyin:"bāng",meaning:"돕다"}, "常":{pinyin:"cháng",meaning:"늘, 보통"},
+  "干":{pinyin:"gān",meaning:"마르다, 깨끗하다"}, "应":{pinyin:"yīng",meaning:"마땅히 ~해야 하다"}, "张":{pinyin:"zhāng",meaning:"장, 펼치다"}, "影":{pinyin:"yǐng",meaning:"그림자, 영화"},
+  "往":{pinyin:"wǎng",meaning:"~쪽으로 가다"}, "悠":{pinyin:"yōu",meaning:"느긋하다, 오래다"}, "批":{pinyin:"pī",meaning:"비평하다, 무리"}, "散":{pinyin:"sàn",meaning:"흩어지다, 산책하다"},
+  "朋":{pinyin:"péng",meaning:"친구"}, "末":{pinyin:"mò",meaning:"끝"}, "条":{pinyin:"tiáo",meaning:"줄, 가닥, 양사"}, "正":{pinyin:"zhèng",meaning:"바로, 정확하다"},
+  "每":{pinyin:"měi",meaning:"매, ~마다"}, "漂":{pinyin:"piào",meaning:"예쁘다"}, "激":{pinyin:"jī",meaning:"격하게 하다, 자극하다"}, "爽":{pinyin:"shuǎng",meaning:"상쾌하다"},
+  "现":{pinyin:"xiàn",meaning:"현재, 나타나다"}, "用":{pinyin:"yòng",meaning:"쓰다, 사용하다"}, "示":{pinyin:"shì",meaning:"보이다, 표시하다"}, "种":{pinyin:"zhǒng",meaning:"종류"},
+  "简":{pinyin:"jiǎn",meaning:"간단하다"}, "聊":{pinyin:"liáo",meaning:"이야기하다"}, "花":{pinyin:"huā",meaning:"꽃, 쓰다"}, "行":{pinyin:"xíng",meaning:"가다, 괜찮다"},
+  "生":{pinyin:"shēng",meaning:"나다, 생활하다"}, "目":{pinyin:"mù",meaning:"눈, 항목"}, "解":{pinyin:"jiě",meaning:"풀다, 이해하다"}, "言":{pinyin:"yán",meaning:"말, 언어"}, "记":{pinyin:"jì",meaning:"기록하다, 기억하다"}, "资":{pinyin:"zī",meaning:"자료, 자원"},
+  "起":{pinyin:"qǐ",meaning:"일어나다, 시작하다"}, "趣":{pinyin:"qù",meaning:"흥미, 재미"}, "较":{pinyin:"jiào",meaning:"비교적, 비교하다"}, "达":{pinyin:"dá",meaning:"도달하다"},
+  "适":{pinyin:"shì",meaning:"알맞다"}, "银":{pinyin:"yín",meaning:"은, 은행"}, "面":{pinyin:"miàn",meaning:"면, 얼굴, 쪽"}, "音":{pinyin:"yīn",meaning:"소리, 발음"},
+  "项":{pinyin:"xiàng",meaning:"항목, 프로젝트"}, "顺":{pinyin:"shùn",meaning:"순조롭다, 따라가다"}
+});
+
 // Greedy longest-match tokenizer against ALL_WORDS
 function tokenizeZh(text, wordList) {
-  const sorted = [...wordList].sort((a,b) => b.char.length - a.char.length);
+  const merged = [...wordList];
+  for (const w of SUPPLEMENTAL_WORDS) {
+    if (!merged.some(item => item.char === w.char)) merged.push(w);
+  }
+  const sorted = merged.sort((a,b) => b.char.length - a.char.length);
   const result = [];
   let i = 0;
   while (i < text.length) {
@@ -3383,7 +3638,15 @@ function tokenizeZh(text, wordList) {
     if (!matched) {
       // single char — try to find in word list
       const single = sorted.find(w => w.char === text[i]);
-      result.push({ text: text[i], meaning: single?.meaning || null, pinyin:single?.pinyin || null, tones:single?.tones || null, word:single || null, isPunct: false });
+      const fallback = BASIC_HANZI_FALLBACK[text[i]];
+      result.push({
+        text: text[i],
+        meaning: single?.meaning || fallback?.meaning || "",
+        pinyin: single?.pinyin || fallback?.pinyin || "",
+        tones: single?.tones || null,
+        word: single || null,
+        isPunct: false
+      });
       i++;
     }
   }
@@ -3451,14 +3714,14 @@ function buildWordRows(tokens) {
       text += tokens[i + 1].text;
       i++;
     }
-    rows.push({ ...tok, text, meaning:text.length > 1 ? "이름/고유명사 추정" : "뜻 정보 없음" });
+    rows.push({ ...tok, text, meaning:tok.meaning || "", pinyin:tok.pinyin || "" });
   }
   return rows;
 }
 
 function SentenceInsight({
   sentence, pinyin, meaning, focusWord, stats,
-  onToggleWordFavorite, onTogglePhraseFavorite, phraseSet, phrase
+  onToggleWordFavorite, onTogglePhraseFavorite, phraseSet, phrase, compact=true
 }) {
   const allWords = React.useMemo(() => getAllWords(stats || {}), [stats]);
   const tokens = React.useMemo(() => tokenizeZh(sentence || "", allWords), [sentence, allWords]);
@@ -3486,12 +3749,13 @@ function SentenceInsight({
 
   return (
     <div style={{
-      animation:"fadeUp .25s ease",background:"rgba(255,255,255,0.54)",
-      border:"1px solid rgba(28,27,26,0.07)",borderRadius:20,padding:16,
-      marginTop:12,boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.45)"
+      animation:"fadeUp .25s ease",background:"rgba(255,255,255,0.58)",
+      backdropFilter:"blur(18px)",WebkitBackdropFilter:"blur(18px)",
+      border:"1px solid rgba(255,255,255,0.72)",borderRadius:compact?22:26,padding:compact?14:18,
+      marginTop:compact?12:14,boxShadow:"inset 1px 1px 0 rgba(255,255,255,0.52)"
     }}>
       <div style={{display:"flex",justifyContent:"space-between",gap:10,alignItems:"center",marginBottom:10}}>
-        <div style={{fontSize:11,fontWeight:900,color:"var(--sub)",letterSpacing:".12em",textTransform:"uppercase"}}>sentence map</div>
+        <div style={{fontSize:12,fontWeight:900,color:"var(--sub)",letterSpacing:".10em",textTransform:"uppercase"}}>sentence map</div>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
           {canFavPhrase && (
             <button onClick={()=>onTogglePhraseFavorite(phraseSet, phrase)} style={{
@@ -3504,53 +3768,52 @@ function SentenceInsight({
         </div>
       </div>
 
-      <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"stretch",marginBottom:10}}>
-        {tokens.map((tok, i) => tok.isPunct ? (
-          <span key={i} style={{fontFamily:"var(--font-zh)",fontSize:22,color:"var(--sub2)",alignSelf:"center"}}>{tok.text}</span>
-        ) : (
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"stretch",marginBottom:compact?8:10}}>
+        {wordRows.map((tok, i) => (
           <button key={i} onClick={()=>tok.word && onToggleWordFavorite?.(tok.word)} disabled={!tok.word || !onToggleWordFavorite}
             style={{
-              border:"1px solid rgba(28,27,26,0.07)",borderRadius:13,padding:"7px 8px 6px",
+              border:"1px solid rgba(255,255,255,0.74)",borderRadius:16,padding:compact?"8px 9px":"9px 10px 8px",
               background:focusWord && tok.text === focusWord.char ? "var(--accent-dim)" : "rgba(255,255,255,0.56)",
               color:"var(--text)",cursor:tok.word && onToggleWordFavorite ? "pointer" : "default",
-              fontFamily:"var(--font-ui)",lineHeight:1.15,minWidth:48,textAlign:"center",
+              fontFamily:"var(--font-ui)",lineHeight:1.16,minWidth:compact?58:64,textAlign:"center",
+              boxShadow:"0 5px 14px rgba(28,27,26,0.04)"
             }}>
-            <div style={{fontFamily:"var(--font-zh)",fontSize:20,fontWeight:800}}>{tok.text}</div>
-            <div style={{fontSize:10,color:"var(--accent)",fontWeight:800,marginTop:4}}>{tok.pinyin || "?"}</div>
-            <div style={{fontSize:10,color:"var(--sub)",marginTop:2,maxWidth:78,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {tok.meaning || "뜻 확인"}
+            <div style={{fontFamily:"var(--font-zh)",fontSize:compact?22:24,fontWeight:900,lineHeight:1.1}}>{tok.text}</div>
+            <div style={{fontSize:12,color:"var(--accent)",fontWeight:900,marginTop:5,lineHeight:1.2,overflowWrap:"anywhere"}}>{tok.pinyin}</div>
+            <div style={{fontSize:12,color:"var(--sub)",fontWeight:700,marginTop:3,maxWidth:compact?116:128,whiteSpace:"normal",overflow:"visible",textOverflow:"clip",overflowWrap:"anywhere",lineHeight:1.25}}>
+              {tok.meaning}
             </div>
           </button>
         ))}
       </div>
 
-      <div style={{fontSize:12,color:"var(--accent)",lineHeight:1.5,marginBottom:4}}>{pinyin}</div>
-      <div style={{fontSize:13,color:"var(--text)",fontWeight:700,lineHeight:1.5,marginBottom:12}}>{meaning}</div>
+      <div style={{fontSize:14,color:"var(--accent)",lineHeight:1.45,marginBottom:5,overflowWrap:"anywhere",fontWeight:700}}>{pinyin}</div>
+      <div style={{fontSize:16,color:"var(--text)",fontWeight:900,lineHeight:1.45,marginBottom:compact?12:14,overflowWrap:"anywhere"}}>{meaning}</div>
 
-      <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:12,marginBottom:12}}>
+      {!compact && <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:12,marginBottom:12}}>
         <div style={{fontSize:11,fontWeight:900,color:"var(--sub)",marginBottom:8}}>단어 매칭표</div>
         <div style={{display:"flex",flexDirection:"column",gap:6}}>
           {wordRows.map((tok, i) => (
             <div key={`${tok.text}-${i}`} style={{
-              display:"grid",gridTemplateColumns:"minmax(52px,.7fr) minmax(78px,1fr) minmax(92px,1.15fr) auto",
+              display:"grid",gridTemplateColumns:"minmax(44px,.7fr) minmax(64px,1fr) minmax(88px,1.15fr) auto",
               gap:8,alignItems:"center",background:"rgba(255,255,255,0.58)",
-              border:"1px solid rgba(28,27,26,0.06)",borderRadius:12,padding:"8px 9px"
+              border:"1px solid rgba(255,255,255,0.72)",borderRadius:16,padding:"9px 10px"
             }}>
               <div style={{fontFamily:"var(--font-zh)",fontSize:21,fontWeight:900,color:"var(--text)",lineHeight:1.15}}>{tok.text}</div>
-              <div style={{fontSize:12,color:"var(--accent)",fontWeight:800,lineHeight:1.35}}>{tok.pinyin || "발음 정보 없음"}</div>
-              <div style={{fontSize:12,color:"var(--text)",fontWeight:800,lineHeight:1.35}}>{tok.meaning || "뜻 정보 없음"}</div>
+              <div style={{fontSize:12,color:"var(--accent)",fontWeight:800,lineHeight:1.35}}>{tok.pinyin}</div>
+              <div style={{fontSize:12,color:"var(--text)",fontWeight:800,lineHeight:1.35}}>{tok.meaning}</div>
               {favButton(tok) || <span style={{width:22,height:22}}/>}
             </div>
           ))}
         </div>
-      </div>
+      </div>}
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10,marginBottom:12}}>
-        <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:12}}>
-          <div style={{fontSize:11,fontWeight:900,color:"var(--sub)",marginBottom:6}}>문장 구조</div>
-          <div style={{fontSize:13,color:"var(--text)",lineHeight:1.55}}>{buildSentenceStructure(tokens)}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,160px),1fr))",gap:compact?8:10,marginBottom:compact?10:12}}>
+        <div style={{background:"rgba(255,255,255,0.50)",border:"1px solid rgba(255,255,255,0.72)",borderRadius:18,padding:14}}>
+          <div style={{fontSize:12,fontWeight:900,color:"var(--sub)",marginBottom:7}}>문장 구조</div>
+          <div style={{fontSize:14,color:"var(--text)",fontWeight:800,lineHeight:1.55,overflowWrap:"anywhere"}}>{buildSentenceStructure(tokens)}</div>
         </div>
-        <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:12}}>
+        {!compact && <div style={{background:"rgba(255,255,255,0.50)",border:"1px solid rgba(255,255,255,0.72)",borderRadius:18,padding:14}}>
           <div style={{fontSize:11,fontWeight:900,color:"var(--sub)",marginBottom:6}}>성조/발음</div>
           <div style={{display:"flex",flexDirection:"column",gap:5}}>
             {toneTokens.map((tok, i) => (
@@ -3561,15 +3824,15 @@ function SentenceInsight({
               </div>
             ))}
           </div>
-        </div>
+        </div>}
       </div>
 
-      <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:14,padding:12,marginBottom:12}}>
-        <div style={{fontSize:11,fontWeight:900,color:"var(--sub)",marginBottom:8}}>문법 포인트</div>
+      <div style={{background:"rgba(255,255,255,0.50)",border:"1px solid rgba(255,255,255,0.72)",borderRadius:18,padding:14,marginBottom:12}}>
+        <div style={{fontSize:12,fontWeight:900,color:"var(--sub)",marginBottom:9}}>문법 포인트</div>
         {grammar.length ? (
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
             {grammar.map(g => (
-              <div key={g.key} style={{fontSize:12,color:"var(--text)",lineHeight:1.55}}>
+              <div key={g.key} style={{fontSize:14,color:"var(--text)",lineHeight:1.55,overflowWrap:"anywhere"}}>
                 <span style={{fontFamily:"var(--font-zh)",fontWeight:900,color:"var(--accent)",marginRight:5}}>{g.key}</span>
                 <strong>{g.title}</strong> · {g.desc}
               </div>
@@ -4092,7 +4355,7 @@ function ReviewScreen({ stats, onResult, onBack }) {
                 background:"var(--gold-dim)",color:"var(--gold)",
               }}>오답 {reviewInfo.wrong}회</div>
             )}
-            <div style={{fontFamily:"var(--font-zh)",fontSize:72,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+            <div style={{fontFamily:"var(--font-zh)",color:"var(--text)",fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}</div>
             <PinyinRow tones={word.tones}/>
             <div style={{position:"absolute",bottom:12,fontSize:11,color:"var(--sub2)"}}>탭하여 뒤집기</div>
           </div>
@@ -4105,7 +4368,7 @@ function ReviewScreen({ stats, onResult, onBack }) {
             alignItems:"center",justifyContent:"center",gap:8,padding:20,
             boxShadow:"inset 2px 2px 0 rgba(255,255,255,0.42),0 8px 60px rgba(79,85,174,0.10)",
           }}>
-            <div style={{fontFamily:"var(--font-zh)",fontSize:42,color:"var(--text)",lineHeight:1}}>{word.char}</div>
+            <div style={{fontFamily:"var(--font-zh)",color:"var(--text)",fontWeight:900,...hanziDisplayStyle(word.char)}}>{word.char}</div>
             <div style={{fontSize:19,color:"var(--accent)",fontWeight:600}}>{word.pinyin}</div>
             <div style={{fontSize:15,color:"var(--text)",fontWeight:500}}>{word.meaning}</div>
             <TTSBtn text={word.char} size="lg"/>
@@ -4313,7 +4576,7 @@ function StatsScreen({ stats }) {
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
             {wrongHotlist.map(({word,info})=>(
               <div key={wordKey(word)} style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{fontFamily:"var(--font-zh)",fontSize:24,minWidth:48}}>{word.char}</div>
+                <div style={{fontFamily:"var(--font-zh)",fontSize:22,width:58,flexShrink:0,lineHeight:1.1,overflowWrap:"anywhere",wordBreak:"break-word"}}>{word.char}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:12,color:"var(--accent)",fontWeight:700}}>{word.pinyin}</div>
                   <div style={{fontSize:13,color:"var(--text)"}}>{word.meaning}</div>
@@ -4880,16 +5143,16 @@ Object.assign(window, { InspectScreen, REVIEW_ITEMS, CHOICE_LABELS });
 <script type="text/babel">
 
 const TWEAK_DEFAULTS = {
-  "accent": "periwinkle",
+  "accent": "blue",
   "zhFont": "serif",
   "density": "comfortable"
 };
 
 const ACCENT_OPTIONS = {
-  blue:      { accent:"#5B7EE8", bright:"#7B96EE", dim:"rgba(91,126,232,.10)"   },
-  indigo:    { accent:"#6B5FD8", bright:"#8B7EE8", dim:"rgba(107,95,216,.10)"   },
-  sky:       { accent:"#3A9ED8", bright:"#5AB4E4", dim:"rgba(58,158,216,.10)"   },
-  periwinkle:{ accent:"#7B8EE0", bright:"#9BAAE8", dim:"rgba(123,142,224,.10)"  },
+  blue:      { accent:"#2457B8", bright:"#3F72D8", dim:"rgba(36,87,184,.12)"   },
+  indigo:    { accent:"#5A4FCF", bright:"#7B70E2", dim:"rgba(90,79,207,.11)"   },
+  sky:       { accent:"#337FBE", bright:"#4C9DDB", dim:"rgba(51,127,190,.11)"  },
+  periwinkle:{ accent:"#5F73D6", bright:"#8493E4", dim:"rgba(95,115,214,.11)"  },
 };
 
 function explainSceneDrillAnswer(word, selected, ok) {
@@ -4935,23 +5198,25 @@ function SceneScreen({ stats, onResult }) {
   if (!activeScene) {
     return (
       <div style={{animation:"fadeUp .3s ease both"}}>
-        <div style={{marginBottom:22}}>
-          <div style={{fontSize:22,fontWeight:800,letterSpacing:"-0.02em",marginBottom:4}}>수련 고르기</div>
-          <div style={{fontSize:13,color:"var(--sub)"}}>씬 하나를 골라 5-10분 집중 수련</div>
+        <div style={{marginBottom:18}}>
+          <div style={{fontSize:"clamp(38px,8vw,66px)",fontWeight:900,letterSpacing:0,lineHeight:.96,marginBottom:9}}>연습 고르기</div>
+          <div style={{fontSize:16,color:"var(--sub)",fontWeight:700,lineHeight:1.5}}>상황 하나만 고르면 바로 연습해요.</div>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:10}}>
-          {scenes.map(scene => (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,180px),1fr))",gap:12}}>
+          {scenes.map((scene, i) => (
             <button key={scene.id} onClick={() => startScene(scene)} style={{
-              padding:"18px 14px",borderRadius:24,border:"1px solid rgba(255,255,255,0.62)",
-              background:"rgba(255,255,255,0.44)",backdropFilter:"blur(20px)",
+              padding:"18px 16px",borderRadius:26,border:"1px solid rgba(255,255,255,0.72)",
+              background:i%4===0?"var(--accent)":i%4===1?"var(--mist)":i%4===2?"var(--gold)":"rgba(255,255,255,0.68)",
+              color:i%4===3?"var(--text)":"#fff",
+              backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
               textAlign:"left",cursor:"pointer",display:"flex",flexDirection:"column",gap:6,
-              transition:"all .15s"
+              transition:"all .15s",boxShadow:"0 16px 36px rgba(28,27,26,0.10)",minHeight:142
             }}>
               <span style={{fontSize:26,lineHeight:1}}>{scene.emoji}</span>
-              <span style={{fontSize:14,fontWeight:800,color:"var(--text)",lineHeight:1.3}}>{scene.title}</span>
-              <span style={{fontSize:11,color:"var(--sub2)"}}>{scene.titleZh}</span>
-              <span style={{fontSize:10,color:"var(--sub)",marginTop:2,fontWeight:700,letterSpacing:"0.04em"}}>
-                HSK {scene.level} · {scene.words.length}단어
+              <span style={{fontSize:18,fontWeight:900,color:"inherit",lineHeight:1.22,overflowWrap:"anywhere"}}>{scene.title}</span>
+              <span style={{fontSize:13,color:i%4===3?"var(--sub2)":"rgba(255,255,255,0.70)",fontWeight:700,overflowWrap:"anywhere"}}>{scene.titleZh}</span>
+              <span style={{fontSize:12,color:i%4===3?"var(--sub)":"rgba(255,255,255,0.78)",marginTop:"auto",fontWeight:900,letterSpacing:0}}>
+                {scene.words.length}개 표현
               </span>
             </button>
           ))}
@@ -4981,8 +5246,8 @@ function SceneScreen({ stats, onResult }) {
             {sceneWords.slice(0,3).map(w => (
               <div key={w.char} style={{display:"flex",alignItems:"center",gap:12,
                 padding:"10px 14px",borderRadius:14,background:"rgba(255,255,255,0.54)"}}>
-                <span style={{fontFamily:"var(--font-zh)",fontSize:20,minWidth:36,textAlign:"center"}}>{w.char}</span>
-                <div>
+                <span style={{fontFamily:"var(--font-zh)",fontSize:19,width:58,flexShrink:0,textAlign:"center",lineHeight:1.1,overflowWrap:"anywhere",wordBreak:"break-word"}}>{w.char}</span>
+                <div style={{minWidth:0}}>
                   <div style={{fontSize:12,color:"var(--sub2)",letterSpacing:"0.06em"}}>{w.pinyin}</div>
                   <div style={{fontSize:14,fontWeight:700}}>{w.meaning}</div>
                 </div>
@@ -5016,39 +5281,30 @@ function SceneScreen({ stats, onResult }) {
               width:`${((wordIdx+1)/sceneWords.length)*100}%`,transition:"width .3s"}}/>
           </div>
         </div>
-        <div className="glass-card" style={{padding:"32px 24px",textAlign:"center",marginBottom:14}}>
+        <div className="glass-card" style={{padding:"20px 18px",textAlign:"center",marginBottom:12}}>
           <div style={{fontSize:11,letterSpacing:"0.18em",color:"var(--sub2)",textTransform:"uppercase",marginBottom:16}}>핵심 표현</div>
-          <div className="focus-hanzi" style={{fontSize:100,lineHeight:.92,marginBottom:14}}>{w.char}</div>
-          <div style={{fontSize:14,letterSpacing:"0.1em",color:"var(--sub2)",marginBottom:6}}>{w.pinyin}</div>
-          <div style={{fontSize:22,fontWeight:800,letterSpacing:"-0.02em",marginBottom:16}}>{w.meaning}</div>
-          <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
+          <div className="focus-hanzi" style={{marginBottom:10,...hanziDisplayStyle(w.char)}}>{w.char}</div>
+          <div style={{fontSize:13,letterSpacing:"0.08em",color:"var(--sub2)",marginBottom:4,overflowWrap:"anywhere"}}>{w.pinyin}</div>
+          <div style={{fontSize:19,fontWeight:800,letterSpacing:0,marginBottom:10,overflowWrap:"anywhere"}}>{w.meaning}</div>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
             <TTSBtn text={w.char}/>
           </div>
           {w.example && (
-            <div style={{padding:"12px 16px",borderRadius:14,background:"rgba(255,255,255,0.54)",
-              border:"1px solid rgba(28,27,26,0.05)",textAlign:"left"}}>
-              <div style={{fontFamily:"var(--font-zh)",fontSize:15,lineHeight:1.6,color:"var(--text)",marginBottom:4}}>
-                {w.example}
-              </div>
-              <div style={{fontSize:12,color:"var(--sub2)"}}>{w.exMeaning}</div>
-              {w.tags && (
-                <div style={{display:"flex",gap:6,marginTop:8,flexWrap:"wrap"}}>
-                  {w.tags.slice(0,2).map(t => (
-                    <span key={t} style={{fontSize:10,padding:"3px 8px",borderRadius:999,
-                      background:"rgba(28,27,26,0.06)",color:"var(--sub)",fontWeight:700}}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            <SentenceInsight
+              sentence={w.example}
+              pinyin={w.exPinyin}
+              meaning={w.exMeaning}
+              focusWord={w}
+              stats={stats}
+              compact={true}
+            />
           )}
         </div>
         <button onClick={() => { if (isLast) setStep(2); else setWordIdx(i => i+1); }} style={{
           width:"100%",padding:"16px",borderRadius:999,border:"none",
           background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:800,
           cursor:"pointer",fontFamily:"var(--font-ui)"
-        }}>{isLast ? "드릴 시작 →" : "다음 표현 →"}</button>
+        }}>{isLast ? "문제 풀기 →" : "다음 표현 →"}</button>
       </div>
     );
   }
@@ -5085,9 +5341,9 @@ function SceneScreen({ stats, onResult }) {
               width:`${((drillIdx+1)/drillWords.length)*100}%`,transition:"width .3s"}}/>
           </div>
         </div>
-        <div className="glass-card" style={{padding:"28px 24px",textAlign:"center",marginBottom:16}}>
+        <div className="glass-card" style={{padding:"20px 18px",textAlign:"center",marginBottom:12}}>
           <div style={{fontSize:11,letterSpacing:"0.18em",color:"var(--sub2)",textTransform:"uppercase",marginBottom:18}}>뜻을 고르세요</div>
-          <div className="focus-hanzi" style={{fontSize:90,lineHeight:.95,marginBottom:10}}>{w.char}</div>
+          <div className="focus-hanzi" style={{marginBottom:8,...hanziDisplayStyle(w.char)}}>{w.char}</div>
           <div style={{fontSize:13,letterSpacing:"0.1em",color:"var(--sub2)"}}>{w.pinyin}</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
@@ -5122,6 +5378,16 @@ function SceneScreen({ stats, onResult }) {
             {explainSceneDrillAnswer(w, selected, isCorrect)}
           </div>
         )}
+        {answered && w.example && (
+          <SentenceInsight
+            sentence={w.example}
+            pinyin={w.exPinyin}
+            meaning={w.exMeaning}
+            focusWord={w}
+            stats={stats}
+            compact={true}
+          />
+        )}
         {answered && (
           <button onClick={() => {
             if (isLastDrill) setStep(3);
@@ -5146,7 +5412,7 @@ function SceneScreen({ stats, onResult }) {
         <div style={{fontSize:48,marginBottom:12}}>
           {pct >= 80 ? "🎯" : pct >= 50 ? "📖" : "💪"}
         </div>
-        <div style={{fontSize:24,fontWeight:800,marginBottom:6}}>수련 완료</div>
+        <div style={{fontSize:24,fontWeight:800,marginBottom:6}}>연습 완료</div>
         <div style={{fontSize:14,color:"var(--sub)",marginBottom:24}}>{activeScene.title} · {activeScene.titleZh}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:24}}>
           {[
@@ -5172,7 +5438,7 @@ function SceneScreen({ stats, onResult }) {
           flex:1,padding:"14px",borderRadius:999,border:"none",
           background:"var(--accent)",color:"#fff",
           fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"var(--font-ui)"
-        }}>다른 씬 →</button>
+        }}>다른 상황 →</button>
       </div>
     </div>
   );
@@ -5180,9 +5446,9 @@ function SceneScreen({ stats, onResult }) {
 
 const NAV = [
   { id:"home",    label:"홈",   sub:"入口", icon:"⌂" },
-  { id:"scene",   label:"수련", sub:"習",   icon:"習" },
+  { id:"scene",   label:"연습", sub:"習",   icon:"習" },
   { id:"archive", label:"서재", sub:"冊",   icon:"◫" },
-  { id:"backup",  label:"나",   sub:"印",   icon:"印" },
+  { id:"stats",   label:"기록", sub:"記",   icon:"記" },
 ];
 
 const ARCHIVE_TOOLS = [
@@ -5192,8 +5458,8 @@ const ARCHIVE_TOOLS = [
   { id:"grammar", label:"문법",   desc:"말의 뼈대", icon:"法" },
   { id:"review",  label:"복습",   desc:"잊기 전에", icon:"回" },
   { id:"commute", label:"듣기",   desc:"퇴근길 재생", icon:"聽" },
-  { id:"stats",   label:"기록",   desc:"학습 흐름", icon:"記" },
   { id:"chat",    label:"도움",   desc:"AI 튜터", icon:"助" },
+  { id:"backup",  label:"계정",   desc:"저장과 백업", icon:"印" },
   { id:"inspect", label:"검수",   desc:"표현 점검", icon:"校" },
 ];
 
@@ -5722,7 +5988,7 @@ function App() {
           <div className="logo-badge">靜</div>
           <div style={{marginLeft:8}}>
             <div className="logo-name">靜習</div>
-            <div className="logo-sub">중국어 수련장</div>
+            <div className="logo-sub">중국어 학습장</div>
           </div>
         </div>
         <div style={{flex:1, overflowY:"auto", marginRight:-4, paddingRight:4}}>
@@ -5817,7 +6083,7 @@ function App() {
             <div key={n.id} className={`bnav-item${activeNav===n.id?" active":""}`}
               onClick={()=>goNav(n.id)}>
               <span className="icon">{n.icon}</span>
-              <span>{n.label}</span>
+              <span className="label">{n.label}</span>
               <span className="sub">{n.sub}</span>
               {n.id==="archive" && reviewCount>0 &&
                 <span className="bnav-badge">{reviewCount}</span>}
