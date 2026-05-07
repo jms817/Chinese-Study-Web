@@ -2169,6 +2169,7 @@ const TEAL_SHADOW = "rgba(27,157,142,0.28)";
 function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncState, onToggleWordFavorite, onSignOut }) {
   const [cardIdx, setCardIdx] = React.useState(0);
   const [flipped, setFlipped] = React.useState(false);
+  const [learnMode, setLearnMode] = React.useState("card");
 
   const chapters = getStudyChapters(stats);
   const allWords = getAllWords(stats);
@@ -2208,19 +2209,34 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
     setFlipped(false);
   };
 
+  const MODES = [
+    { id:"card",    label:"카드",  icon:"🃏", sub:"플립",   ready:true  },
+    { id:"build",   label:"조립",  icon:"🧩", sub:"드래그", ready:false },
+    { id:"match",   label:"매칭",  icon:"⊞",  sub:"짝찾기", ready:false },
+    { id:"error",   label:"오류",  icon:"🔍", sub:"찾기",   ready:false },
+    { id:"predict", label:"예측",  icon:"💭", sub:"채우기", ready:false },
+  ];
+  const gardenPhases = [
+    { max:0,  emoji:"🌱", name:"씨앗" },
+    { max:25, emoji:"🌿", name:"새싹" },
+    { max:50, emoji:"🍃", name:"자람" },
+    { max:75, emoji:"🌸", name:"찻향" },
+    { max:100,emoji:"🫖", name:"완성" },
+  ];
+  const phase = gardenPhases.find(p => pct <= p.max) || gardenPhases[gardenPhases.length-1];
+  const currentMode = MODES.find(m => m.id === learnMode) || MODES[0];
+
   return (
     <div style={{animation:"fadeUp .3s ease both",maxWidth:780,margin:"0 auto"}}>
 
       {/* Compact header */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,gap:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0}}>
-          <div style={{fontFamily:"var(--font-brush)",fontSize:"clamp(26px,6vw,34px)",lineHeight:1,color:"var(--text)",flexShrink:0}}>靜習</div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,gap:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+          <div style={{fontFamily:"var(--font-brush)",fontSize:"clamp(24px,5.5vw,32px)",lineHeight:1,color:"var(--text)",flexShrink:0}}>靜習</div>
           <div style={{minWidth:0}}>
             <div style={{fontSize:10,fontWeight:900,letterSpacing:".16em",color:"var(--sub2)",textTransform:"uppercase"}}>학습 모드</div>
-            <div style={{fontSize:13,fontWeight:700,color:"var(--sub)",marginTop:2,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-              <span style={{background:"rgba(27,157,142,0.12)",color:"var(--accent)",borderRadius:99,padding:"2px 9px",fontSize:11,fontWeight:800,whiteSpace:"nowrap"}}>
-                {stats.todayCount||0}문항
-              </span>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--sub)",marginTop:2,display:"flex",alignItems:"center",gap:6}}>
+              <span style={{background:"rgba(27,157,142,0.12)",color:"var(--accent)",borderRadius:99,padding:"2px 9px",fontSize:11,fontWeight:800,whiteSpace:"nowrap"}}>{stats.todayCount||0}문항</span>
               <span style={{whiteSpace:"nowrap"}}>{xp} XP</span>
               {session && <span style={{width:6,height:6,borderRadius:"50%",background:syncDot,display:"inline-block",flexShrink:0}} title={syncStatus}/>}
             </div>
@@ -2232,7 +2248,7 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
               border:"none",borderRadius:99,padding:"8px 14px",
               background:"var(--coral)",color:"#fff",
               fontSize:12,fontWeight:800,cursor:"pointer",fontFamily:"var(--font-ui)",
-              boxShadow:"0 4px 16px rgba(183,85,76,0.30)",whiteSpace:"nowrap",
+              boxShadow:"0 4px 16px rgba(183,85,76,0.28)",whiteSpace:"nowrap",
             }}>복습 {reviewCount}</button>
           )}
           {onSignOut && (
@@ -2246,8 +2262,98 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
         </div>
       </div>
 
+      {/* Progress Garden */}
+      <div style={{
+        background:"rgba(255,255,255,0.75)",
+        border:"1px solid rgba(255,255,255,0.92)",
+        borderRadius:22,padding:"14px 18px",marginBottom:14,
+        backdropFilter:"blur(18px)",
+        boxShadow:"0 4px 20px rgba(28,27,26,0.05),inset 1px 1px 0 rgba(255,255,255,0.9)",
+        display:"flex",alignItems:"center",gap:14,
+      }}>
+        <div style={{fontSize:34,lineHeight:1,flexShrink:0}}>{phase.emoji}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}>
+            <div style={{fontSize:13,fontWeight:900,color:"var(--text)"}}>
+              {phase.name} <span style={{fontSize:11,fontWeight:700,color:"var(--sub2)",marginLeft:4}}>· {learned}/{totalWords}단어</span>
+            </div>
+            <div style={{fontSize:13,fontWeight:900,color:TEAL}}>{pct}%</div>
+          </div>
+          <div style={{height:7,borderRadius:99,background:"rgba(27,157,142,0.12)",overflow:"hidden"}}>
+            <div style={{
+              height:"100%",width:`${pct}%`,borderRadius:99,
+              background:`linear-gradient(90deg,${TEAL},var(--accent-bright))`,
+              transition:"width .8s cubic-bezier(.4,0,.2,1)",
+            }}/>
+          </div>
+          <div style={{fontSize:11,color:"var(--sub2)",marginTop:6,display:"flex",gap:10}}>
+            <span>연속 {stats.streak||0}일</span>
+            <span>·</span>
+            <span>오늘 {stats.todayCount||0}문항</span>
+            <span>·</span>
+            <span>{xp} XP</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Mode selector */}
+      <div style={{
+        display:"flex",gap:8,overflowX:"auto",
+        scrollbarWidth:"none",paddingBottom:14,
+        WebkitMaskImage:"linear-gradient(to right,black 88%,transparent 100%)",
+        maskImage:"linear-gradient(to right,black 88%,transparent 100%)",
+      }}>
+        {MODES.map(m => (
+          <button key={m.id} onClick={()=>{setLearnMode(m.id);setFlipped(false);}} style={{
+            flex:"0 0 auto",
+            display:"flex",flexDirection:"column",alignItems:"center",gap:3,
+            padding:"10px 18px",borderRadius:18,cursor:"pointer",
+            border:`1.5px solid ${learnMode===m.id ? TEAL : "rgba(28,27,26,0.08)"}`,
+            background: learnMode===m.id
+              ? `linear-gradient(135deg,${TEAL},${TEAL_DARK})`
+              : "rgba(255,255,255,0.75)",
+            boxShadow: learnMode===m.id
+              ? "0 8px 24px rgba(27,157,142,0.28)"
+              : "0 2px 8px rgba(28,27,26,0.04)",
+            transition:"all .18s ease",
+            backdropFilter:"blur(8px)",
+            position:"relative",
+          }}>
+            {!m.ready && <span style={{position:"absolute",top:-4,right:-4,width:8,height:8,borderRadius:"50%",background:"var(--gold)"}}/>}
+            <span style={{fontSize:18,lineHeight:1}}>{m.icon}</span>
+            <span style={{fontSize:13,fontWeight:900,color:learnMode===m.id?"#fff":"var(--text)",fontFamily:"var(--font-ui)",whiteSpace:"nowrap"}}>{m.label}</span>
+            <span style={{fontSize:10,fontWeight:700,color:learnMode===m.id?"rgba(255,255,255,0.65)":"var(--sub2)",fontFamily:"var(--font-ui)"}}>{m.sub}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Mode content */}
+      {learnMode !== "card" && (
+        <div style={{
+          background:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.92)",
+          borderRadius:28,padding:"44px 24px",textAlign:"center",marginBottom:14,
+          backdropFilter:"blur(18px)",
+          boxShadow:"0 4px 20px rgba(28,27,26,0.05),inset 1px 1px 0 rgba(255,255,255,0.9)",
+        }}>
+          <div style={{fontSize:48,marginBottom:14,lineHeight:1}}>{currentMode.icon}</div>
+          <div style={{fontSize:20,fontWeight:900,color:"var(--text)",fontFamily:"var(--font-ui)",marginBottom:8}}>{currentMode.label} 모드</div>
+          <div style={{fontSize:14,color:"var(--sub)",lineHeight:1.7,maxWidth:300,margin:"0 auto"}}>
+            {learnMode==="build" && "문장을 단어 조각으로 분해해서 드래그로 순서대로 재조립해요."}
+            {learnMode==="match" && "마작식으로 카드를 끌어다 알맞은 뜻 카드에 짝 맞춰요."}
+            {learnMode==="error" && "일부러 틀린 문장을 보고 어디가 잘못됐는지 짚어내요."}
+            {learnMode==="predict" && "문장 앞부분만 보고 뒷부분을 예측해서 채워보세요."}
+          </div>
+          <div style={{
+            display:"inline-block",marginTop:20,
+            padding:"7px 18px",borderRadius:99,
+            background:"rgba(166,106,19,0.10)",color:"var(--gold)",
+            fontSize:12,fontWeight:900,letterSpacing:".06em",
+          }}>곧 업데이트 예정</div>
+        </div>
+      )}
+
       {/* Flip card */}
-      <div style={{perspective:1400,marginBottom:14}}>
+      {learnMode === "card" && <div style={{perspective:1400,marginBottom:14}}>
         <div key={safeIdx} style={{
           position:"relative",
           transformStyle:"preserve-3d",
@@ -2375,28 +2481,30 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
-      {/* Stats strip */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
-        {[
-          { label:"진도", value:`${pct}%`, sub:`${learned}/${totalWords}` },
-          { label:"오늘", value:stats.todayCount||0, sub:"문항" },
-          { label:"연속", value:`${stats.streak||0}일`, sub:"스트릭" },
-        ].map(item => (
-          <div key={item.label} style={{
-            padding:"14px 10px 12px",borderRadius:20,textAlign:"center",
-            background:"rgba(255,255,255,0.72)",
-            border:"1px solid rgba(255,255,255,0.90)",
-            backdropFilter:"blur(18px)",
-            boxShadow:"0 4px 16px rgba(28,27,26,0.05),inset 1px 1px 0 rgba(255,255,255,0.9)",
-          }}>
-            <div style={{fontSize:10,color:"var(--sub2)",fontWeight:900,textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>{item.label}</div>
-            <div style={{fontSize:"clamp(20px,5vw,28px)",fontWeight:900,lineHeight:1,color:"var(--text)"}}>{item.value}</div>
-            <div style={{fontSize:11,color:"var(--sub)",marginTop:5,fontWeight:700}}>{item.sub}</div>
-          </div>
-        ))}
-      </div>
+      {/* Stats strip — card mode only */}
+      {learnMode === "card" && (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
+          {[
+            { label:"진도", value:`${pct}%`, sub:`${learned}/${totalWords}` },
+            { label:"오늘", value:stats.todayCount||0, sub:"문항" },
+            { label:"연속", value:`${stats.streak||0}일`, sub:"스트릭" },
+          ].map(item => (
+            <div key={item.label} style={{
+              padding:"14px 10px 12px",borderRadius:20,textAlign:"center",
+              background:"rgba(255,255,255,0.72)",
+              border:"1px solid rgba(255,255,255,0.90)",
+              backdropFilter:"blur(18px)",
+              boxShadow:"0 4px 16px rgba(28,27,26,0.05),inset 1px 1px 0 rgba(255,255,255,0.9)",
+            }}>
+              <div style={{fontSize:10,color:"var(--sub2)",fontWeight:900,textTransform:"uppercase",letterSpacing:".08em",marginBottom:6}}>{item.label}</div>
+              <div style={{fontSize:"clamp(20px,5vw,28px)",fontWeight:900,lineHeight:1,color:"var(--text)"}}>{item.value}</div>
+              <div style={{fontSize:11,color:"var(--sub)",marginTop:5,fontWeight:700}}>{item.sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -2863,25 +2971,35 @@ function VocabScreen({ stats, onStudyChapter, onToggleWordFavorite, onAddUserWor
       {showAdd && <UserWordForm onAdd={(word)=>{onAddUserWord(word);setShowAdd(false);}} onCancel={()=>setShowAdd(false)}/>}
 
       {/* Filters */}
-      <div style={{display:"flex", gap:8, marginBottom:10, overflowX:"auto", paddingBottom:2}}>
-        <Chip label="전체" active={level==="all"} onClick={()=>setLevel("all")}/>
-        {[...new Set(chapters.map(ch => ch.level))].sort((a,b)=>a-b).map(l => (
-          <Chip key={l} label={l===0 ? "내 단어" : `HSK ${l}`} active={level===String(l)} onClick={()=>setLevel(String(l))}/>
-        ))}
-      </div>
-      <div style={{display:"flex", gap:8, marginBottom:14, overflowX:"auto", paddingBottom:2}}>
-        <Chip label="모든 태그" active={tag==="all"} onClick={()=>setTag("all")}/>
-        {tags.slice(0,18).map(t => <Chip key={t} label={t} active={tag===t} onClick={()=>setTag(t)} color="var(--gold)"/>)}
-      </div>
-      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:20,flexWrap:"wrap"}}>
-        {[["all","난이도 전체"],["1","쉬움"],["2","보통"],["3","어려움"]].map(([k,l])=>(
-          <Chip key={k} label={l} active={difficulty===k} onClick={()=>setDifficulty(k)} color="var(--coral)"/>
-        ))}
-        <Chip label="즐겨찾기" active={onlyFav} onClick={()=>setOnlyFav(v=>!v)} color="var(--gold)"/>
-        <Btn variant="primary" onClick={startFilteredStudy} disabled={totalShown===0}
-          style={{padding:"8px 14px",fontSize:13,marginLeft:"auto"}}>
-          결과 학습
-        </Btn>
+      <div style={{marginBottom:16,display:"flex",flexDirection:"column",gap:8}}>
+        <div style={{
+          display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",
+          WebkitMaskImage:"linear-gradient(to right,black 90%,transparent 100%)",
+          maskImage:"linear-gradient(to right,black 90%,transparent 100%)",
+        }}>
+          <Chip label="전체" active={level==="all"} onClick={()=>setLevel("all")}/>
+          {[...new Set(chapters.map(ch => ch.level))].sort((a,b)=>a-b).map(l => (
+            <Chip key={l} label={l===0?"내 단어":`HSK ${l}`} active={level===String(l)} onClick={()=>setLevel(String(l))}/>
+          ))}
+        </div>
+        <div style={{
+          display:"flex",gap:7,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none",
+          WebkitMaskImage:"linear-gradient(to right,black 90%,transparent 100%)",
+          maskImage:"linear-gradient(to right,black 90%,transparent 100%)",
+        }}>
+          <Chip label="모든 태그" active={tag==="all"} onClick={()=>setTag("all")}/>
+          {tags.slice(0,18).map(t => <Chip key={t} label={t} active={tag===t} onClick={()=>setTag(t)} color="var(--gold)"/>)}
+        </div>
+        <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}>
+          {[["all","전체"],["1","쉬움"],["2","보통"],["3","어려움"]].map(([k,l])=>(
+            <Chip key={k} label={l} active={difficulty===k} onClick={()=>setDifficulty(k)} color="var(--coral)"/>
+          ))}
+          <Chip label="★ 즐겨찾기" active={onlyFav} onClick={()=>setOnlyFav(v=>!v)} color="var(--gold)"/>
+          <Btn variant="primary" onClick={startFilteredStudy} disabled={totalShown===0}
+            style={{padding:"8px 16px",fontSize:13,marginLeft:"auto",whiteSpace:"nowrap"}}>
+            {totalShown}개 학습 →
+          </Btn>
+        </div>
       </div>
 
       {filtered.length === 0 && <EmptyState icon="🔎" title="검색 결과 없음" sub="다른 키워드로 검색해 보세요"/>}
