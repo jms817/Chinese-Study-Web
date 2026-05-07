@@ -2093,6 +2093,18 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
             <div style={{fontSize:"clamp(27px,5vw,44px)",fontWeight:900,marginTop:4,letterSpacing:0,overflowWrap:"anywhere",lineHeight:1.08}}>{focusWord.meaning}</div>
             <div style={{display:"flex",gap:10,alignItems:"center",marginTop:14}}>
               <TTSBtn text={focusWord.char}/>
+              {onToggleWordFavorite && focusWord.char && (() => {
+                const fws = (stats?.favorites?.words) || {};
+                const isFav = !!fws[wordKey(focusWord)];
+                return (
+                  <button onClick={()=>onToggleWordFavorite(focusWord)} title={isFav?"즐겨찾기 해제":"즐겨찾기 추가"} style={{
+                    width:46,height:46,borderRadius:14,border:"1px solid var(--border)",cursor:"pointer",
+                    background:isFav?"var(--gold-dim)":"rgba(255,255,255,0.6)",
+                    color:isFav?"var(--gold)":"var(--sub)",fontSize:20,flexShrink:0,
+                    display:"grid",placeItems:"center",
+                  }}>{isFav?"★":"☆"}</button>
+                );
+              })()}
               <button onClick={onStartScene} style={{
                 flex:1,padding:"14px 16px",borderRadius:20,border:"none",
                 background:"var(--accent)",color:"#fff",fontSize:15,fontWeight:900,
@@ -2212,6 +2224,7 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
   const word = queue[idx];
   const total = queue.length;
   const progressPct = total ? Math.round(((idx+1) / total) * 100) : 0;
+  const favWords = (stats?.favorites?.words) || {};
   const modeMeta = {
     card:{ label:"LEARN", sub:"한자를 보고 뜻과 예문까지 천천히 익혀요." },
     listen:{ label:"LISTEN", sub:"소리를 먼저 듣고 떠올리는 감각을 키워요." },
@@ -2352,6 +2365,14 @@ function StudyScreen({ chapter, stats, onResult, onBack, onToggleWordFavorite })
                     color:showStroke?"var(--accent)":"var(--sub)",
                     cursor:"pointer",fontFamily:"var(--font-ui)",
                   }}>획순 {showStroke?"▲":"▼"}</button>
+                  {onToggleWordFavorite && (
+                    <button onClick={e=>{e.stopPropagation();onToggleWordFavorite(word);}} title={favWords[wordKey(word)]?"즐겨찾기 해제":"즐겨찾기 추가"} style={{
+                      width:34,height:34,borderRadius:10,border:"1px solid var(--border)",cursor:"pointer",
+                      background:favWords[wordKey(word)]?"var(--gold-dim)":"var(--card2)",
+                      color:favWords[wordKey(word)]?"var(--gold)":"var(--sub)",fontSize:16,
+                      display:"grid",placeItems:"center",flexShrink:0,
+                    }}>{favWords[wordKey(word)]?"★":"☆"}</button>
+                  )}
                 </div>
               </div>
             </div>
@@ -2998,9 +3019,13 @@ function MyLibraryScreen({ stats, onStudyChapter, onToggleWordFavorite, onToggle
   const userWords = stats.userWords || [];
   const q = query.trim().toLowerCase();
 
-  const savedWords = allWords
-    .filter(w => !!favWords[wordKey(w)] || (w.chapterId === "user" || w.level === 0))
-    .filter((w, index, arr) => arr.findIndex(x => wordKey(x) === wordKey(w)) === index);
+  const extraFavWords = Object.entries(favWords)
+    .filter(([key, fw]) => fw.meaning && !allWords.some(w => wordKey(w) === key))
+    .map(([, fw]) => ({ char:fw.char, pinyin:fw.pinyin||"", meaning:fw.meaning||"", chapterId:fw.chapterId||"extra", level:0, tags:[] }));
+  const savedWords = [
+    ...allWords.filter(w => !!favWords[wordKey(w)] || w.chapterId === "user" || w.level === 0),
+    ...extraFavWords,
+  ].filter((w, index, arr) => arr.findIndex(x => wordKey(x) === wordKey(w)) === index);
   const dueWords = getDueReviewWords(stats);
   const savedPhraseItems = PHRASE_SETS.flatMap(set =>
     set.phrases.map(phrase => ({ set, phrase, key:`${set.id}:${phrase.char}` }))
@@ -3639,12 +3664,15 @@ function tokenizeZh(text, wordList) {
       // single char — try to find in word list
       const single = sorted.find(w => w.char === text[i]);
       const fallback = BASIC_HANZI_FALLBACK[text[i]];
+      const syntheticWord = !single && fallback
+        ? { char: text[i], meaning: fallback.meaning, pinyin: fallback.pinyin, tones: null, chapterId: "extra" }
+        : null;
       result.push({
         text: text[i],
         meaning: single?.meaning || fallback?.meaning || "",
         pinyin: single?.pinyin || fallback?.pinyin || "",
         tones: single?.tones || null,
-        word: single || null,
+        word: single || syntheticWord,
         isPunct: false
       });
       i++;
@@ -5186,6 +5214,7 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
   const [sessionXP, setSessionXP] = React.useState(0);
 
   const allWords = React.useMemo(() => getAllWords(stats), [stats]);
+  const favWords = (stats?.favorites?.words) || {};
   const scenes = React.useMemo(() => THEME_CHAPTERS.concat(HSK_CHAPTERS.slice(0, 8)), []);
   const shuffle = arr => [...arr].sort(() => Math.random() - .5);
   const allDrillOptions = React.useMemo(() => {
@@ -5295,8 +5324,16 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
           <div className="focus-hanzi" style={{marginBottom:10,...hanziDisplayStyle(w.char)}}>{w.char}</div>
           <div style={{fontSize:13,letterSpacing:"0.08em",color:"var(--sub2)",marginBottom:4,overflowWrap:"anywhere"}}>{w.pinyin}</div>
           <div style={{fontSize:19,fontWeight:800,letterSpacing:0,marginBottom:10,overflowWrap:"anywhere"}}>{w.meaning}</div>
-          <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:10,alignItems:"center"}}>
             <TTSBtn text={w.char}/>
+            {onToggleWordFavorite && (
+              <button onClick={()=>onToggleWordFavorite(w)} title={favWords[wordKey(w)]?"즐겨찾기 해제":"즐겨찾기 추가"} style={{
+                width:36,height:36,borderRadius:10,border:"1px solid var(--border)",cursor:"pointer",
+                background:favWords[wordKey(w)]?"var(--gold-dim)":"var(--card2)",
+                color:favWords[wordKey(w)]?"var(--gold)":"var(--sub)",fontSize:17,
+                display:"grid",placeItems:"center",
+              }}>{favWords[wordKey(w)]?"★":"☆"}</button>
+            )}
           </div>
           {w.example && (
             <SentenceInsight
@@ -5808,7 +5845,7 @@ function App() {
       const favorites = { words:{...((s.favorites||{}).words||{})}, phrases:{...((s.favorites||{}).phrases||{})} };
       const key = wordKey(word);
       if (favorites.words[key]) delete favorites.words[key];
-      else favorites.words[key] = { char:word.char, chapterId:word.chapterId, savedAt:new Date().toISOString() };
+      else favorites.words[key] = { char:word.char, chapterId:word.chapterId, pinyin:word.pinyin||"", meaning:word.meaning||"", savedAt:new Date().toISOString() };
       return { ...s, favorites };
     });
   };
