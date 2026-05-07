@@ -188,7 +188,7 @@ input:focus, textarea:focus, select:focus {
   z-index:100;
   box-shadow:0 18px 48px rgba(28,27,26,0.13), inset 1px 1px 0 rgba(255,255,255,0.72);
 }
-.bnav-inner { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; gap:10px; }
+.bnav-inner { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:10px; }
 .bnav-item {
   display:flex; flex-direction:column; align-items:center; gap:4px;
   min-width:0; min-height:78px; justify-content:center;
@@ -263,63 +263,142 @@ input:focus, textarea:focus, select:focus {
   .bnav-item .sub { font-size:9px; }
 }
 
-.hub-sheet {
-  position:fixed;
-  left:50%;
-  bottom:calc(max(14px, env(safe-area-inset-bottom)) + 78px);
-  transform:translateX(-50%);
-  width:min(560px, calc(100vw - 28px));
-  background:rgba(255,255,255,0.74);
-  backdrop-filter:blur(24px);
-  -webkit-backdrop-filter:blur(24px);
-  border:1px solid rgba(255,255,255,0.72);
-  border-radius:20px;
-  box-shadow:0 30px 60px rgba(0,0,0,0.08);
-  padding:14px;
-  z-index:101;
-  animation:hubFloat .18s ease;
+/* ── CONCEPT SCREEN ───────────────────────────── */
+.concept-screen { display:flex; flex-direction:column; gap:0; }
+.concept-header { margin-bottom:28px; }
+.concept-title {
+  font-family:var(--font-brush);
+  font-size:clamp(30px,4.5vw,44px);
+  color:var(--text);
+  line-height:1;
 }
-@keyframes hubFloat {
-  from { opacity:0; transform:translateX(-50%) translateY(10px) scale(.98); }
-  to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+.concept-subtitle {
+  font-family:var(--font-ui);
+  font-size:12px;
+  color:var(--sub2);
+  letter-spacing:.1em;
+  margin-top:6px;
 }
-.hub-head {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:12px;
-}
-.hub-title {
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:0.12em;
-  text-transform:uppercase;
-  color:var(--sub);
-}
-.hub-grid {
+.concept-grid {
   display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:10px;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
 }
-.hub-tool {
+@media(min-width:600px){ .concept-grid { grid-template-columns:repeat(3,1fr); gap:14px; } }
+@media(min-width:900px){ .concept-grid { grid-template-columns:repeat(4,1fr); } }
+.concept-card {
+  position:relative;
   border:none;
-  background:rgba(255,255,255,0.62);
-  border-radius:14px;
-  padding:12px 8px 11px;
+  background:rgba(255,255,255,0.78);
+  border-radius:22px;
+  padding:22px 18px 18px;
   cursor:pointer;
-  box-shadow:inset 1px 1px 0 rgba(255,255,255,0.5);
   display:flex;
   flex-direction:column;
-  align-items:center;
-  gap:6px;
-  color:var(--text);
-  transition:all .16s ease;
+  align-items:flex-start;
+  gap:5px;
+  box-shadow:0 4px 20px rgba(28,27,26,0.06),inset 1px 1px 0 rgba(255,255,255,0.9);
+  transition:all .18s ease;
+  text-align:left;
+  backdrop-filter:blur(8px);
 }
-.hub-tool:hover { transform:translateY(-1px); box-shadow:inset 1px 1px 0 rgba(255,255,255,0.5), 0 10px 24px rgba(0,0,0,0.05); }
-.hub-tool .icon { font-size:22px; font-family:var(--font-zh); line-height:1; }
-.hub-tool .label { font-size:13px; font-weight:800; letter-spacing:0; text-transform:none; font-family:var(--font-body); }
-.hub-tool .desc { font-size:11px; color:var(--sub2); line-height:1.35; text-transform:none; text-align:center; }
+.concept-card:hover { transform:translateY(-3px); box-shadow:0 14px 36px rgba(28,27,26,0.11),inset 1px 1px 0 rgba(255,255,255,0.9); }
+.concept-card:active { transform:translateY(-1px); }
+.concept-card-icon {
+  font-size:30px;
+  font-family:var(--font-zh);
+  line-height:1;
+  color:var(--accent);
+  margin-bottom:6px;
+  display:block;
+}
+.concept-card-label { font-size:15px; font-weight:900; color:var(--text); font-family:var(--font-ui); line-height:1; }
+.concept-card-desc { font-size:12px; color:var(--sub2); font-family:var(--font-body); margin-top:3px; line-height:1.3; }
+.concept-badge {
+  position:absolute; top:12px; right:12px;
+  background:var(--coral); color:white;
+  font-size:10px; font-weight:700;
+  min-width:18px; height:18px;
+  border-radius:99px; display:grid; place-items:center; padding:0 4px;
+}
+
+/* ── ME SCREEN ────────────────────────────────── */
+.me-screen { display:flex; flex-direction:column; gap:16px; }
+.me-user-card {
+  background:linear-gradient(135deg,var(--accent),var(--accent-bright));
+  border-radius:24px;
+  padding:24px 22px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  box-shadow:0 14px 36px rgba(27,157,142,0.22);
+}
+.me-avatar {
+  width:56px; height:56px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.22);
+  display:grid; place-items:center;
+  font-family:var(--font-zh);
+  font-size:28px; color:#fff;
+  flex-shrink:0;
+}
+.me-info { flex:1; min-width:0; }
+.me-name { font-size:20px; font-weight:900; color:#fff; font-family:var(--font-ui); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.me-sync { font-size:12px; color:rgba(255,255,255,0.72); margin-top:4px; }
+.me-stats-row { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.me-stat {
+  background:rgba(255,255,255,0.78);
+  border-radius:20px;
+  padding:18px 20px;
+  box-shadow:0 4px 16px rgba(28,27,26,0.06),inset 1px 1px 0 rgba(255,255,255,0.9);
+  backdrop-filter:blur(8px);
+}
+.me-stat-num { font-size:30px; font-weight:900; color:var(--accent); font-family:var(--font-ui); line-height:1; }
+.me-stat-lbl { font-size:12px; color:var(--sub2); margin-top:4px; }
+.me-actions { display:flex; flex-direction:column; gap:10px; }
+.me-action-card {
+  border:none;
+  background:rgba(255,255,255,0.78);
+  border-radius:20px;
+  padding:16px 20px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  text-align:left;
+  box-shadow:0 4px 16px rgba(28,27,26,0.06),inset 1px 1px 0 rgba(255,255,255,0.9);
+  transition:all .16s ease;
+  backdrop-filter:blur(8px);
+  width:100%;
+}
+.me-action-card:hover { transform:translateX(3px); box-shadow:0 8px 28px rgba(28,27,26,0.1),inset 1px 1px 0 rgba(255,255,255,0.9); }
+.me-action-icon {
+  font-size:22px;
+  font-family:var(--font-zh);
+  color:var(--accent);
+  width:46px; height:46px;
+  border-radius:15px;
+  background:rgba(27,157,142,0.1);
+  display:grid; place-items:center;
+  flex-shrink:0;
+}
+.me-action-info { flex:1; }
+.me-action-label { font-size:15px; font-weight:900; color:var(--text); font-family:var(--font-ui); }
+.me-action-desc { font-size:12px; color:var(--sub2); margin-top:2px; }
+.me-action-arrow { font-size:16px; color:var(--sub2); }
+.me-logout {
+  border:none;
+  background:none;
+  color:var(--sub2);
+  font-size:13px;
+  cursor:pointer;
+  padding:12px;
+  border-radius:12px;
+  transition:all .16s ease;
+  align-self:center;
+  font-family:var(--font-ui);
+}
+.me-logout:hover { background:rgba(220,80,80,0.08); color:var(--coral); }
 .wordmark {
   font-family:var(--font-brush);
   font-size:clamp(22px, 2.4vw, 32px);
@@ -5701,23 +5780,96 @@ function SceneScreen({ stats, onResult, onToggleWordFavorite }) {
   );
 }
 
-const NAV = [
-  { id:"home",    label:"홈",   sub:"入口", icon:"⌂" },
-  { id:"scene",   label:"연습", sub:"習",   icon:"習" },
-  { id:"archive", label:"서재", sub:"冊",   icon:"◫" },
-  { id:"stats",   label:"기록", sub:"記",   icon:"記" },
-];
+function ConceptScreen({ stats, onGoTo }) {
+  const reviewCount = getDueReviewWords(stats).length;
+  const tools = [
+    { id:"my",      label:"내 서재", desc:"별표 모음",   icon:"藏" },
+    { id:"vocab",   label:"단어장", desc:"한자와 뜻",    icon:"文" },
+    { id:"phrase",  label:"회화",   desc:"장면별 표현",  icon:"話" },
+    { id:"grammar", label:"문법",   desc:"말의 뼈대",    icon:"法" },
+    { id:"review",  label:"복습",   desc:"잊기 전에",    icon:"回", badge: reviewCount },
+    { id:"commute", label:"듣기",   desc:"퇴근길 재생",  icon:"聽" },
+    { id:"chat",    label:"도움",   desc:"AI 튜터",      icon:"助" },
+  ];
+  return (
+    <div className="concept-screen">
+      <div className="concept-header">
+        <div className="concept-title">개념</div>
+        <div className="concept-subtitle">학습 도구 모음</div>
+      </div>
+      <div className="concept-grid">
+        {tools.map(tool => (
+          <button key={tool.id} className="concept-card" onClick={() => onGoTo(tool.id)}>
+            {tool.badge > 0 && <span className="concept-badge">{tool.badge}</span>}
+            <span className="concept-card-icon">{tool.icon}</span>
+            <span className="concept-card-label">{tool.label}</span>
+            <span className="concept-card-desc">{tool.desc}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-const ARCHIVE_TOOLS = [
-  { id:"my",      label:"내 서재", desc:"별표 모음", icon:"藏" },
-  { id:"vocab",   label:"단어장", desc:"한자와 뜻", icon:"文" },
-  { id:"phrase",  label:"회화",   desc:"장면별 표현", icon:"話" },
-  { id:"grammar", label:"문법",   desc:"말의 뼈대", icon:"法" },
-  { id:"review",  label:"복습",   desc:"잊기 전에", icon:"回" },
-  { id:"commute", label:"듣기",   desc:"퇴근길 재생", icon:"聽" },
-  { id:"chat",    label:"도움",   desc:"AI 튜터", icon:"助" },
-  { id:"backup",  label:"계정",   desc:"저장과 백업", icon:"印" },
-  { id:"inspect", label:"검수",   desc:"표현 점검", icon:"校" },
+function MeScreen({ session, stats, syncStatus, onGoTo, onSignOut, onOpenSettings }) {
+  const displayName = session?.user?.user_metadata?.display_name
+    || session?.user?.email?.split("@")[0]
+    || "학습자";
+  const totalWords = Object.keys(stats.words || {}).length;
+  const totalFav = Object.values(stats.words || {}).filter(w => w.favorite).length;
+  const actions = [
+    { id:"stats",   icon:"記", label:"학습 기록",   desc:"상세 통계 보기" },
+    { id:"backup",  icon:"印", label:"계정 & 백업", desc:"클라우드 동기화" },
+    { id:"inspect", icon:"校", label:"표현 검수",   desc:"AI 표현 점검" },
+  ];
+  return (
+    <div className="me-screen">
+      <div className="me-user-card">
+        <div className="me-avatar">我</div>
+        <div className="me-info">
+          <div className="me-name">{displayName}</div>
+          <div className="me-sync">{syncStatus}</div>
+        </div>
+      </div>
+      <div className="me-stats-row">
+        <div className="me-stat">
+          <div className="me-stat-num">{totalWords}</div>
+          <div className="me-stat-lbl">학습 단어</div>
+        </div>
+        <div className="me-stat">
+          <div className="me-stat-num">{totalFav}</div>
+          <div className="me-stat-lbl">즐겨찾기</div>
+        </div>
+      </div>
+      <div className="me-actions">
+        {actions.map(a => (
+          <button key={a.id} className="me-action-card" onClick={() => onGoTo(a.id)}>
+            <span className="me-action-icon">{a.icon}</span>
+            <div className="me-action-info">
+              <div className="me-action-label">{a.label}</div>
+              <div className="me-action-desc">{a.desc}</div>
+            </div>
+            <span className="me-action-arrow">›</span>
+          </button>
+        ))}
+        <button className="me-action-card" onClick={onOpenSettings}>
+          <span className="me-action-icon">⚙</span>
+          <div className="me-action-info">
+            <div className="me-action-label">테마 설정</div>
+            <div className="me-action-desc">색상 · 폰트 · 초기화</div>
+          </div>
+          <span className="me-action-arrow">›</span>
+        </button>
+      </div>
+      <button className="me-logout" onClick={onSignOut}>로그아웃</button>
+    </div>
+  );
+}
+
+const NAV = [
+  { id:"learn",   label:"학습", sub:"學", icon:"學" },
+  { id:"concept", label:"개념", sub:"念", icon:"念" },
+  { id:"me",      label:"나",   sub:"我", icon:"我" },
 ];
 
 /* ─── Local account helpers ─── */
@@ -5934,7 +6086,6 @@ function App() {
   const suppressNextAutoSyncRef = React.useRef(false);
   const [sessionLoading, setSessionLoading] = React.useState(true);
   const [screen, setScreen] = React.useState("home");
-  const [hubOpen, setHubOpen] = React.useState(false);
   const [activeChapter, setActiveChapter] = React.useState(null);
   const [tweaksOpen, setTweaksOpen] = React.useState(false);
   const [tweaks, setTweaks] = React.useState(() => ({...TWEAK_DEFAULTS}));
@@ -6189,16 +6340,14 @@ function App() {
   }, [stats, tweaks, session?.user?.id, supabaseClient]);
 
   const reviewCount = getDueReviewWords(stats).length;
-  const archiveScreens = ARCHIVE_TOOLS.map(item => item.id);
-  const activeNav = archiveScreens.includes(screen) ? "archive" : screen;
+  const learnScreens = ["home","scene","study","mission"];
+  const conceptScreens = ["concept","my","vocab","phrase","grammar","review","commute","chat"];
+  const meScreens = ["me","stats","backup","inspect"];
+  const activeNav = conceptScreens.includes(screen) ? "concept" : meScreens.includes(screen) ? "me" : "learn";
   const goNav = (id) => {
-    if (id === "archive") {
-      setHubOpen(v => !v);
-      if (!hubOpen && !archiveScreens.includes(screen)) setScreen("my");
-      return;
-    }
-    setHubOpen(false);
-    setScreen(id);
+    if (id === "learn")   { setScreen("home");    return; }
+    if (id === "concept") { setScreen("concept"); return; }
+    if (id === "me")      { setScreen("me");      return; }
   };
   const handleStartScene = React.useCallback(() => setScreen("scene"), []);
 
@@ -6261,7 +6410,7 @@ function App() {
               onClick={()=>goNav(n.id)}>
               <span className="icon">{n.icon}</span>
               <span>{n.label}</span>
-              {n.id==="archive" && reviewCount>0 &&
+              {n.id==="concept" && reviewCount>0 &&
                 <span className="nav-badge">{reviewCount}</span>}
             </div>
           ))}
@@ -6291,6 +6440,17 @@ function App() {
         {screen==="scene"  && <SceneScreen stats={stats} onResult={handleResult} onToggleWordFavorite={handleToggleWordFavorite}/>}
         {screen==="study"  && <StudyScreen chapter={activeChapter||getStudyChapters(stats)[0]} stats={stats} onResult={handleResult} onBack={()=>setScreen("home")} onToggleWordFavorite={handleToggleWordFavorite}/>}
         {screen==="mission" && <MissionScreen stats={stats} onCompleteMission={handleMissionComplete}/>}
+        {screen==="concept" && <ConceptScreen stats={stats} onGoTo={(id)=>setScreen(id)}/>}
+        {screen==="me"      && (
+          <MeScreen
+            session={session}
+            stats={stats}
+            syncStatus={syncStatus}
+            onGoTo={(id)=>setScreen(id)}
+            onSignOut={handleLogout}
+            onOpenSettings={()=>setTweaksOpen(true)}
+          />
+        )}
         {screen==="my"     && <MyLibraryScreen stats={stats} onStudyChapter={handleStudyChapter} onToggleWordFavorite={handleToggleWordFavorite} onTogglePhraseFavorite={handleTogglePhraseFavorite}/>}
         {screen==="vocab"  && <VocabScreen stats={stats} onStudyChapter={handleStudyChapter} onToggleWordFavorite={handleToggleWordFavorite} onAddUserWord={handleAddUserWord}/>}
         {screen==="phrase" && <PhraseScreen stats={stats} onTogglePhraseFavorite={handleTogglePhraseFavorite} onToggleWordFavorite={handleToggleWordFavorite}/>}
@@ -6322,25 +6482,7 @@ function App() {
         )}
       </main>
 
-      {hubOpen && (
-        <div className="hub-sheet">
-          <div className="hub-head">
-            <div className="hub-title">서재</div>
-            <button onClick={()=>setHubOpen(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"var(--sub)"}}>✕</button>
-          </div>
-          <div className="hub-grid">
-            {ARCHIVE_TOOLS.map(tool => (
-              <button key={tool.id} className="hub-tool" onClick={()=>{ setScreen(tool.id); setHubOpen(false); }}>
-                <span className="icon">{tool.icon}</span>
-                <span className="label">{tool.label}</span>
-                <span className="desc">{tool.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom nav (zen hub) */}
+      {/* Bottom nav */}
       <nav className="bnav">
         <div className="bnav-inner">
           {NAV.map(n => (
@@ -6349,7 +6491,7 @@ function App() {
               <span className="icon">{n.icon}</span>
               <span className="label">{n.label}</span>
               <span className="sub">{n.sub}</span>
-              {n.id==="archive" && reviewCount>0 &&
+              {n.id==="concept" && reviewCount>0 &&
                 <span className="bnav-badge">{reviewCount}</span>}
             </div>
           ))}
