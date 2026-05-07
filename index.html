@@ -86,8 +86,10 @@ button, input, textarea { -webkit-tap-highlight-color:transparent; }
 ::-webkit-scrollbar-thumb { background:rgba(28,27,26,0.12); border-radius:2px; }
 ::selection { background:var(--accent-dim); }
 
-@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-@keyframes blink  { 0%,100%{opacity:.3} 50%{opacity:1} }
+@keyframes fadeUp    { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes blink     { 0%,100%{opacity:.3} 50%{opacity:1} }
+@keyframes matchShake{ 0%,100%{transform:translateX(0) rotate(0)} 20%{transform:translateX(-7px) rotate(-2deg)} 40%{transform:translateX(7px) rotate(2deg)} 60%{transform:translateX(-5px) rotate(-1deg)} 80%{transform:translateX(5px) rotate(1deg)} }
+@keyframes matchPop  { 0%{transform:scale(1)} 40%{transform:scale(1.10)} 100%{transform:scale(1)} }
 
 /* ── INPUT / TEXTAREA — recessed glass ─── */
 input, textarea, select {
@@ -2182,6 +2184,12 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
   const syncDot = syncState==="error" ? "var(--coral)" : syncState==="synced" ? "var(--gold)" : "var(--sub2)";
 
   const cardPool = React.useMemo(() => {
+    const fallback = [{ char:"学", pinyin:"xué", meaning:"배우다", example:"我学习中文。", exPinyin:"Wǒ xuéxí zhōngwén。", exMeaning:"나는 중국어를 공부해요.", chapterId:"hsk1" }];
+    if (learnMode === "star") {
+      const favWords = (stats?.favorites?.words) || {};
+      const starred = allWords.filter(w => favWords[wordKey(w)]);
+      return starred.length ? starred.sort(() => Math.random() - 0.5) : fallback;
+    }
     const nextChapter = chapters.find(ch => ((stats.chapterProgress||{})[ch.id]||0) < ch.words.length) || chapters[0];
     const nextProg = nextChapter ? ((stats.chapterProgress||{})[nextChapter.id]||0) : 0;
     const pool = [...reviewWords.slice(0, 5)];
@@ -2194,8 +2202,8 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
       if (pool.length >= 12) return;
       if (!pool.some(x => x.char === w.char)) pool.push(w);
     });
-    return pool.length ? pool : [{ char:"学", pinyin:"xué", meaning:"배우다", example:"我学习中文。", exPinyin:"Wǒ xuéxí zhōngwén。", exMeaning:"나는 중국어를 공부해요.", chapterId:"hsk1" }];
-  }, [stats]);
+    return pool.length ? pool : fallback;
+  }, [stats, learnMode]);
 
   const safeIdx = cardPool.length ? cardIdx % cardPool.length : 0;
   const focusWord = cardPool[safeIdx];
@@ -2211,8 +2219,9 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
 
   const MODES = [
     { id:"card",    label:"카드",  icon:"🃏", sub:"플립",   ready:true  },
+    { id:"star",    label:"별",    icon:"⭐", sub:"즐겨찾기",ready:true  },
+    { id:"match",   label:"매칭",  icon:"⊞",  sub:"짝찾기", ready:true  },
     { id:"build",   label:"조립",  icon:"🧩", sub:"드래그", ready:false },
-    { id:"match",   label:"매칭",  icon:"⊞",  sub:"짝찾기", ready:false },
     { id:"error",   label:"오류",  icon:"🔍", sub:"찾기",   ready:false },
     { id:"predict", label:"예측",  icon:"💭", sub:"채우기", ready:false },
   ];
@@ -2327,8 +2336,13 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
         ))}
       </div>
 
-      {/* Mode content */}
-      {learnMode !== "card" && (
+      {/* Mode content: match */}
+      {learnMode === "match" && (
+        <MatchingMode cardPool={cardPool} />
+      )}
+
+      {/* Mode content: placeholder for unbuilt modes */}
+      {(learnMode !== "card" && learnMode !== "star" && learnMode !== "match") && (
         <div style={{
           background:"rgba(255,255,255,0.75)",border:"1px solid rgba(255,255,255,0.92)",
           borderRadius:28,padding:"44px 24px",textAlign:"center",marginBottom:14,
@@ -2339,13 +2353,11 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
           <div style={{fontSize:20,fontWeight:900,color:"var(--text)",fontFamily:"var(--font-ui)",marginBottom:8}}>{currentMode.label} 모드</div>
           <div style={{fontSize:14,color:"var(--sub)",lineHeight:1.7,maxWidth:300,margin:"0 auto"}}>
             {learnMode==="build" && "문장을 단어 조각으로 분해해서 드래그로 순서대로 재조립해요."}
-            {learnMode==="match" && "마작식으로 카드를 끌어다 알맞은 뜻 카드에 짝 맞춰요."}
             {learnMode==="error" && "일부러 틀린 문장을 보고 어디가 잘못됐는지 짚어내요."}
             {learnMode==="predict" && "문장 앞부분만 보고 뒷부분을 예측해서 채워보세요."}
           </div>
           <div style={{
-            display:"inline-block",marginTop:20,
-            padding:"7px 18px",borderRadius:99,
+            display:"inline-block",marginTop:20,padding:"7px 18px",borderRadius:99,
             background:"rgba(166,106,19,0.10)",color:"var(--gold)",
             fontSize:12,fontWeight:900,letterSpacing:".06em",
           }}>곧 업데이트 예정</div>
@@ -2353,7 +2365,7 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
       )}
 
       {/* Flip card */}
-      {learnMode === "card" && <div style={{perspective:1400,marginBottom:14}}>
+      {(learnMode === "card" || learnMode === "star") && <div style={{perspective:1400,marginBottom:14}}>
         <div key={safeIdx} style={{
           position:"relative",
           transformStyle:"preserve-3d",
@@ -2483,8 +2495,8 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
         </div>
       </div>}
 
-      {/* Stats strip — card mode only */}
-      {learnMode === "card" && (
+      {/* Stats strip — card/star mode */}
+      {(learnMode === "card" || learnMode === "star") && (
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10}}>
           {[
             { label:"진도", value:`${pct}%`, sub:`${learned}/${totalWords}` },
@@ -2509,7 +2521,217 @@ function HomeScreen({ stats, onStartScene, onReview, session, syncStatus, syncSt
   );
 }
 
-Object.assign(window, { HomeScreen, TEAL, TEAL_DARK, TEAL_SHADOW });
+function MatchingMode({ cardPool }) {
+  const PAIR_COUNT = 4;
+  const [round, setRound] = React.useState(0);
+  const [matched, setMatched] = React.useState(new Set());
+  const [dragging, setDragging] = React.useState(null);
+  const [flash, setFlash] = React.useState(null);
+  const [shake, setShake] = React.useState(null);
+  const [score, setScore] = React.useState(0);
+  const [roundDone, setRoundDone] = React.useState(false);
+  const wordRefs = React.useRef({});
+
+  const pairs = React.useMemo(() => {
+    const pool = [...cardPool].sort(() => Math.random() - 0.5);
+    return pool.slice(0, Math.min(PAIR_COUNT, pool.length));
+  }, [round, cardPool]);
+
+  const [meanings, setMeanings] = React.useState([]);
+  React.useEffect(() => {
+    setMeanings([...pairs].sort(() => Math.random() - 0.5));
+    setMatched(new Set());
+    setRoundDone(false);
+  }, [pairs]);
+
+  const handlePointerDown = (e, word) => {
+    if (matched.has(word.char)) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDragging({ word, x: e.clientX, y: e.clientY, w: rect.width, h: rect.height });
+  };
+
+  React.useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e) => {
+      const pt = e.touches ? e.touches[0] : e;
+      setDragging(d => d ? { ...d, x: pt.clientX, y: pt.clientY } : null);
+    };
+    const onUp = (e) => {
+      if (!dragging) { setDragging(null); return; }
+      const pt = e.changedTouches ? e.changedTouches[0] : e;
+      let hit = null;
+      for (const [char, ref] of Object.entries(wordRefs.current)) {
+        if (!ref) continue;
+        const r = ref.getBoundingClientRect();
+        if (pt.clientX >= r.left && pt.clientX <= r.right && pt.clientY >= r.top && pt.clientY <= r.bottom) {
+          hit = char; break;
+        }
+      }
+      if (hit) {
+        if (hit === dragging.word.char) {
+          setMatched(m => {
+            const next = new Set(m); next.add(hit);
+            if (next.size === pairs.length) setTimeout(() => setRoundDone(true), 500);
+            return next;
+          });
+          setScore(s => s + 10);
+          setFlash({ char: hit, ok: true });
+          setTimeout(() => setFlash(null), 700);
+        } else {
+          setShake(hit);
+          setTimeout(() => setShake(null), 500);
+        }
+      }
+      setDragging(null);
+    };
+    document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerup', onUp);
+    return () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+  }, [dragging, pairs]);
+
+  const nextRound = () => { setRound(r => r + 1); };
+
+  const cardBase = {
+    borderRadius: 20, textAlign: "center", userSelect: "none",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    minHeight: 90,
+  };
+
+  return (
+    <div style={{ userSelect: "none" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--sub)" }}>
+          {matched.size} / {pairs.length} 완성
+        </div>
+        <div style={{
+          fontSize: 15, fontWeight: 900, color: TEAL,
+          background: "rgba(27,157,142,0.10)", borderRadius: 99, padding: "4px 14px",
+        }}>+{score}점</div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 5, borderRadius: 99, background: "rgba(27,157,142,0.12)", marginBottom: 18, overflow: "hidden" }}>
+        <div style={{
+          height: "100%", borderRadius: 99,
+          background: `linear-gradient(90deg,${TEAL},var(--accent-bright))`,
+          width: `${pairs.length ? (matched.size / pairs.length) * 100 : 0}%`,
+          transition: "width .4s ease",
+        }} />
+      </div>
+
+      {/* Word cards — drop targets (show Chinese) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 10 }}>
+        {pairs.map(w => {
+          const isMatched = matched.has(w.char);
+          const isFlash = flash?.char === w.char && flash?.ok;
+          const isShake = shake === w.char;
+          return (
+            <div key={w.char} ref={el => wordRefs.current[w.char] = el} style={{
+              ...cardBase,
+              flexDirection: "column", gap: 4,
+              padding: "18px 10px",
+              background: isMatched
+                ? "rgba(27,157,142,0.12)"
+                : isFlash ? "rgba(27,157,142,0.22)" : "rgba(255,255,255,0.88)",
+              border: `2px solid ${isMatched ? TEAL : isShake ? "var(--coral)" : "rgba(255,255,255,0.92)"}`,
+              boxShadow: isMatched ? `0 4px 20px rgba(27,157,142,0.18)` : "0 4px 16px rgba(28,27,26,0.06),inset 1px 1px 0 rgba(255,255,255,0.9)",
+              animation: isShake ? "matchShake .45s ease" : isFlash ? "matchPop .4s ease" : "none",
+              transition: "background .25s, border-color .25s",
+            }}>
+              <div style={{
+                fontFamily: "var(--font-zh)",
+                fontSize: "clamp(26px,6vw,38px)",
+                fontWeight: 900, lineHeight: 1,
+                color: isMatched ? TEAL : "var(--text)",
+              }}>{w.char}</div>
+              {isMatched && (
+                <div style={{ fontSize: 12, color: TEAL, fontWeight: 700, marginTop: 2 }}>{w.meaning}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ fontSize: 11, color: "var(--sub2)", textAlign: "center", marginBottom: 10, fontWeight: 700, letterSpacing: ".06em" }}>
+        뜻 카드를 끌어서 한자에 올려놓으세요
+      </div>
+
+      {/* Meaning cards — draggable */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+        {meanings.map(w => {
+          if (matched.has(w.char)) return <div key={w.char} style={{ minHeight: 70, borderRadius: 18, background: "rgba(27,157,142,0.05)", border: "2px dashed rgba(27,157,142,0.18)" }}/>;
+          const isDragging = dragging?.word.char === w.char;
+          return (
+            <div key={w.char}
+              onPointerDown={e => handlePointerDown(e, w)}
+              style={{
+                ...cardBase,
+                padding: "14px 10px",
+                background: isDragging ? "rgba(27,157,142,0.06)" : "rgba(255,255,255,0.88)",
+                border: `1.5px solid ${isDragging ? TEAL : "rgba(28,27,26,0.08)"}`,
+                boxShadow: isDragging ? "none" : "0 4px 16px rgba(28,27,26,0.06),inset 1px 1px 0 rgba(255,255,255,0.9)",
+                opacity: isDragging ? 0.35 : 1,
+                cursor: "grab", touchAction: "none",
+                transition: "opacity .12s, border-color .12s",
+              }}>
+              <div style={{ fontSize: "clamp(12px,3vw,15px)", fontWeight: 800, color: "var(--text)", lineHeight: 1.35, overflowWrap: "anywhere" }}>
+                {w.meaning}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Floating drag card */}
+      {dragging && (
+        <div style={{
+          position: "fixed",
+          left: dragging.x - (dragging.w || 120) / 2,
+          top: dragging.y - (dragging.h || 60) / 2,
+          width: dragging.w || 120,
+          padding: "14px 10px",
+          borderRadius: 18,
+          background: `linear-gradient(135deg,${TEAL},${TEAL_DARK})`,
+          boxShadow: "0 14px 36px rgba(27,157,142,0.45)",
+          textAlign: "center", pointerEvents: "none", zIndex: 1000,
+          transform: "scale(1.08) rotate(-2deg)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{ fontSize: "clamp(12px,3vw,15px)", fontWeight: 900, color: "#fff", lineHeight: 1.3 }}>
+            {dragging.word.meaning}
+          </div>
+        </div>
+      )}
+
+      {/* Round complete overlay */}
+      {roundDone && (
+        <div style={{
+          position: "fixed", inset: 0,
+          background: "rgba(245,242,236,0.92)", backdropFilter: "blur(14px)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          zIndex: 200, animation: "fadeUp .28s ease",
+        }}>
+          <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: "var(--text)", marginBottom: 6, fontFamily: "var(--font-ui)" }}>라운드 완료!</div>
+          <div style={{ fontSize: 15, color: "var(--sub)", marginBottom: 28 }}>+{pairs.length * 10}점 획득</div>
+          <button onClick={nextRound} style={{
+            padding: "14px 36px", borderRadius: 99, fontSize: 15, fontWeight: 900,
+            background: `linear-gradient(135deg,${TEAL},${TEAL_DARK})`, color: "#fff",
+            border: "none", cursor: "pointer", fontFamily: "var(--font-ui)",
+            boxShadow: "0 8px 28px rgba(27,157,142,0.35)",
+          }}>다음 라운드 →</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { HomeScreen, MatchingMode, TEAL, TEAL_DARK, TEAL_SHADOW });
 
 </script>
 
