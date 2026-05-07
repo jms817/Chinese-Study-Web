@@ -1181,7 +1181,7 @@ function createSupabaseBrowserClient(config) {
         persistSession:true,
         autoRefreshToken:true,
         detectSessionInUrl:true,
-        flowType:'implicit',
+        flowType:'pkce',
       },
     });
   } catch {
@@ -5982,6 +5982,10 @@ function App() {
       setSessionLoading(false);
     });
     const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+      // Strip any auth tokens from URL so sharing the link won't log others in
+      if (window.location.hash && window.location.hash.includes("access_token")) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       setSession(nextSession || null);
       setSyncStatus(nextSession ? `로그인됨: ${nextSession.user?.email || "사용자"}` : "로그아웃됨");
       setSyncState(nextSession ? "synced" : "ready");
